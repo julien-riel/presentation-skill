@@ -249,7 +249,7 @@ function runClaude(prompt) {
 
     const child = spawn("claude", cmdArgs, {
       cwd: projectDir,
-      stdio: ["pipe", "pipe", "pipe"],
+      stdio: ["ignore", "pipe", "pipe"],
       env: { ...process.env },
     });
 
