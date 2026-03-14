@@ -1,19 +1,15 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
-import { readTemplate } from './validator/templateReader.js';
-import { runValidation } from './validator/engine.js';
-import { generateManifest } from './validator/manifestGenerator.js';
 import { formatText, formatJson } from './validator/formatter.js';
-import { generateDemo } from './validator/demoGenerator.js';
+import {
+  validateTemplate,
+  generateFromAST,
+  generateFromData,
+  getDefaultTemplatePath,
+} from './index.js';
 import { validateAST } from './parser/astValidator.js';
-import { parseCSV, parseJSONData } from './parser/dataParser.js';
-import { transformPresentation } from './transform/index.js';
-import { renderToBuffer } from './renderer/pptxRenderer.js';
-import type { TemplateCapabilities } from './schema/capabilities.js';
-import type { Presentation } from './schema/presentation.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { fileURLToPath } from 'url';
 
 const program = new Command();
 
@@ -32,36 +28,26 @@ program
   .option('-o, --output <path>', 'Write manifest to file')
   .action(async (templatePath: string, options: { json?: boolean; strict?: boolean; demo?: boolean; output?: string }) => {
     try {
-      const template = await readTemplate(templatePath);
-      const results = runValidation(template);
+      const report = await validateTemplate(templatePath, { demo: options.demo });
 
       if (options.json) {
-        console.log(formatJson(results));
+        console.log(formatJson(report.results));
       } else {
-        console.log(formatText(results));
+        console.log(formatText(report.results));
       }
 
-      // Generate manifest
-      const templateName = path.basename(templatePath);
-      const manifest = generateManifest(template, templateName);
-
       if (options.output) {
-        await fs.writeFile(options.output, JSON.stringify(manifest, null, 2));
+        await fs.writeFile(options.output, JSON.stringify(report.manifest, null, 2));
         console.log(`\nManifest written to ${options.output}`);
       }
 
-      // Generate demo PPTX if requested
-      if (options.demo) {
-        const demoBuffer = await generateDemo(manifest, templatePath);
+      if (options.demo && report.demoBuffer) {
         const demoPath = templatePath.replace(/\.pptx$/i, '-demo.pptx');
-        await fs.writeFile(demoPath, demoBuffer);
+        await fs.writeFile(demoPath, report.demoBuffer);
         console.log(`\nDemo PPTX written to ${demoPath}`);
       }
 
-      const hasErrors = results.some(r => r.status === 'fail' && r.severity === 'ERROR');
-      const hasWarnings = results.some(r => r.status === 'fail' && r.severity === 'WARNING');
-
-      if (hasErrors || (options.strict && hasWarnings)) {
+      if (report.hasErrors || (options.strict && report.hasWarnings)) {
         process.exit(1);
       }
     } catch (err) {
@@ -91,20 +77,9 @@ program
         process.exit(1);
       }
 
-      // Resolve template path
-      const templatePath = options.template ?? path.resolve(
-        path.dirname(fileURLToPath(import.meta.url)),
-        '../assets/default-template.pptx'
-      );
+      const templatePath = options.template ?? getDefaultTemplatePath();
+      let buffer: Buffer;
 
-      // Load manifest
-      const template = await readTemplate(templatePath);
-      const manifest: TemplateCapabilities = generateManifest(
-        template, path.basename(templatePath)
-      );
-
-      // Parse input to AST
-      let presentation: Presentation;
       if (options.ast) {
         const raw = await fs.readFile(options.ast, 'utf-8');
         const result = validateAST(raw);
@@ -113,39 +88,17 @@ program
           result.errors.forEach(e => console.error(`  - ${e}`));
           process.exit(1);
         }
-        presentation = result.data;
+        buffer = await generateFromAST(result.data, templatePath);
       } else {
         const raw = await fs.readFile(options.data!, 'utf-8');
         const ext = path.extname(options.data!).toLowerCase();
-        if (ext === '.csv') {
-          presentation = parseCSV(raw, options.title);
-        } else {
-          const jsonData = JSON.parse(raw);
-          presentation = parseJSONData(jsonData, options.title);
-        }
-        // Validate the generated AST
-        const validationResult = validateAST(presentation);
-        if (!validationResult.success) {
-          console.error('Data-generated AST validation errors:');
-          validationResult.errors.forEach(e => console.error(`  - ${e}`));
-          process.exit(1);
-        }
-        presentation = validationResult.data;
+        const format = ext === '.csv' ? 'csv' : 'json';
+        const data = format === 'json' ? JSON.parse(raw) : raw;
+        buffer = await generateFromData(data, format, options.title, templatePath);
       }
-
-      // Transform + Render (opens the template and adds slides to it)
-      const enriched = transformPresentation(presentation, manifest);
-      const buffer = await renderToBuffer(enriched, templatePath);
 
       await fs.writeFile(options.output, buffer);
       console.log(`Presentation written to ${options.output}`);
-
-      // Report warnings
-      const allWarnings = enriched.slides.flatMap(s => s._warnings ?? []);
-      if (allWarnings.length > 0) {
-        console.log(`\nWarnings (${allWarnings.length}):`);
-        allWarnings.forEach(w => console.log(`  - ${w}`));
-      }
     } catch (err) {
       console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
       process.exit(1);
