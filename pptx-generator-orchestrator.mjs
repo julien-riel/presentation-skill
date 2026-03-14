@@ -57,6 +57,7 @@ const C = {
   cyan: "\x1b[36m",
   magenta: "\x1b[35m",
   blue: "\x1b[34m",
+  white: "\x1b[37m",
 };
 
 function log(color, prefix, msg) {
@@ -227,7 +228,9 @@ Sinon, créer des fixtures de test programmatiques avec PptxGenJS.
   log(C.green, "INIT", "Projet prêt");
 }
 
-// ─── Exécuter claude -p ─────────────────────────────────────
+// ─── Exécuter claude -p avec stream-json ────────────────────
+const CLAUDE_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes par invocation
+
 function runClaude(prompt) {
   return new Promise((resolve, reject) => {
     const cmdArgs = [
@@ -235,6 +238,10 @@ function runClaude(prompt) {
       prompt,
       "--allowedTools",
       "Edit,Write,MultiEdit,Bash,Read,Glob,Grep",
+      "--output-format",
+      "stream-json",
+      "--verbose",
+      "--include-partial-messages",
     ];
     if (modelFlag) cmdArgs.push("--model", modelFlag);
 
@@ -248,35 +255,178 @@ function runClaude(prompt) {
 
     let stdout = "";
     let stderr = "";
+    let lineBuffer = "";
+
+    // Statistiques de la session
+    const stats = { toolCalls: 0, tools: {}, textChunks: 0 };
+    let currentTool = null;
+    let toolStartTime = null;
+    let lastActivityTime = Date.now();
+
+    // Timeout: tue le process s'il est inactif trop longtemps
+    const timeoutTimer = setTimeout(() => {
+      log(C.red, "TIMEOUT", `Claude inactif depuis ${CLAUDE_TIMEOUT_MS / 1000}s — abandon`);
+      child.kill("SIGTERM");
+    }, CLAUDE_TIMEOUT_MS);
+
+    // Timer d'inactivité (2 min sans output = alerte)
+    const inactivityInterval = setInterval(() => {
+      const idleSec = Math.floor((Date.now() - lastActivityTime) / 1000);
+      if (idleSec > 120 && idleSec % 30 === 0) {
+        log(C.yellow, "IDLE", `Aucune activité depuis ${idleSec}s...`);
+      }
+    }, 10_000);
+
+    /**
+     * Traite une ligne NDJSON du stream-json de Claude Code.
+     */
+    function processStreamLine(line) {
+      if (!line.trim()) return;
+      lastActivityTime = Date.now();
+
+      let msg;
+      try {
+        msg = JSON.parse(line);
+      } catch {
+        // Pas du JSON valide — afficher tel quel si verbose
+        if (verbose) process.stdout.write(line + "\n");
+        return;
+      }
+
+      const type = msg.type;
+
+      // ── stream_event : événements temps réel de l'API Claude ──
+      if (type === "stream_event") {
+        const event = msg.event;
+        if (!event) return;
+        const eventType = event.type;
+
+        if (eventType === "content_block_start") {
+          const block = event.content_block;
+          if (block?.type === "tool_use") {
+            currentTool = block.name;
+            toolStartTime = Date.now();
+            stats.toolCalls++;
+            stats.tools[currentTool] = (stats.tools[currentTool] || 0) + 1;
+            log(C.cyan, "TOOL", `${currentTool} ...`);
+          }
+        } else if (eventType === "content_block_delta") {
+          const delta = event.delta;
+          if (delta?.type === "text_delta") {
+            stats.textChunks++;
+            if (verbose) {
+              process.stdout.write(delta.text);
+            }
+          } else if (delta?.type === "input_json_delta" && verbose) {
+            // Input JSON du tool call — afficher seulement en verbose
+            process.stdout.write(`${C.dim}${delta.partial_json}${C.reset}`);
+          }
+        } else if (eventType === "content_block_stop") {
+          if (currentTool) {
+            const elapsed = ((Date.now() - toolStartTime) / 1000).toFixed(1);
+            log(C.cyan, "TOOL", `${currentTool} terminé (${elapsed}s)`);
+            currentTool = null;
+            toolStartTime = null;
+          }
+        }
+        return;
+      }
+
+      // ── assistant : message complet de l'assistant ──
+      if (type === "assistant") {
+        const message = msg.message;
+        if (!message?.content) return;
+        for (const block of message.content) {
+          if (block.type === "text" && block.text) {
+            // Afficher un résumé du texte de l'assistant
+            const preview = block.text.substring(0, 200).replace(/\n/g, " ");
+            log(C.white, "AGENT", preview + (block.text.length > 200 ? "..." : ""));
+          } else if (block.type === "tool_use") {
+            // En mode non-verbose, afficher les détails du tool call
+            if (!verbose) {
+              const input = JSON.stringify(block.input || {});
+              const preview = input.substring(0, 120);
+              log(C.dim, "CALL", `${block.name}(${preview}${input.length > 120 ? "..." : ""})`);
+            }
+          }
+        }
+        return;
+      }
+
+      // ── result : résultat final ──
+      if (type === "result") {
+        const cost = msg.cost_usd;
+        const duration = msg.duration_ms;
+        const turns = msg.num_turns;
+        const parts = [];
+        if (turns) parts.push(`${turns} tours`);
+        if (duration) parts.push(`${(duration / 1000).toFixed(0)}s`);
+        if (cost) parts.push(`$${cost.toFixed(4)}`);
+        if (parts.length > 0) {
+          log(C.green, "RESULT", parts.join(" · "));
+        }
+        if (msg.subagent_error) {
+          log(C.red, "ERROR", `Erreur agent: ${msg.subagent_error}`);
+        }
+        return;
+      }
+
+      // ── system : messages système (init, permissions, etc.) ──
+      if (type === "system") {
+        const text = msg.message || msg.subtype || JSON.stringify(msg);
+        log(C.yellow, "SYSTEM", text.substring(0, 200));
+        return;
+      }
+    }
 
     child.stdout.on("data", (data) => {
       const text = data.toString();
       stdout += text;
-      if (verbose) {
-        process.stdout.write(text);
-      } else {
-        const lines = text.split("\n").filter((l) => l.trim());
-        if (lines.length > 0) {
-          const last = lines[lines.length - 1].substring(0, 100);
-          process.stdout.write(
-            `\r${C.dim}  ... ${last}${C.reset}${"".padEnd(20)}`
-          );
-        }
+
+      // NDJSON : chaque ligne = un objet JSON
+      lineBuffer += text;
+      const lines = lineBuffer.split("\n");
+      // Garder la dernière ligne incomplète dans le buffer
+      lineBuffer = lines.pop() || "";
+      for (const line of lines) {
+        processStreamLine(line);
       }
     });
 
     child.stderr.on("data", (data) => {
-      stderr += data.toString();
+      const text = data.toString();
+      stderr += text;
+      // Afficher stderr en temps réel (souvent des infos utiles)
+      if (text.trim()) {
+        log(C.yellow, "STDERR", text.trim().substring(0, 200));
+      }
     });
 
     child.on("close", (code) => {
-      if (!verbose) {
-        process.stdout.write("\r" + " ".repeat(130) + "\r");
+      clearTimeout(timeoutTimer);
+      clearInterval(inactivityInterval);
+
+      // Traiter la dernière ligne du buffer
+      if (lineBuffer.trim()) {
+        processStreamLine(lineBuffer);
       }
+
+      // Résumé des stats
+      if (stats.toolCalls > 0) {
+        const toolSummary = Object.entries(stats.tools)
+          .map(([name, count]) => `${name}×${count}`)
+          .join(", ");
+        log(C.blue, "STATS", `${stats.toolCalls} appels d'outils : ${toolSummary}`);
+      }
+
       resolve({ code, stdout, stderr });
     });
 
-    child.on("error", (err) => reject(err));
+    child.on("error", (err) => {
+      clearTimeout(timeoutTimer);
+      clearInterval(inactivityInterval);
+      reject(err);
+    });
   });
 }
 
