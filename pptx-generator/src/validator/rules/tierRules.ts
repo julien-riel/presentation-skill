@@ -1,0 +1,80 @@
+import type { ValidationRule } from '../types.js';
+import {
+  LAYOUT_PPT_NAME_TO_TYPE,
+  TIER1_LAYOUTS,
+  TIER2_LAYOUTS,
+  ALL_LAYOUT_TYPES,
+} from '../types.js';
+
+/**
+ * Returns layout type names supported by the template.
+ */
+function getSupportedTypes(template: { layouts: { name: string }[] }): string[] {
+  return template.layouts
+    .map(l => LAYOUT_PPT_NAME_TO_TYPE[l.name])
+    .filter((t): t is string => !!t);
+}
+
+export const tierRules: ValidationRule[] = [
+  // TIER-001: must satisfy Tier 1
+  {
+    id: 'TIER-001',
+    severity: 'ERROR',
+    description: 'Le gabarit doit satisfaire le Tier 1 (title, section, bullets, generic)',
+    validate: (template) => {
+      const supported = getSupportedTypes(template);
+      const missing = TIER1_LAYOUTS.filter(t => !supported.includes(t));
+      return {
+        id: 'TIER-001',
+        severity: 'ERROR',
+        status: missing.length === 0 ? 'pass' : 'fail',
+        message: missing.length === 0
+          ? 'Tier 1 requirements satisfied'
+          : `Tier 1 missing: ${missing.join(', ')}`,
+        ...(missing.length > 0 && { context: { missing } }),
+      };
+    },
+  },
+
+  // TIER-002: Tier 2 layouts missing
+  {
+    id: 'TIER-002',
+    severity: 'WARNING',
+    description: 'Layouts Tier 2 manquants (twoColumns, timeline)',
+    validate: (template) => {
+      const supported = getSupportedTypes(template);
+      const tier2Only = TIER2_LAYOUTS.filter(t => !TIER1_LAYOUTS.includes(t));
+      const missing = tier2Only.filter(t => !supported.includes(t));
+      return {
+        id: 'TIER-002',
+        severity: 'WARNING',
+        status: missing.length === 0 ? 'pass' : 'fail',
+        message: missing.length === 0
+          ? 'Tier 2 requirements satisfied'
+          : `Tier 2 missing: ${missing.join(', ')}`,
+        ...(missing.length > 0 && { context: { missing } }),
+      };
+    },
+  },
+
+  // TIER-003: Tier 3+ layouts missing
+  {
+    id: 'TIER-003',
+    severity: 'INFO',
+    description: 'Layouts Tier 3+ manquants',
+    validate: (template) => {
+      const supported = getSupportedTypes(template);
+      const tier3Only = ALL_LAYOUT_TYPES.filter(t => !TIER2_LAYOUTS.includes(t));
+      const missing = tier3Only.filter(t => !supported.includes(t));
+      return {
+        id: 'TIER-003',
+        severity: 'INFO',
+        status: missing.length === 0 ? 'pass' : 'fail',
+        message: missing.length === 0
+          ? 'All Tier 3+ layouts present'
+          : `Tier 3+ missing: ${missing.join(', ')}`,
+        ...(missing.length > 0 && { context: { missing } }),
+      };
+    },
+  },
+];
