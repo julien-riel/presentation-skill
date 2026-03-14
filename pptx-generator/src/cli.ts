@@ -5,8 +5,15 @@ import { runValidation } from './validator/engine.js';
 import { generateManifest } from './validator/manifestGenerator.js';
 import { formatText, formatJson } from './validator/formatter.js';
 import { generateDemo } from './validator/demoGenerator.js';
+import { validateAST } from './parser/astValidator.js';
+import { parseCSV, parseJSONData } from './parser/dataParser.js';
+import { transformPresentation } from './transform/index.js';
+import { renderToBuffer } from './renderer/pptxRenderer.js';
+import type { TemplateCapabilities } from './schema/capabilities.js';
+import type { Presentation } from './schema/presentation.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 
 const program = new Command();
 
@@ -65,9 +72,86 @@ program
 
 program
   .command('generate')
-  .description('Generate a presentation (not yet implemented)')
-  .action(() => {
-    console.log('Generation: not yet implemented');
+  .description('Generate a .pptx presentation from AST JSON or data file')
+  .option('--ast <path>', 'Path to AST JSON file')
+  .option('--data <path>', 'Path to CSV or JSON data file')
+  .option('--template <path>', 'Path to .pptx template (default: built-in)')
+  .option('-o, --output <path>', 'Output .pptx file path', 'output.pptx')
+  .option('--title <title>', 'Presentation title (for data mode)', 'Presentation')
+  .action(async (options: {
+    ast?: string;
+    data?: string;
+    template?: string;
+    output: string;
+    title: string;
+  }) => {
+    try {
+      if (!options.ast && !options.data) {
+        console.error('Error: Provide --ast <file> or --data <file>');
+        process.exit(1);
+      }
+
+      // Load or generate manifest
+      let manifest: TemplateCapabilities;
+      if (options.template) {
+        const template = await readTemplate(options.template);
+        manifest = generateManifest(template, path.basename(options.template));
+      } else {
+        const defaultPath = path.resolve(
+          path.dirname(fileURLToPath(import.meta.url)),
+          '../assets/default-template.pptx'
+        );
+        const template = await readTemplate(defaultPath);
+        manifest = generateManifest(template, 'default-template.pptx');
+      }
+
+      // Parse input to AST
+      let presentation: Presentation;
+      if (options.ast) {
+        const raw = await fs.readFile(options.ast, 'utf-8');
+        const result = validateAST(raw);
+        if (!result.success) {
+          console.error('AST validation errors:');
+          result.errors.forEach(e => console.error(`  - ${e}`));
+          process.exit(1);
+        }
+        presentation = result.data;
+      } else {
+        const raw = await fs.readFile(options.data!, 'utf-8');
+        const ext = path.extname(options.data!).toLowerCase();
+        if (ext === '.csv') {
+          presentation = parseCSV(raw, options.title);
+        } else {
+          const jsonData = JSON.parse(raw);
+          presentation = parseJSONData(jsonData, options.title);
+        }
+        // Validate the generated AST
+        const validationResult = validateAST(presentation);
+        if (!validationResult.success) {
+          console.error('Data-generated AST validation errors:');
+          validationResult.errors.forEach(e => console.error(`  - ${e}`));
+          process.exit(1);
+        }
+        presentation = validationResult.data;
+      }
+
+      // Transform + Render
+      const enriched = transformPresentation(presentation, manifest);
+      const buffer = await renderToBuffer(enriched);
+
+      await fs.writeFile(options.output, buffer);
+      console.log(`Presentation written to ${options.output}`);
+
+      // Report warnings
+      const allWarnings = enriched.slides.flatMap(s => s._warnings ?? []);
+      if (allWarnings.length > 0) {
+        console.log(`\nWarnings (${allWarnings.length}):`);
+        allWarnings.forEach(w => console.log(`  - ${w}`));
+      }
+    } catch (err) {
+      console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+      process.exit(1);
+    }
   });
 
 program.parse();
