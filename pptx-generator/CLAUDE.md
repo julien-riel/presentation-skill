@@ -8,7 +8,7 @@ La spec complète est dans docs/spec.md. Lis-la au début de chaque phase.
 ## Stack
 - TypeScript strict, Node.js, ESM
 - Zod pour la validation de schémas
-- PptxGenJS pour la génération PPTX
+- JSZip + OOXML brut pour la génération PPTX
 - JSZip + xml2js pour la lecture/validation de gabarits
 - Vitest pour les tests
 - Commander.js pour le CLI
