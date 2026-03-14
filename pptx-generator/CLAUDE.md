@@ -22,9 +22,9 @@ La spec complète est dans docs/spec.md. Lis-la au début de chaque phase.
 - Lancer les tests: npx vitest run
 
 ## Gabarit de test
-Si assets/default-template.pptx existe, c'est un gabarit Tier 1 valide
-créé manuellement. Ne jamais le modifier programmatiquement.
-Sinon, créer des fixtures de test programmatiques avec PptxGenJS.
+assets/default-template.pptx est généré par scripts/buildDefaultTemplate.ts.
+Pour le reconstruire: npx tsx scripts/buildDefaultTemplate.ts
+Ne pas modifier le .pptx à la main — toujours passer par le script.
 
 ## Règles
 - Ne pas installer de dépendances sans raison
