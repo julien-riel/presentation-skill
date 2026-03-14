@@ -118,7 +118,7 @@ describe('generateDemo', () => {
     let foundTimelineShapes = false;
     for (const name of slideNames) {
       const xml = await zip.file(name)?.async('text');
-      if (xml && xml.includes('2E7D32') && xml.includes('F57C00')) {
+      if (xml && xml.includes('27AE60') && xml.includes('F39C12')) {
         foundTimelineShapes = true;
         break;
       }

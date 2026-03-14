@@ -48,12 +48,12 @@ describe('timelineDrawer', () => {
     expect(slideXml).toContain('2026-Q2');
     expect(slideXml).toContain('2026-Q3');
 
-    // Green circle for done status (2E7D32)
-    expect(slideXml).toContain('2E7D32');
-    // Orange for in-progress (F57C00)
-    expect(slideXml).toContain('F57C00');
-    // Grey for planned (9E9E9E)
-    expect(slideXml).toContain('9E9E9E');
+    // Green circle for done status (27AE60)
+    expect(slideXml).toContain('27AE60');
+    // Amber for in-progress (F39C12)
+    expect(slideXml).toContain('F39C12');
+    // Gray for planned (8395A7)
+    expect(slideXml).toContain('8395A7');
   });
 
   it('handles a single event timeline', async () => {

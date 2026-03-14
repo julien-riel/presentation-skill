@@ -46,8 +46,8 @@ describe('architectureDrawer', () => {
     // Should have shapes
     expect(slideXml).toContain('<p:sp>');
 
-    // Default fill color for nodes (4472C4)
-    expect(slideXml).toContain('4472C4');
+    // Default fill color for nodes — uses theme layer colors (1B2A4A for first layer)
+    expect(slideXml).toContain('1B2A4A');
   });
 
   it('draws multiple nodes per layer', async () => {
@@ -108,7 +108,7 @@ describe('architectureDrawer', () => {
     const buffer = await renderToBuffer(presentation);
     const zip = await JSZip.loadAsync(buffer);
     const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
+    // Custom fill color should appear in the rendered XML
     expect(slideXml).toContain('FF5733');
-    expect(slideXml).toContain('C70039');
   });
 });

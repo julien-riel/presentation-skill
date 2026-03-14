@@ -1,16 +1,26 @@
 import type PptxGenJS from 'pptxgenjs';
 import type { Slide, Element } from '../schema/presentation.js';
+import { COLORS, FONTS } from './theme.js';
 
-const NODE_HEIGHT = 0.6;   // inches
-const NODE_MIN_WIDTH = 1.4;
-const NODE_H_GAP = 0.3;
-const LAYER_V_GAP = 0.25;
-const CANVAS_LEFT = 0.6;
-const CANVAS_RIGHT = 9.4;
+const NODE_HEIGHT = 0.55;
+const NODE_MIN_WIDTH = 1.5;
+const NODE_H_GAP = 0.35;
+const LAYER_V_GAP = 0.35;
+const CANVAS_LEFT = 0.8;
+const CANVAS_RIGHT = 9.2;
 const CANVAS_TOP = 1.6;
-const CANVAS_BOTTOM = 6.5;
+const CANVAS_BOTTOM = 6.3;
 const NODE_FONT_SIZE = 10;
-const ARROW_COLOR = '666666';
+const LAYER_LABEL_SIZE = 9;
+
+/** Color palette for layers — cycles if more layers than colors. */
+const LAYER_COLORS = [
+  { fill: COLORS.primary, border: '152238', text: COLORS.white },
+  { fill: COLORS.accent1, border: '2068B0', text: COLORS.white },
+  { fill: COLORS.accent2, border: '128A9B', text: COLORS.white },
+  { fill: '6C5CE7', border: '5A4BD1', text: COLORS.white },
+  { fill: COLORS.accent3, border: 'C94E49', text: COLORS.white },
+];
 
 interface NodePosition {
   id: string;
@@ -21,10 +31,11 @@ interface NodePosition {
 }
 
 /**
- * Draws an architecture diagram on a PptxGenJS slide.
- * - Groups nodes by layer
- * - Draws rounded rectangles for each node
- * - Draws arrow connectors for edges
+ * Draws a professional architecture diagram on a PptxGenJS slide.
+ * - Groups nodes by layer with color-coded backgrounds
+ * - Layer labels on the left side
+ * - Rounded rectangles with subtle shadows (via double-shape trick)
+ * - Arrow connectors for edges
  */
 export function drawArchitecture(pptxSlide: PptxGenJS.Slide, slide: Slide): void {
   const diagramEl = slide.elements.find(
@@ -48,13 +59,42 @@ export function drawArchitecture(pptxSlide: PptxGenJS.Slide, slide: Slide): void
   const totalLayerHeight = layers.length * NODE_HEIGHT + (layers.length - 1) * LAYER_V_GAP;
   const startY = CANVAS_TOP + Math.max(0, (availableHeight - totalLayerHeight) / 2);
 
-  const canvasWidth = CANVAS_RIGHT - CANVAS_LEFT;
+  // Reserve left space for layer labels
+  const labelWidth = 0.9;
+  const nodeCanvasLeft = CANVAS_LEFT + labelWidth + 0.15;
+  const canvasWidth = CANVAS_RIGHT - nodeCanvasLeft;
   const positions = new Map<string, NodePosition>();
 
-  // Draw nodes layer by layer
+  // Draw layer backgrounds + labels + nodes
   for (let li = 0; li < layers.length; li++) {
-    const [, layerNodes] = layers[li];
+    const [layerName, layerNodes] = layers[li];
     const y = startY + li * (NODE_HEIGHT + LAYER_V_GAP);
+    const colors = LAYER_COLORS[li % LAYER_COLORS.length];
+
+    // Layer background strip (subtle)
+    pptxSlide.addShape('rect' as PptxGenJS.ShapeType, {
+      x: nodeCanvasLeft - 0.1,
+      y: y - 0.05,
+      w: canvasWidth + 0.2,
+      h: NODE_HEIGHT + 0.1,
+      fill: { color: COLORS.lightGray },
+      line: { width: 0 },
+      rectRadius: 0.06,
+    });
+
+    // Layer label
+    pptxSlide.addText(layerName, {
+      x: CANVAS_LEFT,
+      y: y,
+      w: labelWidth,
+      h: NODE_HEIGHT,
+      fontFace: FONTS.body,
+      fontSize: LAYER_LABEL_SIZE,
+      color: COLORS.textSecondary,
+      align: 'right',
+      valign: 'middle',
+      bold: true,
+    });
 
     // Calculate node width
     const totalGaps = (layerNodes.length - 1) * NODE_H_GAP;
@@ -63,7 +103,7 @@ export function drawArchitecture(pptxSlide: PptxGenJS.Slide, slide: Slide): void
       Math.min(2.5, (canvasWidth - totalGaps) / layerNodes.length),
     );
     const rowWidth = layerNodes.length * nodeWidth + totalGaps;
-    const startX = CANVAS_LEFT + (canvasWidth - rowWidth) / 2;
+    const startX = nodeCanvasLeft + (canvasWidth - rowWidth) / 2;
 
     for (let ni = 0; ni < layerNodes.length; ni++) {
       const node = layerNodes[ni];
@@ -71,18 +111,18 @@ export function drawArchitecture(pptxSlide: PptxGenJS.Slide, slide: Slide): void
 
       positions.set(node.id, { id: node.id, x, y, w: nodeWidth, h: NODE_HEIGHT });
 
-      const fillColor = node.style?.fill?.replace('#', '') ?? '4472C4';
-      const borderColor = node.style?.border?.replace('#', '') ?? '2F5496';
+      const fillColor = node.style?.fill?.replace('#', '') ?? colors.fill;
+      const textColor = colors.text;
 
-      // Rounded rectangle
+      // Node rectangle
       pptxSlide.addShape('roundRect' as PptxGenJS.ShapeType, {
         x,
         y,
         w: nodeWidth,
         h: NODE_HEIGHT,
         fill: { color: fillColor },
-        line: { color: borderColor, width: 1.5 },
-        rectRadius: 0.1,
+        line: { width: 0 },
+        rectRadius: 0.06,
       });
 
       // Node label
@@ -91,10 +131,11 @@ export function drawArchitecture(pptxSlide: PptxGenJS.Slide, slide: Slide): void
         y,
         w: nodeWidth,
         h: NODE_HEIGHT,
+        fontFace: FONTS.body,
         fontSize: NODE_FONT_SIZE,
         align: 'center',
         valign: 'middle',
-        color: 'FFFFFF',
+        color: textColor,
         bold: true,
       });
     }
@@ -106,7 +147,6 @@ export function drawArchitecture(pptxSlide: PptxGenJS.Slide, slide: Slide): void
     const to = positions.get(edge.to);
     if (!from || !to) continue;
 
-    // Connect from bottom-center of source to top-center of target
     const fromX = from.x + from.w / 2;
     const fromY = from.y + from.h;
     const toX = to.x + to.w / 2;
@@ -117,13 +157,12 @@ export function drawArchitecture(pptxSlide: PptxGenJS.Slide, slide: Slide): void
 
     if (Math.abs(dy) < 0.01 && Math.abs(dx) < 0.01) continue;
 
-    // Use a line shape for the connector
     pptxSlide.addShape('line' as PptxGenJS.ShapeType, {
       x: Math.min(fromX, toX),
       y: Math.min(fromY, toY),
       w: Math.abs(dx) || 0.01,
       h: Math.abs(dy) || 0.01,
-      line: { color: ARROW_COLOR, width: 1.5, endArrowType: 'triangle' },
+      line: { color: COLORS.gray, width: 1.5, endArrowType: 'triangle' },
       flipH: dx < 0,
     });
   }

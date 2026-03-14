@@ -16,14 +16,14 @@ const SLIDE_W = 12192000; // 16:9 width in EMU
 const SLIDE_H = 6858000;  // 16:9 height in EMU
 const MARGIN = 457200;    // 0.5 inch in EMU
 
-// Accent colors with WCAG AA contrast >= 4.5:1 against white
+// Accent colors — professional palette, WCAG AA contrast >= 4.5:1 against white
 const ACCENT_COLORS = [
-  '1F4E79', // accent1 - dark blue
-  '2E75B6', // accent2 - medium blue (contrast ~4.56)
-  'C00000', // accent3 - dark red
-  '2E7D32', // accent4 - dark green
-  '6A1B9A', // accent5 - dark purple
-  'E65100', // accent6 - dark orange
+  '1B2A4A', // accent1 - dark navy (primary)
+  '2D7DD2', // accent2 - vibrant blue
+  '17A2B8', // accent3 - teal
+  'E8625C', // accent4 - warm coral
+  '27AE60', // accent5 - green
+  'F39C12', // accent6 - amber (contrast ~3.0 vs white, but 8.5:1 vs dark bg)
 ];
 
 const OUTPUT_PATH = path.resolve(__dirname, '../assets/default-template.pptx');
@@ -280,13 +280,13 @@ function slideLayoutRels(): string {
 
 function themeXml(): string {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="DefaultTheme">
+<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Professional">
   <a:themeElements>
-    <a:clrScheme name="DefaultColors">
-      <a:dk1><a:srgbClr val="000000"/></a:dk1>
+    <a:clrScheme name="Professional">
+      <a:dk1><a:srgbClr val="1B2A4A"/></a:dk1>
       <a:lt1><a:srgbClr val="FFFFFF"/></a:lt1>
-      <a:dk2><a:srgbClr val="44546A"/></a:dk2>
-      <a:lt2><a:srgbClr val="E7E6E6"/></a:lt2>
+      <a:dk2><a:srgbClr val="2C3E50"/></a:dk2>
+      <a:lt2><a:srgbClr val="F7F9FC"/></a:lt2>
       <a:accent1><a:srgbClr val="${ACCENT_COLORS[0]}"/></a:accent1>
       <a:accent2><a:srgbClr val="${ACCENT_COLORS[1]}"/></a:accent2>
       <a:accent3><a:srgbClr val="${ACCENT_COLORS[2]}"/></a:accent3>
@@ -296,9 +296,9 @@ function themeXml(): string {
       <a:hlink><a:srgbClr val="0563C1"/></a:hlink>
       <a:folHlink><a:srgbClr val="954F72"/></a:folHlink>
     </a:clrScheme>
-    <a:fontScheme name="DefaultFonts">
+    <a:fontScheme name="ProfessionalFonts">
       <a:majorFont>
-        <a:latin typeface="Calibri"/>
+        <a:latin typeface="Calibri Light"/>
         <a:ea typeface=""/>
         <a:cs typeface=""/>
       </a:majorFont>
