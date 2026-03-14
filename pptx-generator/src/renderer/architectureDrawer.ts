@@ -1,26 +1,14 @@
-import type PptxGenJS from 'pptxgenjs';
 import type { Slide, Element } from '../schema/presentation.js';
-import { COLORS, FONTS } from './theme.js';
+import { emu, rectShape, lineShape, textBoxShape } from './xmlHelpers.js';
 
-const NODE_HEIGHT = 0.55;
-const NODE_MIN_WIDTH = 1.5;
-const NODE_H_GAP = 0.35;
-const LAYER_V_GAP = 0.35;
-const CANVAS_LEFT = 0.8;
-const CANVAS_RIGHT = 9.2;
-const CANVAS_TOP = 1.6;
-const CANVAS_BOTTOM = 6.3;
-const NODE_FONT_SIZE = 10;
-const LAYER_LABEL_SIZE = 9;
-
-/** Color palette for layers — cycles if more layers than colors. */
-const LAYER_COLORS = [
-  { fill: COLORS.primary, border: '152238', text: COLORS.white },
-  { fill: COLORS.accent1, border: '2068B0', text: COLORS.white },
-  { fill: COLORS.accent2, border: '128A9B', text: COLORS.white },
-  { fill: '6C5CE7', border: '5A4BD1', text: COLORS.white },
-  { fill: COLORS.accent3, border: 'C94E49', text: COLORS.white },
-];
+const NODE_H = emu(0.55);
+const NODE_MIN_W = emu(1.5);
+const NODE_H_GAP = emu(0.35);
+const LAYER_V_GAP = emu(0.35);
+const CANVAS_LEFT = emu(0.8);
+const CANVAS_RIGHT = emu(9.2);
+const CANVAS_TOP = emu(1.6);
+const CANVAS_BOTTOM = emu(6.3);
 
 interface NodePosition {
   id: string;
@@ -31,19 +19,24 @@ interface NodePosition {
 }
 
 /**
- * Draws a professional architecture diagram on a PptxGenJS slide.
- * - Groups nodes by layer with color-coded backgrounds
- * - Layer labels on the left side
- * - Rounded rectangles with subtle shadows (via double-shape trick)
- * - Arrow connectors for edges
+ * Builds architecture diagram shape XML fragments.
+ * Uses the template's accent colors for node fills.
  */
-export function drawArchitecture(pptxSlide: PptxGenJS.Slide, slide: Slide): void {
+export function buildArchitectureShapes(
+  slide: Slide,
+  startId: number,
+  accentColors: string[],
+): { shapes: string; nextId: number } {
   const diagramEl = slide.elements.find(
     (el): el is Extract<Element, { type: 'diagram' }> => el.type === 'diagram',
   );
-  if (!diagramEl || diagramEl.nodes.length === 0) return;
+  if (!diagramEl || diagramEl.nodes.length === 0) {
+    return { shapes: '', nextId: startId };
+  }
 
   const { nodes, edges } = diagramEl;
+  let id = startId;
+  let shapes = '';
 
   // Group nodes by layer
   const layerMap = new Map<string, typeof nodes>();
@@ -55,115 +48,77 @@ export function drawArchitecture(pptxSlide: PptxGenJS.Slide, slide: Slide): void
   const layers = Array.from(layerMap.entries());
 
   // Calculate vertical spacing
-  const availableHeight = CANVAS_BOTTOM - CANVAS_TOP;
-  const totalLayerHeight = layers.length * NODE_HEIGHT + (layers.length - 1) * LAYER_V_GAP;
-  const startY = CANVAS_TOP + Math.max(0, (availableHeight - totalLayerHeight) / 2);
+  const availableH = CANVAS_BOTTOM - CANVAS_TOP;
+  const totalH = layers.length * NODE_H + (layers.length - 1) * LAYER_V_GAP;
+  const startY = CANVAS_TOP + Math.max(0, Math.round((availableH - totalH) / 2));
 
-  // Reserve left space for layer labels
-  const labelWidth = 0.9;
-  const nodeCanvasLeft = CANVAS_LEFT + labelWidth + 0.15;
-  const canvasWidth = CANVAS_RIGHT - nodeCanvasLeft;
+  const canvasW = CANVAS_RIGHT - CANVAS_LEFT;
   const positions = new Map<string, NodePosition>();
 
-  // Draw layer backgrounds + labels + nodes
   for (let li = 0; li < layers.length; li++) {
-    const [layerName, layerNodes] = layers[li];
-    const y = startY + li * (NODE_HEIGHT + LAYER_V_GAP);
-    const colors = LAYER_COLORS[li % LAYER_COLORS.length];
+    const [, layerNodes] = layers[li];
+    const y = startY + li * (NODE_H + LAYER_V_GAP);
 
-    // Layer background strip (subtle)
-    pptxSlide.addShape('rect' as PptxGenJS.ShapeType, {
-      x: nodeCanvasLeft - 0.1,
-      y: y - 0.05,
-      w: canvasWidth + 0.2,
-      h: NODE_HEIGHT + 0.1,
-      fill: { color: COLORS.lightGray },
-      line: { width: 0 },
-      rectRadius: 0.06,
-    });
-
-    // Layer label
-    pptxSlide.addText(layerName, {
-      x: CANVAS_LEFT,
-      y: y,
-      w: labelWidth,
-      h: NODE_HEIGHT,
-      fontFace: FONTS.body,
-      fontSize: LAYER_LABEL_SIZE,
-      color: COLORS.textSecondary,
-      align: 'right',
-      valign: 'middle',
-      bold: true,
-    });
+    // Pick color from template accent colors, cycling through them
+    const fillColor = accentColors[li % accentColors.length]?.replace('#', '') ?? '4472C4';
 
     // Calculate node width
     const totalGaps = (layerNodes.length - 1) * NODE_H_GAP;
-    const nodeWidth = Math.max(
-      NODE_MIN_WIDTH,
-      Math.min(2.5, (canvasWidth - totalGaps) / layerNodes.length),
+    const nodeW = Math.max(
+      NODE_MIN_W,
+      Math.min(emu(2.5), Math.round((canvasW - totalGaps) / layerNodes.length)),
     );
-    const rowWidth = layerNodes.length * nodeWidth + totalGaps;
-    const startX = nodeCanvasLeft + (canvasWidth - rowWidth) / 2;
+    const rowW = layerNodes.length * nodeW + totalGaps;
+    const startX = CANVAS_LEFT + Math.round((canvasW - rowW) / 2);
 
     for (let ni = 0; ni < layerNodes.length; ni++) {
       const node = layerNodes[ni];
-      const x = startX + ni * (nodeWidth + NODE_H_GAP);
+      const x = startX + ni * (nodeW + NODE_H_GAP);
 
-      positions.set(node.id, { id: node.id, x, y, w: nodeWidth, h: NODE_HEIGHT });
+      positions.set(node.id, { id: node.id, x, y, w: nodeW, h: NODE_H });
 
-      const fillColor = node.style?.fill?.replace('#', '') ?? colors.fill;
-      const textColor = colors.text;
+      const nodeFill = node.style?.fill?.replace('#', '') ?? fillColor;
 
-      // Node rectangle
-      pptxSlide.addShape('roundRect' as PptxGenJS.ShapeType, {
-        x,
-        y,
-        w: nodeWidth,
-        h: NODE_HEIGHT,
-        fill: { color: fillColor },
-        line: { width: 0 },
+      // Rounded rectangle node
+      shapes += rectShape(id++, {
+        x, y, cx: nodeW, cy: NODE_H,
+        fill: nodeFill,
         rectRadius: 0.06,
       });
 
-      // Node label
-      pptxSlide.addText(node.label, {
-        x,
-        y,
-        w: nodeWidth,
-        h: NODE_HEIGHT,
-        fontFace: FONTS.body,
-        fontSize: NODE_FONT_SIZE,
-        align: 'center',
-        valign: 'middle',
-        color: textColor,
-        bold: true,
-      });
+      // Node label (white text on colored background)
+      shapes += textBoxShape(id++, x, y, nodeW, NODE_H,
+        node.label, { size: 10, bold: true, color: 'FFFFFF' });
     }
   }
 
   // Draw edges as arrow lines
+  const connectorColor = accentColors[0]?.replace('#', '') ?? '666666';
   for (const edge of edges) {
     const from = positions.get(edge.from);
     const to = positions.get(edge.to);
     if (!from || !to) continue;
 
-    const fromX = from.x + from.w / 2;
+    const fromX = from.x + Math.round(from.w / 2);
     const fromY = from.y + from.h;
-    const toX = to.x + to.w / 2;
+    const toX = to.x + Math.round(to.w / 2);
     const toY = to.y;
 
     const dx = toX - fromX;
     const dy = toY - fromY;
+    if (Math.abs(dy) < 100 && Math.abs(dx) < 100) continue;
 
-    if (Math.abs(dy) < 0.01 && Math.abs(dx) < 0.01) continue;
-
-    pptxSlide.addShape('line' as PptxGenJS.ShapeType, {
+    shapes += lineShape(id++, {
       x: Math.min(fromX, toX),
       y: Math.min(fromY, toY),
-      w: Math.abs(dx) || 0.01,
-      h: Math.abs(dy) || 0.01,
-      line: { color: COLORS.gray, width: 1.5, endArrowType: 'triangle' },
+      cx: Math.abs(dx) || 1,
+      cy: Math.abs(dy) || 1,
+      lineColor: connectorColor,
+      lineWidth: 1.5,
+      endArrow: true,
       flipH: dx < 0,
     });
   }
+
+  return { shapes, nextId: id };
 }

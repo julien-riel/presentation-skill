@@ -52,7 +52,7 @@ program
 
       // Generate demo PPTX if requested
       if (options.demo) {
-        const demoBuffer = await generateDemo(manifest);
+        const demoBuffer = await generateDemo(manifest, templatePath);
         const demoPath = templatePath.replace(/\.pptx$/i, '-demo.pptx');
         await fs.writeFile(demoPath, demoBuffer);
         console.log(`\nDemo PPTX written to ${demoPath}`);
@@ -91,19 +91,17 @@ program
         process.exit(1);
       }
 
-      // Load or generate manifest
-      let manifest: TemplateCapabilities;
-      if (options.template) {
-        const template = await readTemplate(options.template);
-        manifest = generateManifest(template, path.basename(options.template));
-      } else {
-        const defaultPath = path.resolve(
-          path.dirname(fileURLToPath(import.meta.url)),
-          '../assets/default-template.pptx'
-        );
-        const template = await readTemplate(defaultPath);
-        manifest = generateManifest(template, 'default-template.pptx');
-      }
+      // Resolve template path
+      const templatePath = options.template ?? path.resolve(
+        path.dirname(fileURLToPath(import.meta.url)),
+        '../assets/default-template.pptx'
+      );
+
+      // Load manifest
+      const template = await readTemplate(templatePath);
+      const manifest: TemplateCapabilities = generateManifest(
+        template, path.basename(templatePath)
+      );
 
       // Parse input to AST
       let presentation: Presentation;
@@ -135,9 +133,9 @@ program
         presentation = validationResult.data;
       }
 
-      // Transform + Render
+      // Transform + Render (opens the template and adds slides to it)
       const enriched = transformPresentation(presentation, manifest);
-      const buffer = await renderToBuffer(enriched);
+      const buffer = await renderToBuffer(enriched, templatePath);
 
       await fs.writeFile(options.output, buffer);
       console.log(`Presentation written to ${options.output}`);

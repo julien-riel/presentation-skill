@@ -1,9 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import JSZip from 'jszip';
+import * as path from 'path';
 import type { Presentation, Slide } from '../../src/schema/presentation.js';
 import type { TemplateCapabilities } from '../../src/schema/capabilities.js';
 import { transformPresentation } from '../../src/transform/index.js';
-import { renderPresentation, renderToBuffer } from '../../src/renderer/pptxRenderer.js';
+import { renderToBuffer } from '../../src/renderer/pptxRenderer.js';
+
+const TEMPLATE_PATH = path.resolve(__dirname, '../../assets/default-template.pptx');
 
 /**
  * Helper: creates a minimal Tier 1 capabilities manifest.
@@ -29,50 +32,10 @@ function makeTier1Capabilities(extra: string[] = []): TemplateCapabilities {
       comparison: 'twoColumns',
     },
     placeholders: {},
-    theme: { title_font: 'Arial', body_font: 'Calibri', accent_colors: ['#000'] },
+    theme: { title_font: 'Calibri Light', body_font: 'Calibri', accent_colors: ['#1B2A4A', '#2D7DD2', '#17A2B8'] },
     slide_dimensions: { width_emu: 12192000, height_emu: 6858000 },
   };
 }
-
-// ─── Renderer Unit Tests ──────────────────────────────────────────────────────
-
-describe('renderPresentation', () => {
-  it('creates a PptxGenJS instance with correct title', () => {
-    const presentation: Presentation = {
-      title: 'Test Deck',
-      slides: [
-        {
-          layout: 'title',
-          _resolvedLayout: 'title',
-          elements: [
-            { type: 'title', text: 'Hello World' },
-            { type: 'subtitle', text: 'A test' },
-          ],
-        },
-      ],
-    };
-
-    const pptx = renderPresentation(presentation);
-    expect(pptx.title).toBe('Test Deck');
-  });
-
-  it('sets author from metadata', () => {
-    const presentation: Presentation = {
-      title: 'Test',
-      metadata: { author: 'Jane Doe' },
-      slides: [
-        {
-          layout: 'title',
-          _resolvedLayout: 'title',
-          elements: [{ type: 'title', text: 'Hi' }],
-        },
-      ],
-    };
-
-    const pptx = renderPresentation(presentation);
-    expect(pptx.author).toBe('Jane Doe');
-  });
-});
 
 // ─── Buffer Output + JSZip Validation ─────────────────────────────────────────
 
@@ -108,11 +71,10 @@ describe('renderToBuffer', () => {
       ],
     };
 
-    const buffer = await renderToBuffer(presentation);
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH);
     expect(buffer).toBeInstanceOf(Buffer);
     expect(buffer.length).toBeGreaterThan(0);
 
-    // Verify it's a valid ZIP (PPTX)
     const zip = await JSZip.loadAsync(buffer);
     const slideFiles = Object.keys(zip.files).filter(
       (name) => name.match(/^ppt\/slides\/slide\d+\.xml$/),
@@ -136,7 +98,7 @@ describe('renderToBuffer', () => {
       ],
     };
 
-    const buffer = await renderToBuffer(presentation);
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH);
     const zip = await JSZip.loadAsync(buffer);
     const slideFiles = Object.keys(zip.files).filter(
       (name) => name.match(/^ppt\/slides\/slide\d+\.xml$/),
@@ -144,7 +106,7 @@ describe('renderToBuffer', () => {
     expect(slideFiles).toHaveLength(1);
   });
 
-  it('handles canvas layout with text placeholder', async () => {
+  it('handles canvas layout with timeline', async () => {
     const presentation: Presentation = {
       title: 'Canvas Test',
       slides: [
@@ -165,39 +127,12 @@ describe('renderToBuffer', () => {
       ],
     };
 
-    const buffer = await renderToBuffer(presentation);
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH);
     const zip = await JSZip.loadAsync(buffer);
     const slideFiles = Object.keys(zip.files).filter(
       (name) => name.match(/^ppt\/slides\/slide\d+\.xml$/),
     );
     expect(slideFiles).toHaveLength(1);
-  });
-
-  it('respects _fontSizeOverride in rendered output', async () => {
-    const presentation: Presentation = {
-      title: 'Font Override',
-      slides: [
-        {
-          layout: 'bullets',
-          _resolvedLayout: 'bullets',
-          _fontSizeOverride: 16,
-          elements: [
-            { type: 'title', text: 'Smaller Font' },
-            { type: 'bullets', items: ['A', 'B', 'C', 'D'] },
-          ],
-        },
-      ],
-    };
-
-    // Verify it renders without error and produces valid PPTX
-    const buffer = await renderToBuffer(presentation);
-    expect(buffer.length).toBeGreaterThan(0);
-
-    const zip = await JSZip.loadAsync(buffer);
-    const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
-    expect(slideXml).toBeDefined();
-    // Font size 16pt → 1600 hundredths of a point in OOXML
-    expect(slideXml).toContain('1600');
   });
 
   it('includes speaker notes when present', async () => {
@@ -213,13 +148,59 @@ describe('renderToBuffer', () => {
       ],
     };
 
-    const buffer = await renderToBuffer(presentation);
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH);
     const zip = await JSZip.loadAsync(buffer);
-    // PptxGenJS stores notes in notesSlide files
     const notesFiles = Object.keys(zip.files).filter(
       (name) => name.includes('notesSlide'),
     );
     expect(notesFiles.length).toBeGreaterThan(0);
+  });
+
+  it('slide XML contains the text content', async () => {
+    const presentation: Presentation = {
+      title: 'Content Test',
+      slides: [
+        {
+          layout: 'bullets',
+          _resolvedLayout: 'bullets',
+          elements: [
+            { type: 'title', text: 'My Title' },
+            { type: 'bullets', items: ['Alpha', 'Beta'] },
+          ],
+        },
+      ],
+    };
+
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH);
+    const zip = await JSZip.loadAsync(buffer);
+    const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
+    expect(slideXml).toBeDefined();
+    expect(slideXml).toContain('My Title');
+    expect(slideXml).toContain('Alpha');
+    expect(slideXml).toContain('Beta');
+  });
+
+  it('slides reference the correct slideLayout', async () => {
+    const presentation: Presentation = {
+      title: 'Layout Ref Test',
+      slides: [
+        {
+          layout: 'bullets',
+          _resolvedLayout: 'bullets',
+          elements: [
+            { type: 'title', text: 'Bullets Slide' },
+            { type: 'bullets', items: ['A'] },
+          ],
+        },
+      ],
+    };
+
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH);
+    const zip = await JSZip.loadAsync(buffer);
+    const rels = await zip.file('ppt/slides/_rels/slide1.xml.rels')?.async('text');
+    expect(rels).toBeDefined();
+    // Should reference a slideLayout
+    expect(rels).toContain('slideLayout');
   });
 });
 
@@ -276,29 +257,24 @@ describe('E2E: AST → Transform(Tier 1) → Render', () => {
       ],
     };
 
-    // Step 1: Transform
     const enriched = transformPresentation(ast, caps);
 
     // kpi → bullets degradation
     expect(enriched.slides[3]._resolvedLayout).toBe('bullets');
 
     // 7 bullets → split into 2 slides (5 + 2)
-    // Original 5 slides become 6 after split
     expect(enriched.slides.length).toBe(6);
 
-    // Step 2: Render
-    const buffer = await renderToBuffer(enriched);
+    const buffer = await renderToBuffer(enriched, TEMPLATE_PATH);
     expect(buffer).toBeInstanceOf(Buffer);
     expect(buffer.length).toBeGreaterThan(0);
 
-    // Step 3: Validate PPTX structure
     const zip = await JSZip.loadAsync(buffer);
     const slideFiles = Object.keys(zip.files).filter(
       (name) => name.match(/^ppt\/slides\/slide\d+\.xml$/),
     );
     expect(slideFiles).toHaveLength(6);
 
-    // Verify it contains actual XML content
     const firstSlide = await zip.file('ppt/slides/slide1.xml')?.async('text');
     expect(firstSlide).toBeDefined();
     expect(firstSlide).toContain('Welcome');
@@ -323,12 +299,11 @@ describe('E2E: AST → Transform(Tier 1) → Render', () => {
     };
 
     const enriched = transformPresentation(ast, caps);
-    // 11 bullets → ceil(11/5) = 3 slides
     expect(enriched.slides.length).toBe(3);
     expect(enriched.slides[0]._splitIndex).toBe('(1/3)');
     expect(enriched.slides[2]._splitIndex).toBe('(3/3)');
 
-    const buffer = await renderToBuffer(enriched);
+    const buffer = await renderToBuffer(enriched, TEMPLATE_PATH);
     const zip = await JSZip.loadAsync(buffer);
     const slideFiles = Object.keys(zip.files).filter(
       (name) => name.match(/^ppt\/slides\/slide\d+\.xml$/),

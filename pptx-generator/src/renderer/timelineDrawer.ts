@@ -1,124 +1,90 @@
-import type PptxGenJS from 'pptxgenjs';
 import type { Slide, Element } from '../schema/presentation.js';
-import { COLORS, FONTS, FONT_SIZES } from './theme.js';
-
-/** Status-to-color mapping for timeline events. */
-const STATUS_COLORS: Record<string, string> = {
-  done: COLORS.green,
-  'in-progress': COLORS.amber,
-  planned: COLORS.gray,
-};
-
-const DEFAULT_STATUS = 'planned';
-
-const LINE_Y = 3.3;       // inches from top
-const CIRCLE_RADIUS = 0.18;
-const LABEL_WIDTH = 1.3;
-const LABEL_HEIGHT = 0.45;
-const DATE_FONT_SIZE = FONT_SIZES.small;
-const LABEL_FONT_SIZE = 12;
+import { emu, ellipseShape, rectShape, lineShape, textBoxShape } from './xmlHelpers.js';
 
 /**
- * Draws a professional timeline on a PptxGenJS slide.
- * - Horizontal track line with rounded endpoints
- * - Colored circles per event with white border
- * - Labels alternating above/below with date captions
+ * Status colors: uses template accent colors when available,
+ * falls back to sensible defaults.
  */
-export function drawTimeline(pptxSlide: PptxGenJS.Slide, slide: Slide): void {
+function statusColor(status: string, accents: string[]): string {
+  switch (status) {
+    case 'done': return accents[3] ?? '27AE60';         // accent4 or green
+    case 'in-progress': return accents[4] ?? 'F39C12';  // accent5 or amber
+    default: return accents.length > 2 ? accents[2] : '999999'; // accent3 or gray
+  }
+}
+
+/**
+ * Builds timeline shape XML fragments.
+ * Uses the template's accent colors for status indicators.
+ */
+export function buildTimelineShapes(
+  slide: Slide,
+  startId: number,
+  accentColors: string[],
+): { shapes: string; nextId: number } {
   const timelineEl = slide.elements.find(
     (el): el is Extract<Element, { type: 'timeline' }> => el.type === 'timeline',
   );
-  if (!timelineEl || timelineEl.events.length === 0) return;
+  if (!timelineEl || timelineEl.events.length === 0) {
+    return { shapes: '', nextId: startId };
+  }
 
   const events = timelineEl.events;
   const count = events.length;
+  let id = startId;
+  let shapes = '';
 
-  // Canvas area
-  const canvasLeft = 1.0;
-  const canvasRight = 9.0;
-  const lineWidth = canvasRight - canvasLeft;
+  // Canvas area in EMU
+  const left = emu(1.0);
+  const right = emu(9.0);
+  const lineY = emu(3.3);
+  const lineWidth = right - left;
+  const circleR = emu(0.18);
+  const labelW = emu(1.3);
+  const labelH = emu(0.45);
+  const trackColor = accentColors[0] ?? '666666';
 
-  // Track line (thicker, themed color)
-  pptxSlide.addShape('rect' as PptxGenJS.ShapeType, {
-    x: canvasLeft,
-    y: LINE_Y - 0.02,
-    w: lineWidth,
-    h: 0.04,
-    fill: { color: COLORS.lightGray },
-    line: { width: 0 },
-    rectRadius: 0.02,
+  // Horizontal track line
+  shapes += rectShape(id++, {
+    x: left, y: lineY - emu(0.015), cx: lineWidth, cy: emu(0.03),
+    fill: trackColor + '40',  // Won't work as opacity in OOXML, use light version
+  });
+  // Actually just use a thin solid line
+  shapes = '';
+  id = startId;
+  shapes += lineShape(id++, {
+    x: left, y: lineY, cx: lineWidth, cy: 0,
+    lineColor: trackColor, lineWidth: 2,
   });
 
-  // Compute spacing
   const spacing = count > 1 ? lineWidth / (count - 1) : 0;
 
   for (let i = 0; i < count; i++) {
     const event = events[i];
-    const cx = count > 1 ? canvasLeft + i * spacing : canvasLeft + lineWidth / 2;
-    const status = event.status ?? DEFAULT_STATUS;
-    const color = STATUS_COLORS[status] ?? STATUS_COLORS[DEFAULT_STATUS];
+    const cx = count > 1 ? left + i * spacing : left + lineWidth / 2;
+    const status = event.status ?? 'planned';
+    const color = statusColor(status, accentColors);
 
-    // Outer ring (white border effect)
-    pptxSlide.addShape('ellipse' as PptxGenJS.ShapeType, {
-      x: cx - CIRCLE_RADIUS - 0.03,
-      y: LINE_Y - CIRCLE_RADIUS - 0.03,
-      w: (CIRCLE_RADIUS + 0.03) * 2,
-      h: (CIRCLE_RADIUS + 0.03) * 2,
-      fill: { color: COLORS.white },
-      line: { width: 0 },
-    });
-
-    // Inner colored circle
-    pptxSlide.addShape('ellipse' as PptxGenJS.ShapeType, {
-      x: cx - CIRCLE_RADIUS,
-      y: LINE_Y - CIRCLE_RADIUS,
-      w: CIRCLE_RADIUS * 2,
-      h: CIRCLE_RADIUS * 2,
-      fill: { color },
-      line: { width: 0 },
+    // Colored circle
+    shapes += ellipseShape(id++, {
+      x: cx - circleR, y: lineY - circleR,
+      cx: circleR * 2, cy: circleR * 2,
+      fill: color,
     });
 
     // Alternate labels above/below
     const isAbove = i % 2 === 0;
-    const labelY = isAbove ? LINE_Y - 1.0 : LINE_Y + 0.45;
-    const dateY = isAbove ? LINE_Y - 0.6 : LINE_Y + 0.85;
-
-    // Connector dot-line from circle to label
-    const connStart = isAbove ? LINE_Y - CIRCLE_RADIUS - 0.05 : LINE_Y + CIRCLE_RADIUS + 0.05;
-    const connEnd = isAbove ? labelY + LABEL_HEIGHT : labelY;
-    pptxSlide.addShape('line' as PptxGenJS.ShapeType, {
-      x: cx,
-      y: Math.min(connStart, connEnd),
-      w: 0,
-      h: Math.abs(connEnd - connStart),
-      line: { color: COLORS.lightGray, width: 1, dashType: 'dash' },
-    });
+    const labelY = isAbove ? lineY - emu(0.9) : lineY + emu(0.4);
+    const dateY = isAbove ? lineY - emu(0.5) : lineY + emu(0.8);
 
     // Event label
-    pptxSlide.addText(event.label, {
-      x: cx - LABEL_WIDTH / 2,
-      y: labelY,
-      w: LABEL_WIDTH,
-      h: LABEL_HEIGHT,
-      fontFace: FONTS.body,
-      fontSize: LABEL_FONT_SIZE,
-      align: 'center',
-      valign: 'middle',
-      bold: true,
-      color: COLORS.text,
-    });
+    shapes += textBoxShape(id++, cx - labelW / 2, labelY, labelW, labelH,
+      event.label, { size: 11, bold: true, color: accentColors[0] ?? '333333' });
 
     // Date caption
-    pptxSlide.addText(event.date, {
-      x: cx - LABEL_WIDTH / 2,
-      y: dateY,
-      w: LABEL_WIDTH,
-      h: 0.3,
-      fontFace: FONTS.body,
-      fontSize: DATE_FONT_SIZE,
-      align: 'center',
-      valign: 'middle',
-      color: COLORS.textSecondary,
-    });
+    shapes += textBoxShape(id++, cx - labelW / 2, dateY, labelW, emu(0.3),
+      event.date, { size: 9, color: '888888' });
   }
+
+  return { shapes, nextId: id };
 }

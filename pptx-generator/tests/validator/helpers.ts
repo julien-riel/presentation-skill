@@ -16,6 +16,7 @@ export function makeLayout(
 ): LayoutInfo {
   return {
     name,
+    filePath: `ppt/slideLayouts/slideLayout1.xml`,
     placeholders: placeholders.map(p => ({
       index: p.index,
       type: p.type,

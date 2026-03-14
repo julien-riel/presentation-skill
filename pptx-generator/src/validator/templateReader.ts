@@ -41,6 +41,7 @@ async function extractLayouts(zip: JSZip): Promise<LayoutInfo[]> {
 
     layouts.push({
       name: layoutName,
+      filePath: file,
       placeholders,
     });
   }

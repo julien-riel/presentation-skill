@@ -278,9 +278,10 @@ export function buildDemoAST(capabilities: TemplateCapabilities): Presentation {
 /**
  * Generates a demo PPTX buffer from template capabilities.
  * Runs the full pipeline: buildDemoAST → transform → render.
+ * Opens the template file and adds demo slides to it.
  */
-export async function generateDemo(capabilities: TemplateCapabilities): Promise<Buffer> {
+export async function generateDemo(capabilities: TemplateCapabilities, templatePath: string): Promise<Buffer> {
   const ast = buildDemoAST(capabilities);
   const enriched = transformPresentation(ast, capabilities);
-  return renderToBuffer(enriched);
+  return renderToBuffer(enriched, templatePath);
 }

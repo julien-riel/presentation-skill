@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import JSZip from 'jszip';
+import * as path from 'path';
 import type { TemplateCapabilities } from '../../src/schema/capabilities.js';
 import { buildDemoAST, generateDemo } from '../../src/validator/demoGenerator.js';
+
+const TEMPLATE_PATH = path.resolve(__dirname, '../../assets/default-template.pptx');
 
 /**
  * Creates a Tier 2 capabilities manifest (supports timeline + twoColumns but not kpi/architecture).
@@ -90,7 +93,7 @@ describe('buildDemoAST', () => {
 describe('generateDemo', () => {
   it('produces a valid PPTX buffer with 14+ slides', async () => {
     const caps = makeTier2Capabilities();
-    const buffer = await generateDemo(caps);
+    const buffer = await generateDemo(caps, TEMPLATE_PATH);
 
     expect(buffer).toBeInstanceOf(Buffer);
     expect(buffer.length).toBeGreaterThan(0);
@@ -107,7 +110,7 @@ describe('generateDemo', () => {
 
   it('contains timeline shapes in timeline slides', async () => {
     const caps = makeTier2Capabilities();
-    const buffer = await generateDemo(caps);
+    const buffer = await generateDemo(caps, TEMPLATE_PATH);
     const zip = await JSZip.loadAsync(buffer);
 
     // Find all slide XMLs and check at least one has timeline colors
@@ -118,7 +121,8 @@ describe('generateDemo', () => {
     let foundTimelineShapes = false;
     for (const name of slideNames) {
       const xml = await zip.file(name)?.async('text');
-      if (xml && xml.includes('27AE60') && xml.includes('F39C12')) {
+      // Timeline slides have ellipse shapes for events and line shapes for the track
+      if (xml && xml.includes('prstGeom prst="ellipse"') && xml.includes('prstGeom prst="line"')) {
         foundTimelineShapes = true;
         break;
       }

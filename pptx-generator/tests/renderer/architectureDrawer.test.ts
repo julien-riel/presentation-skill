@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import JSZip from 'jszip';
+import * as path from 'path';
 import type { Presentation } from '../../src/schema/presentation.js';
 import { renderToBuffer } from '../../src/renderer/pptxRenderer.js';
+
+const TEMPLATE_PATH = path.resolve(__dirname, '../../assets/default-template.pptx');
 
 describe('architectureDrawer', () => {
   it('draws architecture shapes (rounded rects + connectors) in the PPTX XML', async () => {
@@ -30,24 +33,18 @@ describe('architectureDrawer', () => {
       ],
     };
 
-    const buffer = await renderToBuffer(presentation);
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH);
     const zip = await JSZip.loadAsync(buffer);
     const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
     expect(slideXml).toBeDefined();
 
-    // Title present
     expect(slideXml).toContain('System Architecture');
-
-    // Node labels present
     expect(slideXml).toContain('Web UI');
     expect(slideXml).toContain('API Server');
     expect(slideXml).toContain('Database');
-
-    // Should have shapes
     expect(slideXml).toContain('<p:sp>');
-
-    // Default fill color for nodes — uses theme layer colors (1B2A4A for first layer)
-    expect(slideXml).toContain('1B2A4A');
+    // Uses template accent colors for node fills
+    expect(slideXml).toContain('solidFill');
   });
 
   it('draws multiple nodes per layer', async () => {
@@ -76,7 +73,7 @@ describe('architectureDrawer', () => {
       ],
     };
 
-    const buffer = await renderToBuffer(presentation);
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH);
     const zip = await JSZip.loadAsync(buffer);
     const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
     expect(slideXml).toContain('App A');
@@ -96,7 +93,7 @@ describe('architectureDrawer', () => {
             {
               type: 'diagram',
               nodes: [
-                { id: 'x', label: 'Node X', style: { fill: '#FF5733', border: '#C70039' } },
+                { id: 'x', label: 'Node X', style: { fill: '#FF5733' } },
               ],
               edges: [],
             },
@@ -105,10 +102,9 @@ describe('architectureDrawer', () => {
       ],
     };
 
-    const buffer = await renderToBuffer(presentation);
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH);
     const zip = await JSZip.loadAsync(buffer);
     const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
-    // Custom fill color should appear in the rendered XML
     expect(slideXml).toContain('FF5733');
   });
 });

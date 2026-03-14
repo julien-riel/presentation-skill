@@ -17,6 +17,8 @@ export interface PlaceholderInfo {
  */
 export interface LayoutInfo {
   name: string;
+  /** Path inside the ZIP, e.g. "ppt/slideLayouts/slideLayout3.xml" */
+  filePath: string;
   placeholders: PlaceholderInfo[];
 }
 

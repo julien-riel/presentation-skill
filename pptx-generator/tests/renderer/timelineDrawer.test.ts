@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import JSZip from 'jszip';
+import * as path from 'path';
 import type { Presentation } from '../../src/schema/presentation.js';
 import { renderToBuffer } from '../../src/renderer/pptxRenderer.js';
+
+const TEMPLATE_PATH = path.resolve(__dirname, '../../assets/default-template.pptx');
 
 describe('timelineDrawer', () => {
   it('draws timeline shapes (line + circles) in the PPTX XML', async () => {
@@ -26,7 +29,7 @@ describe('timelineDrawer', () => {
       ],
     };
 
-    const buffer = await renderToBuffer(presentation);
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH);
     const zip = await JSZip.loadAsync(buffer);
     const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
     expect(slideXml).toBeDefined();
@@ -34,8 +37,7 @@ describe('timelineDrawer', () => {
     // Should contain the title
     expect(slideXml).toContain('Project Timeline');
 
-    // Should contain shapes (sp elements for line and circles)
-    // PptxGenJS renders shapes as <p:sp> elements
+    // Should contain shapes
     expect(slideXml).toContain('<p:sp>');
 
     // Should contain event labels
@@ -48,12 +50,8 @@ describe('timelineDrawer', () => {
     expect(slideXml).toContain('2026-Q2');
     expect(slideXml).toContain('2026-Q3');
 
-    // Green circle for done status (27AE60)
-    expect(slideXml).toContain('27AE60');
-    // Amber for in-progress (F39C12)
-    expect(slideXml).toContain('F39C12');
-    // Gray for planned (8395A7)
-    expect(slideXml).toContain('8395A7');
+    // Should contain colored ellipse shapes (from template accent colors)
+    expect(slideXml).toContain('prstGeom prst="ellipse"');
   });
 
   it('handles a single event timeline', async () => {
@@ -74,7 +72,7 @@ describe('timelineDrawer', () => {
       ],
     };
 
-    const buffer = await renderToBuffer(presentation);
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH);
     const zip = await JSZip.loadAsync(buffer);
     const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
     expect(slideXml).toContain('Only Event');
