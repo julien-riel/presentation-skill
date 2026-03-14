@@ -380,6 +380,16 @@ async function main() {
   await fs.writeFile(OUTPUT_PATH, buffer);
 
   console.log(`Template written to ${OUTPUT_PATH}`);
+
+  // Generate the pre-computed manifest
+  const { readTemplate } = await import('../src/validator/templateReader.js');
+  const { generateManifest } = await import('../src/validator/manifestGenerator.js');
+  const templateInfo = await readTemplate(OUTPUT_PATH);
+  const manifest = generateManifest(templateInfo, 'default-template.pptx');
+  const manifestPath = path.resolve(__dirname, '../assets/default-capabilities.json');
+  await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
+  console.log(`Manifest written to ${manifestPath}`);
+
   console.log(`  Slide dimensions: ${SLIDE_W} x ${SLIDE_H} EMU (16:9)`);
   console.log(`  Layouts: 6 (Tier 2)`);
   console.log(`  Accent colors: ${ACCENT_COLORS.length}`);

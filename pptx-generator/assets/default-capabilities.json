@@ -1,0 +1,78 @@
+{
+  "template": "default-template.pptx",
+  "generated_at": "2026-03-14T21:34:48.965Z",
+  "validator_version": "1.0.0",
+  "tier": 2,
+  "supported_layouts": [
+    "title",
+    "section",
+    "bullets",
+    "generic",
+    "twoColumns",
+    "timeline"
+  ],
+  "unsupported_layouts": [
+    "architecture",
+    "chart",
+    "table",
+    "kpi",
+    "quote",
+    "imageText",
+    "roadmap",
+    "process",
+    "comparison"
+  ],
+  "fallback_map": {
+    "kpi": "bullets",
+    "chart": "bullets",
+    "table": "bullets",
+    "quote": "bullets",
+    "architecture": "bullets",
+    "imageText": "twoColumns",
+    "roadmap": "timeline",
+    "process": "timeline",
+    "comparison": "twoColumns"
+  },
+  "placeholders": {
+    "LAYOUT_TITLE": {
+      "CTRTITLE": 0,
+      "SUBTITLE": 1
+    },
+    "LAYOUT_SECTION": {
+      "TITLE": 0,
+      "BODY": 1
+    },
+    "LAYOUT_BULLETS": {
+      "TITLE": 0,
+      "BODY": 1
+    },
+    "LAYOUT_GENERIC": {
+      "TITLE": 0,
+      "BODY": 1
+    },
+    "LAYOUT_TWO_COLUMNS": {
+      "TITLE": 0,
+      "BODY": 2
+    },
+    "LAYOUT_TIMELINE": {
+      "TITLE": 0,
+      "BODY": 1
+    }
+  },
+  "theme": {
+    "title_font": "Calibri Light",
+    "body_font": "Calibri",
+    "accent_colors": [
+      "#1B2A4A",
+      "#2D7DD2",
+      "#17A2B8",
+      "#E8625C",
+      "#27AE60",
+      "#F39C12"
+    ]
+  },
+  "slide_dimensions": {
+    "width_emu": 12192000,
+    "height_emu": 6858000
+  }
+}
