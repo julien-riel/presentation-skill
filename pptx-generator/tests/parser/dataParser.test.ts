@@ -44,6 +44,45 @@ describe('parseCSV', () => {
     const tableSlide = result.slides.find(s => s.layout === 'table');
     expect(tableSlide).toBeDefined();
   });
+
+  it('should handle quoted fields with commas inside', () => {
+    const csv = 'Name,Role,Department\n"Smith, John",Developer,Engineering\nBob,Designer,Product';
+    const result = parseCSV(csv, 'Team');
+    const tableSlide = result.slides.find(s => s.layout === 'table');
+    expect(tableSlide).toBeDefined();
+    const tableEl = tableSlide!.elements.find((el: any) => el.type === 'table') as any;
+    expect(tableEl.rows[0][0]).toBe('Smith, John');
+  });
+
+  it('should handle escaped quotes in CSV fields', () => {
+    const csv = 'Name,Note\n"Alice ""The Dev""",Good\nBob,Fine';
+    const result = parseCSV(csv, 'Notes');
+    const tableSlide = result.slides.find(s => s.layout === 'table');
+    const tableEl = tableSlide!.elements.find((el: any) => el.type === 'table') as any;
+    expect(tableEl.rows[0][0]).toBe('Alice "The Dev"');
+  });
+
+  it('should ignore invalid status values in CSV timeline data', () => {
+    const csv = 'Date,Milestone,Status\n2026-Q1,Planning,done\n2026-Q2,Development,complete';
+    const result = parseCSV(csv, 'Project');
+    const timelineSlide = result.slides.find(s => s.layout === 'timeline');
+    const timelineEl = timelineSlide!.elements.find((el: any) => el.type === 'timeline') as any;
+    expect(timelineEl.events[0].status).toBe('done');
+    expect(timelineEl.events[1].status).toBeUndefined();
+  });
+
+  it('should handle Windows-style \\r\\n line endings', () => {
+    const csv = 'Name,Role,Department\r\nAlice,Developer,Engineering\r\nBob,Designer,Product';
+    const result = parseCSV(csv, 'Team');
+    const tableSlide = result.slides.find(s => s.layout === 'table');
+    expect(tableSlide).toBeDefined();
+    const tableEl = tableSlide!.elements.find(
+      (el): el is Extract<typeof el, { type: 'table' }> => el.type === 'table'
+    );
+    expect(tableEl).toBeDefined();
+    expect(tableEl!.rows[0][0]).toBe('Alice');
+    expect(tableEl!.rows[0][2]).toBe('Engineering');
+  });
 });
 
 describe('parseJSONData', () => {

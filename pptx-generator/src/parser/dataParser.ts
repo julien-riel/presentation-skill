@@ -1,6 +1,13 @@
 import type { Presentation, Slide } from '../schema/presentation.js';
 
-const DATE_PATTERN = /^\d{4}[-/]?(Q[1-4]|[01]?\d|[A-Za-z]{3})$/;
+const DATE_PATTERN = /^\d{4}[-/](Q[1-4]|[01]?\d|[A-Za-z]{3})$/;
+
+const VALID_STATUSES = ['done', 'in-progress', 'planned'] as const;
+type TimelineStatus = typeof VALID_STATUSES[number];
+
+function isValidStatus(value: string): value is TimelineStatus {
+  return VALID_STATUSES.includes(value as TimelineStatus);
+}
 
 /**
  * Detects the dominant data type from CSV headers and rows.
@@ -28,11 +35,48 @@ export function detectDataType(
   return 'table';
 }
 
+/**
+ * Splits a single CSV line respecting quoted fields.
+ * Fields wrapped in double quotes can contain commas and escaped quotes ("").
+ */
+function splitCSVLine(line: string): string[] {
+  const fields: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (i + 1 < line.length && line[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        current += ch;
+      }
+    } else {
+      if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === ',') {
+        fields.push(current.trim());
+        current = '';
+      } else {
+        current += ch;
+      }
+    }
+  }
+  fields.push(current.trim());
+  return fields;
+}
+
 function splitCSV(csv: string): { headers: string[]; rows: string[][] } {
-  const lines = csv.trim().split('\n').map(l => l.trim()).filter(Boolean);
+  const lines = csv.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim().split('\n').filter(Boolean);
   if (lines.length === 0) return { headers: [], rows: [] };
-  const headers = lines[0].split(',').map(h => h.trim());
-  const rows = lines.slice(1).map(l => l.split(',').map(c => c.trim()));
+  const headers = splitCSVLine(lines[0]);
+  const rows = lines.slice(1).map(l => splitCSVLine(l));
   return { headers, rows };
 }
 
@@ -80,8 +124,8 @@ export function parseCSV(csv: string, title: string): Presentation {
           events: rows.map(row => ({
             date: row[dateColIdx] ?? '',
             label: row[labelColIdx] ?? '',
-            ...(statusColIdx >= 0 && row[statusColIdx]
-              ? { status: row[statusColIdx] as 'done' | 'in-progress' | 'planned' }
+            ...(statusColIdx >= 0 && row[statusColIdx] && isValidStatus(row[statusColIdx].trim())
+              ? { status: row[statusColIdx].trim() as TimelineStatus }
               : {}),
           })),
         },
@@ -158,7 +202,7 @@ export function parseJSONData(data: unknown, title: string): Presentation {
             type: 'timeline',
             events: data.map((item: Record<string, string>) => ({
               date: item.date, label: item.label,
-              ...(item.status ? { status: item.status as 'done' | 'in-progress' | 'planned' } : {}),
+              ...(item.status && isValidStatus(item.status) ? { status: item.status as TimelineStatus } : {}),
             })),
           },
         ],
