@@ -266,6 +266,33 @@ describe('renderToBuffer', () => {
     expect(mediaFiles.length).toBe(1);
   });
 
+  it('renders two-column bullets with icons', async () => {
+    const presentation: Presentation = {
+      title: 'Two Col Icons',
+      slides: [
+        {
+          layout: 'twoColumns',
+          _resolvedLayout: 'twoColumns',
+          elements: [
+            { type: 'title', text: 'Comparison' },
+            { type: 'bullets', items: ['Pro A', 'Pro B'], column: 'left', icons: ['check', 'check'] },
+            { type: 'bullets', items: ['Con A'], column: 'right', icons: ['x'] },
+          ],
+        },
+      ],
+    };
+
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH);
+    const zip = await JSZip.loadAsync(buffer);
+    const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
+    expect(slideXml).toContain('Pro A');
+    expect(slideXml).toContain('Con A');
+    expect(slideXml).toContain('<p:pic>');
+
+    const mediaFiles = Object.keys(zip.files).filter(name => name.startsWith('ppt/media/') && !zip.files[name].dir);
+    expect(mediaFiles.length).toBe(3);
+  });
+
   it('slides reference the correct slideLayout', async () => {
     const presentation: Presentation = {
       title: 'Layout Ref Test',

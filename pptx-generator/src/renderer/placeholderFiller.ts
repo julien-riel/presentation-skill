@@ -39,6 +39,50 @@ function getTitleText(slide: Slide): string {
 }
 
 /**
+ * Builds icon bullet shapes for a column region.
+ * Returns shapes XML and populates iconRequests array.
+ */
+function buildIconBulletShapes(
+  bulletsEl: Extract<Element, { type: 'bullets' }>,
+  id: number,
+  iconRequests: IconRequest[],
+  accentColor: string,
+  regionLeft: number,
+  regionTop: number,
+  regionWidth: number,
+): { shapes: string; nextId: number } {
+  let shapes = '';
+  const iconSizePx = 20;
+  const iconEmu = emuFromPx(iconSizePx);
+  const lineHeight = emu(0.55);
+  const iconGap = emu(0.15);
+
+  for (let i = 0; i < bulletsEl.items.length; i++) {
+    const itemY = regionTop + i * lineHeight;
+    const iconName = bulletsEl.icons?.[i];
+
+    if (iconName) {
+      iconRequests.push({
+        name: iconName,
+        color: accentColor,
+        sizePx: iconSizePx,
+        x: regionLeft,
+        y: itemY + Math.round((lineHeight - iconEmu) / 2),
+        cx: iconEmu,
+        cy: iconEmu,
+      });
+    }
+
+    const textX = regionLeft + iconEmu + iconGap;
+    const textW = regionWidth - iconEmu - iconGap;
+    shapes += textBoxShape(id++, textX, itemY, textW, lineHeight,
+      bulletsEl.items[i], { size: 14, align: 'l', valign: 'ctr' });
+  }
+
+  return { shapes, nextId: id };
+}
+
+/**
  * Builds all shape XML fragments for a slide.
  * Returns the concatenated shapes XML and the next available shape ID.
  *
@@ -82,37 +126,10 @@ export function buildSlideShapes(
 
       const bulletsEl = findElement(slide.elements, 'bullets');
       if (bulletsEl && bulletsEl.icons && bulletsEl.icons.length > 0) {
-        // Manual layout with icons
         const accentColor = templateInfo.theme.accentColors[0]?.replace('#', '') ?? '2D7DD2';
-        const iconSizePx = 20;
-        const iconEmu = emuFromPx(iconSizePx);
-        const bodyLeft = emu(0.8);
-        const bodyTop = emu(1.8);
-        const bodyWidth = emu(8.4);
-        const lineHeight = emu(0.55);
-        const iconGap = emu(0.15);
-
-        for (let i = 0; i < bulletsEl.items.length; i++) {
-          const itemY = bodyTop + i * lineHeight;
-          const iconName = bulletsEl.icons[i];
-
-          if (iconName) {
-            iconRequests.push({
-              name: iconName,
-              color: accentColor,
-              sizePx: iconSizePx,
-              x: bodyLeft,
-              y: itemY + Math.round((lineHeight - iconEmu) / 2),
-              cx: iconEmu,
-              cy: iconEmu,
-            });
-          }
-
-          const textX = bodyLeft + iconEmu + iconGap;
-          const textW = bodyWidth - iconEmu - iconGap;
-          shapes += textBoxShape(id++, textX, itemY, textW, lineHeight,
-            bulletsEl.items[i], { size: 14, align: 'l', valign: 'ctr' });
-        }
+        const result = buildIconBulletShapes(bulletsEl, id, iconRequests, accentColor, emu(0.8), emu(1.8), emu(8.4));
+        shapes += result.shapes;
+        id = result.nextId;
       } else if (bulletsEl) {
         shapes += bulletPlaceholderShape(id++, 1, bulletsEl.items);
       } else {
@@ -134,11 +151,32 @@ export function buildSlideShapes(
       const leftBullets = bulletElements.find((el) => el.column === 'left') ?? bulletElements[0];
       const rightBullets = bulletElements.find((el) => el.column === 'right') ?? bulletElements[1];
 
-      if (leftBullets) {
-        shapes += bulletPlaceholderShape(id++, 1, leftBullets.items);
-      }
-      if (rightBullets) {
-        shapes += bulletPlaceholderShape(id++, 2, rightBullets.items);
+      const hasAnyIcons = (leftBullets?.icons?.length ?? 0) > 0 || (rightBullets?.icons?.length ?? 0) > 0;
+
+      if (hasAnyIcons) {
+        const accentColor = templateInfo.theme.accentColors[0]?.replace('#', '') ?? '2D7DD2';
+        const bodyTop = emu(1.8);
+        const leftStart = emu(0.8);
+        const colWidth = emu(4.0);
+        const rightStart = emu(5.2);
+
+        if (leftBullets) {
+          const result = buildIconBulletShapes(leftBullets, id, iconRequests, accentColor, leftStart, bodyTop, colWidth);
+          shapes += result.shapes;
+          id = result.nextId;
+        }
+        if (rightBullets) {
+          const result = buildIconBulletShapes(rightBullets, id, iconRequests, accentColor, rightStart, bodyTop, colWidth);
+          shapes += result.shapes;
+          id = result.nextId;
+        }
+      } else {
+        if (leftBullets) {
+          shapes += bulletPlaceholderShape(id++, 1, leftBullets.items);
+        }
+        if (rightBullets) {
+          shapes += bulletPlaceholderShape(id++, 2, rightBullets.items);
+        }
       }
       break;
     }
