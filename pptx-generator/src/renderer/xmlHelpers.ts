@@ -13,6 +13,11 @@ export function emu(inches: number): number {
   return Math.round(inches * INCH);
 }
 
+/** Converts pixels to EMU assuming 96 DPI. */
+export function emuFromPx(px: number): number {
+  return Math.round(px * 9525);
+}
+
 /** Escapes XML special characters. */
 export function escapeXml(text: string): string {
   return text
@@ -249,6 +254,35 @@ export function wrapSlideXml(shapes: string, notesText?: string): string {
     </p:spTree>
   </p:cSld>
 </p:sld>`;
+}
+
+/**
+ * Creates a picture shape that references an embedded image.
+ * Used for icon rendering in slides.
+ */
+export function pictureShape(
+  id: number,
+  relId: string,
+  x: number,
+  y: number,
+  cx: number,
+  cy: number,
+): string {
+  return `<p:pic>
+  <p:nvPicPr>
+    <p:cNvPr id="${id}" name="Icon ${id}"/>
+    <p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr>
+    <p:nvPr/>
+  </p:nvPicPr>
+  <p:blipFill>
+    <a:blip r:embed="${relId}"/>
+    <a:stretch><a:fillRect/></a:stretch>
+  </p:blipFill>
+  <p:spPr>
+    <a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm>
+    <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+  </p:spPr>
+</p:pic>`;
 }
 
 /**
