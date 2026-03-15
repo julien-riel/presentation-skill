@@ -320,6 +320,38 @@ describe('renderToBuffer', () => {
     expect(mediaFiles.length).toBe(1);
   });
 
+  it('gracefully skips unknown icon names without crashing', async () => {
+    const presentation: Presentation = {
+      title: 'Unknown Icon Test',
+      slides: [
+        {
+          layout: 'bullets',
+          _resolvedLayout: 'bullets',
+          elements: [
+            { type: 'title', text: 'Test' },
+            {
+              type: 'bullets',
+              items: ['Valid', 'Invalid'],
+              icons: ['check', 'totally-fake-icon-xyz'],
+            },
+          ],
+        },
+      ],
+    };
+
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH);
+    expect(buffer).toBeInstanceOf(Buffer);
+
+    const zip = await JSZip.loadAsync(buffer);
+    const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
+    expect(slideXml).toContain('Valid');
+    expect(slideXml).toContain('Invalid');
+
+    // Only 1 media file (the valid icon)
+    const mediaFiles = Object.keys(zip.files).filter(name => name.startsWith('ppt/media/') && !zip.files[name].dir);
+    expect(mediaFiles.length).toBe(1);
+  });
+
   it('slides reference the correct slideLayout', async () => {
     const presentation: Presentation = {
       title: 'Layout Ref Test',
@@ -418,6 +450,74 @@ describe('E2E: AST → Transform(Tier 1) → Render', () => {
     const firstSlide = await zip.file('ppt/slides/slide1.xml')?.async('text');
     expect(firstSlide).toBeDefined();
     expect(firstSlide).toContain('Welcome');
+  });
+
+  it('produces a valid PPTX with icons across multiple element types', async () => {
+    const caps = makeTier1Capabilities(['twoColumns', 'timeline', 'architecture']);
+    const ast: Presentation = {
+      title: 'Icon Integration Test',
+      slides: [
+        {
+          layout: 'architecture',
+          elements: [
+            { type: 'title', text: 'System' },
+            {
+              type: 'diagram',
+              nodes: [
+                { id: 'web', label: 'Web', layer: 'Frontend', style: { icon: 'globe' } },
+                { id: 'api', label: 'API', layer: 'Backend', style: { icon: 'server' } },
+                { id: 'db', label: 'DB', layer: 'Data', style: { icon: 'database' } },
+              ],
+              edges: [{ from: 'web', to: 'api' }, { from: 'api', to: 'db' }],
+            },
+          ],
+        },
+        {
+          layout: 'bullets',
+          elements: [
+            { type: 'title', text: 'Features' },
+            { type: 'bullets', items: ['Fast', 'Secure'], icons: ['zap', 'shield'] },
+          ],
+        },
+        {
+          layout: 'timeline',
+          elements: [
+            { type: 'title', text: 'Roadmap' },
+            {
+              type: 'timeline',
+              events: [
+                { date: 'Q1', label: 'Plan', status: 'done', icon: 'clipboard-check' },
+                { date: 'Q2', label: 'Build', status: 'in-progress', icon: 'hammer' },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const enriched = transformPresentation(ast, caps);
+    const buffer = await renderToBuffer(enriched, TEMPLATE_PATH);
+    expect(buffer).toBeInstanceOf(Buffer);
+
+    const zip = await JSZip.loadAsync(buffer);
+
+    // Should have 3 slides
+    const slideFiles = Object.keys(zip.files).filter(
+      name => name.match(/^ppt\/slides\/slide\d+\.xml$/),
+    );
+    expect(slideFiles).toHaveLength(3);
+
+    // Should have image files in ppt/media/
+    const mediaFiles = Object.keys(zip.files).filter(name => name.startsWith('ppt/media/') && !zip.files[name].dir);
+    expect(mediaFiles.length).toBeGreaterThanOrEqual(5);
+
+    // Content types should include PNG
+    const contentTypes = await zip.file('[Content_Types].xml')?.async('text');
+    expect(contentTypes).toContain('Extension="png"');
+
+    // Slide 1 (architecture) should have image relationships
+    const slide1Rels = await zip.file('ppt/slides/_rels/slide1.xml.rels')?.async('text');
+    expect(slide1Rels).toContain('rIdImg');
   });
 
   it('handles a presentation with _splitIndex in titles', async () => {
