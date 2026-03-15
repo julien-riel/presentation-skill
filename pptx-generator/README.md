@@ -47,7 +47,7 @@ pptx-generator/
 ├── tests/                     # Test suite
 ├── assets/                    # Default template and capabilities
 ├── scripts/                   # Build scripts
-├── docs/                      # Specification and documentation
+├── references/                # Designer guide, AST schema, integration notes
 └── package.json               # Node.js package metadata
 ```
 
@@ -68,7 +68,7 @@ The plugin also provides a CLI for direct use:
 
 ```bash
 # Validate a template
-npx tsx src/cli.ts validate <template.pptx> [--json] [--demo]
+npx tsx src/cli.ts validate <template.pptx> [--json] [--demo] [--strict] [-o manifest.json]
 
 # Generate from AST
 npx tsx src/cli.ts generate --ast <ast.json> [-o output.pptx]

@@ -22,10 +22,8 @@ Quand l'utilisateur decrit une presentation en langage naturel :
 
 1. **Charger le manifeste par defaut** : lire le fichier `assets/default-capabilities.json` s'il existe, sinon generer le manifeste en validant le gabarit par defaut :
    ```typescript
-   import { readTemplate } from './src/validator/templateReader.js';
-   import { generateManifest } from './src/validator/manifestGenerator.js';
-   const template = await readTemplate('assets/default-template.pptx');
-   const manifest = generateManifest(template, 'default-template.pptx');
+   import { getDefaultManifest } from './src/index.js';
+   const manifest = getDefaultManifest();
    ```
 
 2. **Construire le prompt systeme** : utiliser `buildASTPrompt(manifest, briefUtilisateur)` depuis `src/parser/promptParser.ts` pour obtenir les instructions de generation d'AST.
@@ -88,8 +86,10 @@ Quand l'utilisateur veut valider un gabarit PowerPoint :
 
 **Via CLI** :
 ```bash
-npx tsx src/cli.ts validate <gabarit.pptx> [--json] [--demo] [-o manifeste.json]
+npx tsx src/cli.ts validate <gabarit.pptx> [--json] [--demo] [--strict] [-o manifeste.json]
 ```
+
+L'option `--strict` traite les avertissements comme des erreurs (exit code 1).
 
 **Par programmation** :
 ```typescript
@@ -141,13 +141,13 @@ L'utilisateur peut fournir son propre gabarit `.pptx` :
 | `title` | Titre de la diapositive | `text` |
 | `subtitle` | Sous-titre | `text` |
 | `text` | Texte libre | `text` |
-| `bullets` | Liste a puces | `items`, `column?` (left/right) |
-| `timeline` | Frise chronologique | `events` (date, label, status?) |
-| `diagram` | Diagramme d'architecture | `nodes` (id, label, layer?), `edges` (from, to) |
+| `bullets` | Liste a puces | `items`, `column?` (left/right), `icons?` (noms Lucide par item) |
+| `timeline` | Frise chronologique | `events` (date, label, status?, `icon?`) |
+| `diagram` | Diagramme d'architecture | `nodes` (id, label, layer?, style?: {icon?}), `edges` (from, to) |
 | `chart` | Graphique | `chartType` (bar/line/pie/donut), `data` |
 | `table` | Tableau | `headers`, `rows` |
-| `kpi` | Indicateurs cles | `indicators` (label, value, unit?, trend?) |
-| `quote` | Citation | `text`, `author?` |
+| `kpi` | Indicateurs cles | `indicators` (label, value, unit?, trend?, `icon?`) |
+| `quote` | Citation | `text`, `author?`, `icon?` |
 
 ### Regles de contenu (strictes)
 

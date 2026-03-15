@@ -154,6 +154,13 @@ Liste a puces. Peut etre affectee a une colonne dans un layout `twoColumns`.
 }
 ```
 
+> **Comportement avec icones** : lorsque le champ `icons` est present et non vide,
+> le renderer ne remplit **pas** le placeholder de puces du gabarit. Il genere a
+> la place des textboxes explicites avec les images PNG des icones a cote de chaque
+> puce. Cela signifie que le style de puces du gabarit (police, taille, couleur,
+> indentation) n'est **pas applique** en mode icones. Le style est fixe : 14pt,
+> aligne a gauche.
+
 ### 5.5 `diagram`
 
 Diagramme de noeuds et d'aretes pour les layouts architecture/process.
@@ -359,9 +366,6 @@ Le Transform applique les regles suivantes :
 | Puces par diapositive         | max 5         | Decoupage automatique en N diapositives avec suffixe `(n/N)`  |
 | Mots par puce                 | max 12        | Troncature avec ellipse `...` et ajout d'un warning           |
 | Caracteres par titre          | max ~60       | Troncature avec ellipse et ajout d'un warning                 |
-| Noeuds par diagramme          | max 8         | Regroupement automatique                                      |
-| Evenements par timeline       | max 6         | Decoupage sur plusieurs diapositives                          |
-| Police du corps (4-5 puces)   | min 12pt      | Reduction de 2pt par rapport a la taille par defaut (18pt)    |
 
 Chaque diapositive devrait contenir au moins un element `title` pour un rendu
 coherent.

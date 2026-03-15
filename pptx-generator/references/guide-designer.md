@@ -89,7 +89,7 @@ Si l'un de ces layouts est absent, le validateur émet un **WARNING**. Le gabari
 
 Tous les layouts avancés : `LAYOUT_ARCHITECTURE`, `LAYOUT_CHART`, `LAYOUT_TABLE`, `LAYOUT_KPI`, `LAYOUT_QUOTE`, `LAYOUT_IMAGE_TEXT`, `LAYOUT_ROADMAP`, `LAYOUT_PROCESS`, `LAYOUT_COMPARISON`.
 
-Si l'un de ces layouts est absent, le validateur émet une **INFO**. Les diapositives concernées seront automatiquement dégradées via la cascade de fallback.
+L'absence de ces layouts n'est pas bloquante. Le validateur émet un **WARNING** pour les layouts individuels (ex: LAY-006 pour LAYOUT_ARCHITECTURE) et une **INFO** globale via TIER-003 si le Tier 3 n'est pas complet. Les diapositives concernées seront automatiquement dégradées via la cascade de fallback.
 
 ### Cascade de fallback
 

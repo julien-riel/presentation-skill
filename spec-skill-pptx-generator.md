@@ -299,11 +299,11 @@ Le Transform annote l'AST enrichi avec le champ `_resolvedLayout` (layout effect
     "comparison": "twoColumns"
   },
   "placeholders": {
-    "LAYOUT_TITLE": { "TITLE": 0, "SUBTITLE": 1 },
-    "LAYOUT_SECTION": { "TITLE": 0, "SUBTITLE": 1 },
+    "LAYOUT_TITLE": { "CTRTITLE": 0, "SUBTITLE": 1 },
+    "LAYOUT_SECTION": { "TITLE": 0, "BODY": 1 },
     "LAYOUT_BULLETS": { "TITLE": 0, "BODY": 1 },
-    "LAYOUT_TWO_COLUMNS": { "TITLE": 0, "LEFT_BODY": 1, "RIGHT_BODY": 2 },
-    "LAYOUT_TIMELINE": { "TITLE": 0, "TIMELINE_CANVAS": 1 },
+    "LAYOUT_TWO_COLUMNS": { "TITLE": 0, "BODY_1": 1, "BODY_2": 2 },
+    "LAYOUT_TIMELINE": { "TITLE": 0, "BODY": 1 },
     "LAYOUT_GENERIC": { "TITLE": 0, "BODY": 1 }
   },
   "theme": {
@@ -317,6 +317,8 @@ Le Transform annote l'AST enrichi avec le champ `_resolvedLayout` (layout effect
   }
 }
 ```
+
+> Note : les clés de placeholder sont générées à partir du type OOXML en majuscules. Quand plusieurs placeholders partagent le même type dans un layout, un suffixe d'index est ajouté (ex : `BODY_1`, `BODY_2`).
 
 ---
 
@@ -622,7 +624,8 @@ pptx-generator/
 │   │   ├── placeholderFiller.ts      # Remplissage texte par index
 │   │   ├── timelineDrawer.ts         # Dessin de timelines (shapes)
 │   │   ├── architectureDrawer.ts     # Dessin de diagrammes (shapes)
-│   │   └── iconResolver.ts           # Résolution et rendu d'icônes Lucide
+│   │   ├── iconResolver.ts           # Résolution et rendu d'icônes Lucide
+│   │   └── xmlHelpers.ts            # Utilitaires XML/OOXML (shapes, namespaces)
 │   └── validator/
 │       ├── templateReader.ts         # Extraction structure du .pptx
 │       ├── rules/
@@ -631,7 +634,8 @@ pptx-generator/
 │       │   ├── dimensionRules.ts     # DIM-001 à DIM-005
 │       │   ├── themeRules.ts         # THM-001 à THM-004
 │       │   ├── tierRules.ts          # TIER-001 à TIER-003
-│       │   └── manifestRules.ts      # MAN-001 à MAN-002
+│       │   ├── manifestRules.ts      # MAN-001 à MAN-002
+│       │   └── ruleHelpers.ts       # Utilitaires partagés des règles de validation
 │       ├── engine.ts                 # Exécution des règles
 │       ├── manifestGenerator.ts      # Génération du JSON de capacités
 │       ├── demoGenerator.ts          # Génération du PPTX démo
