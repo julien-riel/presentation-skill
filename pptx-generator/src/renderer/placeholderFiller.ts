@@ -1,6 +1,6 @@
 import type { Slide, Element } from '../schema/presentation.js';
 import type { TemplateInfo } from '../validator/types.js';
-import { placeholderShape, bulletPlaceholderShape } from './xmlHelpers.js';
+import { placeholderShape, bulletPlaceholderShape, textBoxShape, emuFromPx, emu } from './xmlHelpers.js';
 import { buildTimelineShapes } from './timelineDrawer.js';
 import { buildArchitectureShapes } from './architectureDrawer.js';
 
@@ -81,7 +81,39 @@ export function buildSlideShapes(
       shapes += placeholderShape(id++, 'title', 0, [title]);
 
       const bulletsEl = findElement(slide.elements, 'bullets');
-      if (bulletsEl) {
+      if (bulletsEl && bulletsEl.icons && bulletsEl.icons.length > 0) {
+        // Manual layout with icons
+        const accentColor = templateInfo.theme.accentColors[0]?.replace('#', '') ?? '2D7DD2';
+        const iconSizePx = 20;
+        const iconEmu = emuFromPx(iconSizePx);
+        const bodyLeft = emu(0.8);
+        const bodyTop = emu(1.8);
+        const bodyWidth = emu(8.4);
+        const lineHeight = emu(0.55);
+        const iconGap = emu(0.15);
+
+        for (let i = 0; i < bulletsEl.items.length; i++) {
+          const itemY = bodyTop + i * lineHeight;
+          const iconName = bulletsEl.icons[i];
+
+          if (iconName) {
+            iconRequests.push({
+              name: iconName,
+              color: accentColor,
+              sizePx: iconSizePx,
+              x: bodyLeft,
+              y: itemY + Math.round((lineHeight - iconEmu) / 2),
+              cx: iconEmu,
+              cy: iconEmu,
+            });
+          }
+
+          const textX = bodyLeft + iconEmu + iconGap;
+          const textW = bodyWidth - iconEmu - iconGap;
+          shapes += textBoxShape(id++, textX, itemY, textW, lineHeight,
+            bulletsEl.items[i], { size: 14, align: 'l', valign: 'ctr' });
+        }
+      } else if (bulletsEl) {
         shapes += bulletPlaceholderShape(id++, 1, bulletsEl.items);
       } else {
         const textEl = findElement(slide.elements, 'text');

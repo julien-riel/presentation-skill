@@ -180,6 +180,92 @@ describe('renderToBuffer', () => {
     expect(slideXml).toContain('Beta');
   });
 
+  it('renders bullets with icons as picture + textbox shapes', async () => {
+    const presentation: Presentation = {
+      title: 'Icon Bullets Test',
+      slides: [
+        {
+          layout: 'bullets',
+          _resolvedLayout: 'bullets',
+          elements: [
+            { type: 'title', text: 'Features' },
+            {
+              type: 'bullets',
+              items: ['Fast', 'Secure', 'Simple'],
+              icons: ['zap', 'shield', 'box'],
+            },
+          ],
+        },
+      ],
+    };
+
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH);
+    const zip = await JSZip.loadAsync(buffer);
+    const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
+    expect(slideXml).toBeDefined();
+
+    expect(slideXml).toContain('<p:pic>');
+    expect(slideXml).toContain('Fast');
+    expect(slideXml).toContain('Secure');
+    expect(slideXml).toContain('Simple');
+
+    const mediaFiles = Object.keys(zip.files).filter(name => name.startsWith('ppt/media/') && !zip.files[name].dir);
+    expect(mediaFiles.length).toBe(3);
+  });
+
+  it('renders bullets without icons normally (backward compat)', async () => {
+    const presentation: Presentation = {
+      title: 'No Icon Bullets',
+      slides: [
+        {
+          layout: 'bullets',
+          _resolvedLayout: 'bullets',
+          elements: [
+            { type: 'title', text: 'Plain' },
+            { type: 'bullets', items: ['A', 'B'] },
+          ],
+        },
+      ],
+    };
+
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH);
+    const zip = await JSZip.loadAsync(buffer);
+    const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
+
+    expect(slideXml).not.toContain('<p:pic>');
+    expect(slideXml).toContain('A');
+    expect(slideXml).toContain('B');
+  });
+
+  it('handles icons array shorter than items', async () => {
+    const presentation: Presentation = {
+      title: 'Partial Icons',
+      slides: [
+        {
+          layout: 'bullets',
+          _resolvedLayout: 'bullets',
+          elements: [
+            { type: 'title', text: 'Partial' },
+            {
+              type: 'bullets',
+              items: ['With icon', 'No icon'],
+              icons: ['check'],
+            },
+          ],
+        },
+      ],
+    };
+
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH);
+    const zip = await JSZip.loadAsync(buffer);
+    const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
+    expect(slideXml).toContain('With icon');
+    expect(slideXml).toContain('No icon');
+
+    const mediaFiles = Object.keys(zip.files).filter(name => name.startsWith('ppt/media/') && !zip.files[name].dir);
+    expect(mediaFiles.length).toBe(1);
+  });
+
   it('slides reference the correct slideLayout', async () => {
     const presentation: Presentation = {
       title: 'Layout Ref Test',
