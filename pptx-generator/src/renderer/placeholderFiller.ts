@@ -4,6 +4,9 @@ import { placeholderShape, bulletPlaceholderShape, textBoxShape, emuFromPx, emu 
 import { buildTimelineShapes } from './timelineDrawer.js';
 import { buildArchitectureShapes } from './architectureDrawer.js';
 
+/** Default accent color when template has no accent colors defined. */
+const DEFAULT_ACCENT_COLOR = '2D7DD2';
+
 /**
  * Describes an icon to be resolved and embedded by the renderer.
  * Drawers emit these synchronously; renderToBuffer resolves them in batch.
@@ -99,6 +102,7 @@ export function buildSlideShapes(
   let id = startId;
   let shapes = '';
   const iconRequests: IconRequest[] = [];
+  let quoteRendered = false;
 
   switch (layout) {
     case 'title':
@@ -126,7 +130,7 @@ export function buildSlideShapes(
 
       const bulletsEl = findElement(slide.elements, 'bullets');
       if (bulletsEl && bulletsEl.icons && bulletsEl.icons.length > 0) {
-        const accentColor = templateInfo.theme.accentColors[0]?.replace('#', '') ?? '2D7DD2';
+        const accentColor = templateInfo.theme.accentColors[0]?.replace('#', '') ?? DEFAULT_ACCENT_COLOR;
         const result = buildIconBulletShapes(bulletsEl, id, iconRequests, accentColor, emu(0.8), emu(1.8), emu(8.4));
         shapes += result.shapes;
         id = result.nextId;
@@ -136,6 +140,7 @@ export function buildSlideShapes(
         const quoteEl = findElement(slide.elements, 'quote');
         const textEl = findElement(slide.elements, 'text');
         if (quoteEl) {
+          quoteRendered = true;
           const quoteText = quoteEl.author
             ? `\u201C${quoteEl.text}\u201D \u2014 ${quoteEl.author}`
             : `\u201C${quoteEl.text}\u201D`;
@@ -160,7 +165,7 @@ export function buildSlideShapes(
       const hasAnyIcons = (leftBullets?.icons?.length ?? 0) > 0 || (rightBullets?.icons?.length ?? 0) > 0;
 
       if (hasAnyIcons) {
-        const accentColor = templateInfo.theme.accentColors[0]?.replace('#', '') ?? '2D7DD2';
+        const accentColor = templateInfo.theme.accentColors[0]?.replace('#', '') ?? DEFAULT_ACCENT_COLOR;
         const bodyTop = emu(1.8);
         const leftStart = emu(0.8);
         const colWidth = emu(4.0);
@@ -220,21 +225,23 @@ export function buildSlideShapes(
     }
   }
 
-  // Check for quote element with decorative icon (applies to any layout)
-  const quoteEl = findElement(slide.elements, 'quote');
-  if (quoteEl?.icon) {
-    const accentColor = templateInfo.theme.accentColors[0]?.replace('#', '') ?? '2D7DD2';
-    const iconSizePx = 48;
-    const iconEmu = emuFromPx(iconSizePx);
-    iconRequests.push({
-      name: quoteEl.icon,
-      color: accentColor,
-      sizePx: iconSizePx,
-      x: emu(0.5),
-      y: emu(1.5),
-      cx: iconEmu,
-      cy: iconEmu,
-    });
+  // Check for quote element with decorative icon (only when quote text was rendered)
+  if (quoteRendered) {
+    const quoteEl = findElement(slide.elements, 'quote');
+    if (quoteEl?.icon) {
+      const accentColor = templateInfo.theme.accentColors[0]?.replace('#', '') ?? DEFAULT_ACCENT_COLOR;
+      const iconSizePx = 48;
+      const iconEmu = emuFromPx(iconSizePx);
+      iconRequests.push({
+        name: quoteEl.icon,
+        color: accentColor,
+        sizePx: iconSizePx,
+        x: emu(0.5),
+        y: emu(1.5),
+        cx: iconEmu,
+        cy: iconEmu,
+      });
+    }
   }
 
   return { shapes, nextId: id, iconRequests };
