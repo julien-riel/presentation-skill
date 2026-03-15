@@ -34,6 +34,7 @@ export const TextElementSchema = z.object({
 export const BulletsElementSchema = z.object({
   type: z.literal('bullets'),
   items: z.array(z.string()),
+  icons: z.array(z.string()).optional(),
   column: z.enum(['left', 'right']).optional(),
   level: z.number().optional(),
 });
@@ -66,6 +67,7 @@ export const TimelineEventSchema = z.object({
   date: z.string(),
   label: z.string(),
   status: z.enum(['done', 'in-progress', 'planned']).optional(),
+  icon: z.string().optional(),
 });
 
 export const TimelineElementSchema = z.object({
@@ -98,6 +100,7 @@ export const KpiElementSchema = z.object({
     value: z.string(),
     unit: z.string().optional(),
     trend: z.enum(['up', 'down', 'stable']).optional(),
+    icon: z.string().optional(),
   })),
 });
 
@@ -105,6 +108,7 @@ export const QuoteElementSchema = z.object({
   type: z.literal('quote'),
   text: z.string(),
   author: z.string().optional(),
+  icon: z.string().optional(),
 });
 
 export const ElementSchema = z.discriminatedUnion('type', [

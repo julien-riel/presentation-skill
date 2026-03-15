@@ -110,6 +110,37 @@ describe('ElementSchema', () => {
     expect(ElementSchema.parse(el)).toEqual(el);
   });
 
+  it('accepts a bullets element with icons array', () => {
+    const el = { type: 'bullets', items: ['a', 'b'], icons: ['check', 'clock'] };
+    expect(ElementSchema.parse(el)).toEqual(el);
+  });
+
+  it('accepts a bullets element without icons (backward compat)', () => {
+    const el = { type: 'bullets', items: ['a', 'b'] };
+    expect(ElementSchema.parse(el)).toEqual(el);
+  });
+
+  it('accepts a timeline event with icon', () => {
+    const el = {
+      type: 'timeline',
+      events: [{ date: '2026-01', label: 'Launch', status: 'done', icon: 'rocket' }],
+    };
+    expect(ElementSchema.parse(el)).toEqual(el);
+  });
+
+  it('accepts a kpi element with icon on indicator', () => {
+    const el = {
+      type: 'kpi',
+      indicators: [{ label: 'Revenue', value: '1.2M', icon: 'trending-up' }],
+    };
+    expect(ElementSchema.parse(el)).toEqual(el);
+  });
+
+  it('accepts a quote element with icon', () => {
+    const el = { type: 'quote', text: 'To be', icon: 'quote' };
+    expect(ElementSchema.parse(el)).toEqual(el);
+  });
+
   it('rejects an element with unknown type', () => {
     expect(() => ElementSchema.parse({ type: 'unknown', text: 'x' })).toThrow();
   });
