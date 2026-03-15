@@ -1,6 +1,6 @@
 import type { Slide, Element } from '../schema/presentation.js';
 import type { IconRequest } from './placeholderFiller.js';
-import { emu, ellipseShape, rectShape, lineShape, textBoxShape, emuFromPx } from './xmlHelpers.js';
+import { emu, ellipseShape, lineShape, textBoxShape, emuFromPx } from './xmlHelpers.js';
 
 /**
  * Status colors: uses template accent colors when available,
@@ -47,13 +47,6 @@ export function buildTimelineShapes(
   const trackColor = accentColors[0] ?? '666666';
 
   // Horizontal track line
-  shapes += rectShape(id++, {
-    x: left, y: lineY - emu(0.015), cx: lineWidth, cy: emu(0.03),
-    fill: trackColor + '40',  // Won't work as opacity in OOXML, use light version
-  });
-  // Actually just use a thin solid line
-  shapes = '';
-  id = startId;
   shapes += lineShape(id++, {
     x: left, y: lineY, cx: lineWidth, cy: 0,
     lineColor: trackColor, lineWidth: 2,

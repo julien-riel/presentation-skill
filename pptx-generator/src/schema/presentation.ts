@@ -133,7 +133,6 @@ export const SlideSchema = z.object({
   elements: z.array(ElementSchema),
   notes: z.string().optional(),
   _resolvedLayout: LayoutTypeSchema.optional(),
-  _fontSizeOverride: z.number().optional(),
   _splitIndex: z.string().optional(),
   _warnings: z.array(z.string()).optional(),
 });

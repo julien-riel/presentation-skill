@@ -45,7 +45,9 @@ export async function renderToBuffer(
   const layoutFileMap = buildLayoutFileMap(templateInfo.layouts);
 
   // Read and parse presentation.xml to get the relationship base
-  const presXml = await zip.file('ppt/presentation.xml')!.async('text');
+  const presXmlEntry = zip.file('ppt/presentation.xml');
+  if (!presXmlEntry) throw new Error('Template is missing required file: ppt/presentation.xml');
+  const presXml = await presXmlEntry.async('text');
 
   // Track new slides
   const slideEntries: Array<{
@@ -100,10 +102,14 @@ export async function renderToBuffer(
   }
 
   // Read existing Content_Types
-  const contentTypesXml = await zip.file('[Content_Types].xml')!.async('text');
+  const contentTypesEntry = zip.file('[Content_Types].xml');
+  if (!contentTypesEntry) throw new Error('Template is missing required file: [Content_Types].xml');
+  const contentTypesXml = await contentTypesEntry.async('text');
 
   // Read existing presentation.xml.rels
-  const presRelsXml = await zip.file('ppt/_rels/presentation.xml.rels')!.async('text');
+  const presRelsEntry = zip.file('ppt/_rels/presentation.xml.rels');
+  if (!presRelsEntry) throw new Error('Template is missing required file: ppt/_rels/presentation.xml.rels');
+  const presRelsXml = await presRelsEntry.async('text');
 
   // Find the highest existing rId in presentation.rels
   const rIdMatches = [...presRelsXml.matchAll(/Id="rId(\d+)"/g)];
@@ -154,7 +160,10 @@ export async function renderToBuffer(
       newContentTypes += `\n  <Override PartName="/${notesPath}" ContentType="application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml"/>`;
 
       // Add notes reference to slide rels
-      const slideRelsContent = await zip.file(`ppt/slides/_rels/slide${entry.slideNum}.xml.rels`)!.async('text');
+      const slideRelsPath = `ppt/slides/_rels/slide${entry.slideNum}.xml.rels`;
+      const slideRelsEntry = zip.file(slideRelsPath);
+      if (!slideRelsEntry) throw new Error(`Template is missing required file: ${slideRelsPath}`);
+      const slideRelsContent = await slideRelsEntry.async('text');
       const updatedSlideRels = slideRelsContent.replace(
         '</Relationships>',
         `  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide" Target="../notesSlides/notesSlide${entry.slideNum}.xml"/>\n</Relationships>`
@@ -168,7 +177,10 @@ export async function renderToBuffer(
     }
 
     if (entry.images.length > 0) {
-      const currentRels = await zip.file(`ppt/slides/_rels/slide${entry.slideNum}.xml.rels`)!.async('text');
+      const imgRelsPath = `ppt/slides/_rels/slide${entry.slideNum}.xml.rels`;
+      const imgRelsEntry = zip.file(imgRelsPath);
+      if (!imgRelsEntry) throw new Error(`Template is missing required file: ${imgRelsPath}`);
+      const currentRels = await imgRelsEntry.async('text');
       const imageRels = entry.images.map(img =>
         `  <Relationship Id="${img.relId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/${img.mediaPath.split('/').pop()}"/>`
       ).join('\n');

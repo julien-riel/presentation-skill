@@ -166,7 +166,7 @@ describe('contentValidator', () => {
 // ─── Overflow Handler ───────────────────────────────────────────────────────
 
 describe('overflowHandler', () => {
-  it('reduces font size for 4-5 bullets', () => {
+  it('returns slides unchanged (pass-through)', () => {
     const slides: Slide[] = [{
       layout: 'bullets',
       elements: [
@@ -176,34 +176,7 @@ describe('overflowHandler', () => {
     }];
 
     const result = handleOverflow(slides);
-    expect(result[0]._fontSizeOverride).toBe(16); // 18 - 2
-  });
-
-  it('does not reduce font size for 3 bullets', () => {
-    const slides: Slide[] = [{
-      layout: 'bullets',
-      elements: [
-        { type: 'title', text: 'Test' },
-        { type: 'bullets', items: ['A', 'B', 'C'] },
-      ],
-    }];
-
-    const result = handleOverflow(slides);
-    expect(result[0]._fontSizeOverride).toBeUndefined();
-  });
-
-  it('respects minimum font size of 12pt', () => {
-    const slides: Slide[] = [{
-      layout: 'bullets',
-      _fontSizeOverride: 13,
-      elements: [
-        { type: 'title', text: 'Test' },
-        { type: 'bullets', items: ['A', 'B', 'C', 'D', 'E'] },
-      ],
-    }];
-
-    const result = handleOverflow(slides);
-    expect(result[0]._fontSizeOverride).toBe(12); // max(12, 13-2)
+    expect(result).toEqual(slides);
   });
 });
 
@@ -250,10 +223,9 @@ describe('transformPresentation (full pipeline)', () => {
     expect(result.slides[1]._resolvedLayout).toBe('bullets');
     expect(result.slides[1]._warnings).toContain('Layout "kpi" degraded to "bullets"');
 
-    // Slide 3: long bullet truncated, 4 items → font size reduced
+    // Slide 3: long bullet truncated
     const contentSlide = result.slides[2];
     const bullets = contentSlide.elements.find((el) => el.type === 'bullets');
     expect(bullets && bullets.type === 'bullets' && bullets.items[0]).toContain('…');
-    expect(contentSlide._fontSizeOverride).toBe(16);
   });
 });

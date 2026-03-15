@@ -180,7 +180,6 @@ describe('SlideSchema', () => {
       layout: 'kpi',
       elements: [{ type: 'kpi', indicators: [{ label: 'X', value: '42' }] }],
       _resolvedLayout: 'bullets',
-      _fontSizeOverride: 14,
       _splitIndex: '(1/2)',
       _warnings: ['kpi degraded to bullets'],
     };

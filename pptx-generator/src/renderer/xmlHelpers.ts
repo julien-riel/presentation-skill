@@ -237,7 +237,7 @@ export function textBoxShape(
 /**
  * Wraps shape fragments in a complete slide XML document.
  */
-export function wrapSlideXml(shapes: string, notesText?: string): string {
+export function wrapSlideXml(shapes: string): string {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
        xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"

@@ -4,19 +4,9 @@ Ce document liste ce qui manque pour transformer le projet en un **skill Claude 
 
 ---
 
-## 1. SKILL.md — Point d'entrée du skill
+## ~~1. SKILL.md — Point d'entrée du skill~~ FAIT
 
-Le fichier le plus important. C'est lui que Claude Code charge quand le skill est invoqué. Il n'existe pas encore.
-
-**Contenu attendu :**
-- Description du skill (une phrase)
-- Déclencheurs : quand Claude doit activer ce skill (mots-clés : « présentation », « deck », « slides », « PowerPoint », « valider un gabarit »)
-- Instructions pour le mode prompt libre : utiliser `buildASTPrompt()` pour construire le system prompt, générer le JSON AST, puis passer par le pipeline transform → render
-- Instructions pour le mode validation : appeler le CLI `validate`
-- Référence au gabarit par défaut et comment l'utilisateur peut fournir le sien
-- Exemples d'invocations
-
-**Pourquoi c'est critique :** Sans SKILL.md, le skill ne peut pas être chargé par Claude Code, VS Code (via Claude extension), ni Cowork.
+SKILL.md existe (184 lignes) avec description, déclencheurs, modes d'opération, exemples et référence au gabarit par défaut.
 
 ---
 
@@ -34,82 +24,45 @@ Le template actuel (`assets/default-template.pptx`) est fonctionnellement correc
 
 ---
 
-## 3. Manifeste pré-généré
+## ~~3. Manifeste pré-généré~~ FAIT
 
-La spec demande `assets/default-capabilities.json` — le manifeste du template par défaut, pré-calculé pour éviter de relire le .pptx à chaque génération.
-
-**À faire :**
-- Ajouter une étape dans `buildDefaultTemplate.ts` qui génère aussi le manifeste JSON
-- Modifier le renderer pour charger le manifeste depuis un fichier si disponible (au lieu de re-parser le .pptx)
+`assets/default-capabilities.json` existe et est généré par le script de build.
 
 ---
 
-## 4. Guide designer de gabarit
+## ~~4. Guide designer de gabarit~~ FAIT
 
-Fichier `references/guide-designer.md` — documentation pour les designers de l'entreprise qui veulent créer leur propre gabarit.
-
-**Contenu attendu :**
-- Noms de layouts à respecter (`LAYOUT_TITLE`, `LAYOUT_BULLETS`, etc.)
-- Placeholders requis par layout (type + index)
-- Tiers expliqués (Tier 1 minimum, Tier 2 recommandé)
-- Comment valider leur gabarit (`npx tsx src/cli.ts validate mon-gabarit.pptx --demo`)
-- Contraintes de dimensions (16:9, marges 0.5", etc.)
-- Bonnes pratiques thème (contraste WCAG, polices lisibles)
+`references/guide-designer.md` existe avec noms de layouts, placeholders, tiers, cascade de fallback, contraintes de dimensions et bonnes pratiques thème.
 
 ---
 
-## 5. Documentation du schéma AST
+## ~~5. Documentation du schéma AST~~ FAIT
 
-Fichier `references/ast-schema.md` — pour les développeurs qui veulent générer des AST programmatiquement.
-
-**Contenu attendu :**
-- Schéma complet avec exemples par type de layout
-- Types d'éléments disponibles (title, subtitle, text, bullets, timeline, diagram, kpi, chart, table, quote)
-- Champs ajoutés par le transform (`_resolvedLayout`, `_warnings`, etc.)
-- Exemple JSON complet d'une présentation multi-slides
+`references/ast-schema.md` existe avec schéma complet, exemples par type, champs du transform et exemple JSON multi-slides.
 
 ---
 
-## 6. Orchestrateur principal (`src/index.ts`)
+## ~~6. Orchestrateur principal (`src/index.ts`)~~ FAIT
 
-La spec prévoit un fichier `src/index.ts` qui orchestre les trois modes (validation, génération prompt, génération AST/data). Il n'existe pas.
-
-**À faire :**
-- Exporter une API programmatique propre :
-  ```typescript
-  export async function generateFromAST(ast, templatePath?): Promise<Buffer>
-  export async function generateFromData(data, title, templatePath?): Promise<Buffer>
-  export async function validateTemplate(templatePath): Promise<ValidationReport>
-  export function buildPrompt(capabilities, brief): string
-  ```
-- C'est cette API que le SKILL.md référencera pour les appels internes
+`src/index.ts` existe avec l'API programmatique complète (`generateFromAST`, `generateFromData`, `validateTemplate`, `buildPrompt`).
 
 ---
 
-## 7. Packaging et distribution
+## 7. Packaging et distribution — PARTIELLEMENT FAIT
 
-Pour que le skill soit installable facilement.
+Les éléments suivants sont en place :
+- ~~`"type": "module"` dans package.json~~ FAIT
+- ~~Scripts npm `validate` et `generate`~~ FAIT
+- ~~`.npmignore`~~ FAIT
 
-**À faire :**
-- Ajouter `"type": "module"` dans package.json (le code utilise déjà des imports ESM avec `.js` extensions)
-- Nettoyer les dépendances : `pptxgenjs` n'est plus utilisé par le renderer — le retirer ou le garder si d'autres modules l'utilisent encore
-- Ajouter un script `"build"` dans package.json pour compiler le TypeScript
-- Ajouter un script `"validate"` et `"generate"` comme raccourcis CLI
-- Créer un `.npmignore` ou configurer `"files"` dans package.json pour exclure tests/ et scripts/ de la distribution
-- Vérifier que `npx tsx src/cli.ts` fonctionne sans installation globale
+**Reste à faire :**
+- Nettoyer les dépendances : `pptxgenjs` a été retiré, mais `xmlbuilder` reste dans les dépendances — vérifier s'il est encore utilisé et le retirer si non
 
 ---
 
-## 8. Intégration VS Code / Cowork
+## ~~8. Intégration VS Code / Cowork~~ FAIT
 
-Pour que le skill fonctionne dans les différents environnements Claude.
-
-**À faire :**
-- Tester le chargement du SKILL.md dans Claude Code (`claude` CLI)
-- Tester dans l'extension VS Code Claude
-- Tester dans Claude Cowork
-- S'assurer que les chemins relatifs fonctionnent (le skill doit pouvoir trouver `assets/default-template.pptx` relativement à son propre répertoire)
-- Documenter l'installation : `git clone` + `npm install` + prêt
+`references/integration-notes.md` existe avec les notes d'intégration.
 
 ---
 
@@ -119,20 +72,19 @@ Ces éléments ne sont pas bloquants pour une v1 mais sont dans la spec :
 
 | Fonctionnalité | Priorité | Notes |
 |---|---|---|
+| ~~Support des icônes Lucide~~ | ~~Haute~~ | ~~FAIT — icônes sur bullets, timeline, KPI, quote, diagram~~ |
+| Gabarit par défaut professionnel | Haute | Le template actuel est fonctionnel mais visuellement vide |
 | Renderers KPI/Chart/Table natifs | Moyenne | Actuellement dégradés en bullets — acceptable pour v1 |
 | Cache du manifeste (comparaison dates) | Basse | Spec section 8.3 — re-générer si .pptx plus récent |
+| Nettoyage dépendance `xmlbuilder` | Basse | `pptxgenjs` a été retiré, mais `xmlbuilder` reste |
 | Mode génération depuis données avec LLM | Moyenne | `dataParser.ts` fait l'analyse, mais la narration LLM manque |
 | Support Tier 3 layouts (roadmap, process, comparison, etc.) | Basse | La dégradation fonctionne, les renderers spécialisés sont du bonus |
-| Gabarit par défaut créé dans PowerPoint | Haute | Un vrai .pptx designé sera bien plus beau que du XML généré |
 
 ---
 
 ## Ordre de priorité suggéré
 
-1. **SKILL.md** — sans ça, pas de skill
-2. **Gabarit professionnel** — créer dans PowerPoint, valider avec le CLI
-3. **Guide designer** — pour que les équipes fassent leurs propres gabarits
-4. **src/index.ts** — API propre
-5. **Packaging** — scripts npm, nettoyage dépendances
-6. **Documentation AST** — pour les usages avancés
-7. **Tests d'intégration** — VS Code, Cowork
+1. **Gabarit professionnel** — créer dans PowerPoint, valider avec le CLI
+2. **Renderers KPI/Chart/Table** — pour une couverture complète des types de slides
+3. **Cache manifeste** — re-générer si .pptx plus récent
+4. **Nettoyage `xmlbuilder`** — vérifier et retirer si inutilisé

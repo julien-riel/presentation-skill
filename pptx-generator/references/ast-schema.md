@@ -10,7 +10,7 @@ decrit une presentation. Il circule dans le pipeline selon trois etapes :
    debordements (split de puces, troncature de titres) et annote l'AST avec
    des champs prefixes par `_`.
 3. **Renderer** -- consomme l'AST final et produit un fichier PPTX via
-   PptxGenJS.
+   JSZip + OOXML brut.
 
 L'AST est un objet JSON conforme au schema Zod defini dans
 `src/schema/presentation.ts`. Ce document en est la reference exhaustive.
@@ -138,6 +138,7 @@ Liste a puces. Peut etre affectee a une colonne dans un layout `twoColumns`.
 |----------|-------------------------|--------|---------------------------------------------------|
 | `type`   | `"bullets"`             | oui    | Discriminant                                      |
 | `items`  | `string[]`              | oui    | Liste des puces                                   |
+| `icons`  | `string[]`              | non    | Noms d'icones Lucide, un par puce                 |
 | `column` | `"left"` \| `"right"`   | non    | Colonne cible (pour layout `twoColumns`)          |
 | `level`  | `number`                | non    | Niveau d'indentation (0 = racine)                 |
 
@@ -149,6 +150,7 @@ Liste a puces. Peut etre affectee a une colonne dans un layout `twoColumns`.
     "Nouveaux clients : 45",
     "Taux de retention : 94%"
   ],
+  "icons": ["trending-up", "users", "shield-check"],
   "column": "left"
 }
 ```
@@ -212,6 +214,7 @@ Frise chronologique avec evenements dates.
 | `date`   | `string`                                        | oui    | Date de l'evenement       |
 | `label`  | `string`                                        | oui    | Description               |
 | `status` | `"done"` \| `"in-progress"` \| `"planned"`     | non    | Etat d'avancement         |
+| `icon`   | `string`                                        | non    | Nom d'icone Lucide        |
 
 ```json
 {
@@ -301,6 +304,7 @@ Indicateurs cles de performance.
 | `value` | `string`                                   | oui    | Valeur affichee          |
 | `unit`  | `string`                                   | non    | Unite (ex. `"%"`, `"EUR"`) |
 | `trend` | `"up"` \| `"down"` \| `"stable"`          | non    | Tendance                 |
+| `icon`  | `string`                                   | non    | Nom d'icone Lucide       |
 
 ```json
 {
@@ -322,6 +326,7 @@ Citation avec attribution optionnelle.
 | `type`   | `"quote"`  | oui    | Discriminant         |
 | `text`   | `string`   | oui    | Texte de la citation |
 | `author` | `string`   | non    | Auteur               |
+| `icon`   | `string`   | non    | Icone Lucide decorative |
 
 ```json
 {

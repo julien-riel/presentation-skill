@@ -1,0 +1,19 @@
+{
+  "name": "pptx-generator",
+  "version": "1.0.0",
+  "description": "Generate professional PowerPoint presentations from prompts, AST, or data, with template validation",
+  "author": {
+    "name": "Julien"
+  },
+  "repository": "https://github.com/julien/presentation-skill",
+  "license": "ISC",
+  "keywords": [
+    "pptx",
+    "powerpoint",
+    "presentation",
+    "slides",
+    "deck",
+    "generator",
+    "template"
+  ]
+}

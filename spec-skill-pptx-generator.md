@@ -383,6 +383,7 @@ interface TextElement     { type: "text"; text: string }
 interface BulletsElement  {
   type: "bullets";
   items: string[];
+  icons?: string[];              // Noms d'icônes Lucide, un par puce
   column?: "left" | "right";
   level?: number;
 }
@@ -420,6 +421,7 @@ interface KpiElement {
     value: string;
     unit?: string;
     trend?: "up" | "down" | "stable";
+    icon?: string;               // Nom d'icône Lucide optionnel
   }[];
 }
 
@@ -427,6 +429,7 @@ interface QuoteElement {
   type: "quote";
   text: string;
   author?: string;
+  icon?: string;                 // Icône Lucide décorative optionnelle
 }
 ```
 
@@ -451,6 +454,7 @@ interface TimelineEvent {
   date: string;
   label: string;
   status?: "done" | "in-progress" | "planned";
+  icon?: string;                 // Nom d'icône Lucide optionnel
 }
 ```
 
@@ -584,7 +588,8 @@ Le manifeste est régénéré si le `.pptx` est plus récent (comparaison de dat
 |------------------------|------------------------------|-------------------------------------------|
 | Runtime                | Node.js + TypeScript         | Cohérence avec l'écosystème existant      |
 | Lecture PPTX (validation) | JSZip + xml2js            | Accès direct au XML du .pptx              |
-| Génération PPTX        | PptxGenJS                    | Création de slides avec shapes            |
+| Génération PPTX        | JSZip + OOXML brut           | Création de slides avec OOXML brut        |
+| Icônes                 | lucide-static + @resvg/resvg-js | Rendu d'icônes Lucide en images PNG    |
 | Schéma AST             | Zod                          | Validation avec inférence de types TS     |
 | CLI (validateur)       | Commander.js                 | Parsing des options --demo, --strict, etc.|
 | Tests                  | Vitest                       | Rapide, compatible TypeScript             |
@@ -617,12 +622,11 @@ pptx-generator/
 │   │   ├── overflowHandler.ts        # Auto-split, font sizing adaptatif
 │   │   └── index.ts                  # Orchestrateur du transform
 │   ├── renderer/
-│   │   ├── pptxRenderer.ts           # Moteur principal (PptxGenJS)
+│   │   ├── pptxRenderer.ts           # Moteur principal (JSZip + OOXML brut)
 │   │   ├── placeholderFiller.ts      # Remplissage texte par index
 │   │   ├── timelineDrawer.ts         # Dessin de timelines (shapes)
 │   │   ├── architectureDrawer.ts     # Dessin de diagrammes (shapes)
-│   │   ├── kpiDrawer.ts              # Dessin de KPI (grands chiffres)
-│   │   └── chartInserter.ts          # Insertion de charts natifs PPT
+│   │   └── iconResolver.ts           # Résolution et rendu d'icônes Lucide
 │   └── validator/
 │       ├── templateReader.ts         # Extraction structure du .pptx
 │       ├── rules/

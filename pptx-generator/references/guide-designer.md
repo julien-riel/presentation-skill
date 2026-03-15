@@ -97,13 +97,13 @@ Lorsqu'un layout n'est pas disponible dans le gabarit, le générateur tente de 
 
 - `kpi` → `bullets` → `generic`
 - `architecture` → `bullets` → `generic`
-- `chart` → `generic`
-- `table` → `generic`
-- `quote` → `generic`
+- `chart` → `bullets` → `generic`
+- `table` → `bullets` → `generic`
+- `quote` → `bullets` → `generic`
 - `comparison` → `twoColumns` → `bullets` → `generic`
 - `roadmap` → `timeline` → `bullets` → `generic`
 - `process` → `timeline` → `bullets` → `generic`
-- `imageText` → `twoColumns` → `generic`
+- `imageText` → `twoColumns` → `bullets` → `generic`
 
 Le layout `LAYOUT_GENERIC` sert de fallback ultime. C'est pour cette raison qu'il fait partie du Tier 1.
 
