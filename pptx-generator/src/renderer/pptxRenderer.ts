@@ -6,7 +6,9 @@ import type { LayoutInfo } from '../validator/types.js';
 import { LAYOUT_TYPE_TO_PPT_NAME } from '../validator/types.js';
 import { readTemplate } from '../validator/templateReader.js';
 import { buildSlideShapes } from './placeholderFiller.js';
-import { wrapSlideXml, notesSlideXml } from './xmlHelpers.js';
+import type { IconRequest } from './placeholderFiller.js';
+import { resolveIcon, createIconCache } from './iconResolver.js';
+import { wrapSlideXml, notesSlideXml, pictureShape } from './xmlHelpers.js';
 
 /**
  * Maps layout type names (e.g. "bullets") to their slideLayout file index
@@ -51,8 +53,12 @@ export async function renderToBuffer(
     slideXml: string;
     layoutIndex: number;
     notes?: string;
+    images: Array<{ relId: string; mediaPath: string; pngBuffer: Buffer }>;
   }> = [];
 
+  const iconCache = createIconCache();
+  let nextImageNum = 1;
+  let hasImages = false;
   let nextShapeId = 100; // Start high to avoid conflicts with layout shapes
 
   for (let i = 0; i < presentation.slides.length; i++) {
@@ -63,16 +69,33 @@ export async function renderToBuffer(
     const layoutIndex = layoutEntry?.index ?? 1;
 
     // Build the shapes XML for this slide
-    const { shapes, nextId } = buildSlideShapes(slide, nextShapeId, templateInfo);
+    const { shapes, nextId, iconRequests } = buildSlideShapes(slide, nextShapeId, templateInfo);
     nextShapeId = nextId;
 
-    const slideXml = wrapSlideXml(shapes);
+    let allShapes = shapes;
+    const slideImages: Array<{ relId: string; mediaPath: string; pngBuffer: Buffer }> = [];
+
+    for (const req of iconRequests) {
+      const icon = await resolveIcon(req.name, req.color, req.sizePx, iconCache);
+      if (!icon) continue;
+
+      const mediaPath = `ppt/media/image${nextImageNum}.png`;
+      const relId = `rIdImg${nextImageNum}`;
+      nextImageNum++;
+
+      allShapes += pictureShape(nextShapeId++, relId, req.x, req.y, req.cx, req.cy);
+      slideImages.push({ relId, mediaPath, pngBuffer: icon.pngBuffer });
+      hasImages = true;
+    }
+
+    const slideXml = wrapSlideXml(allShapes);
 
     slideEntries.push({
       slideNum: i + 1,
       slideXml,
       layoutIndex,
       notes: slide.notes,
+      images: slideImages,
     });
   }
 
@@ -138,8 +161,28 @@ export async function renderToBuffer(
       );
       zip.file(`ppt/slides/_rels/slide${entry.slideNum}.xml.rels`, updatedSlideRels);
     }
+
+    // Write image files to ZIP and update slide rels
+    for (const img of entry.images) {
+      zip.file(img.mediaPath, img.pngBuffer);
+    }
+
+    if (entry.images.length > 0) {
+      const currentRels = await zip.file(`ppt/slides/_rels/slide${entry.slideNum}.xml.rels`)!.async('text');
+      const imageRels = entry.images.map(img =>
+        `  <Relationship Id="${img.relId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/${img.mediaPath.split('/').pop()}"/>`
+      ).join('\n');
+      const updatedRels = currentRels.replace(
+        '</Relationships>',
+        `${imageRels}\n</Relationships>`
+      );
+      zip.file(`ppt/slides/_rels/slide${entry.slideNum}.xml.rels`, updatedRels);
+    }
   }
 
+  if (hasImages && !newContentTypes.includes('Extension="png"')) {
+    newContentTypes += '\n  <Default Extension="png" ContentType="image/png"/>';
+  }
   newContentTypes += '\n</Types>';
   newPresRels += '\n</Relationships>';
 

@@ -1,4 +1,5 @@
 import type { Slide, Element } from '../schema/presentation.js';
+import type { IconRequest } from './placeholderFiller.js';
 import { emu, ellipseShape, rectShape, lineShape, textBoxShape } from './xmlHelpers.js';
 
 /**
@@ -21,18 +22,19 @@ export function buildTimelineShapes(
   slide: Slide,
   startId: number,
   accentColors: string[],
-): { shapes: string; nextId: number } {
+): { shapes: string; nextId: number; iconRequests: IconRequest[] } {
   const timelineEl = slide.elements.find(
     (el): el is Extract<Element, { type: 'timeline' }> => el.type === 'timeline',
   );
   if (!timelineEl || timelineEl.events.length === 0) {
-    return { shapes: '', nextId: startId };
+    return { shapes: '', nextId: startId, iconRequests: [] };
   }
 
   const events = timelineEl.events;
   const count = events.length;
   let id = startId;
   let shapes = '';
+  const iconRequests: IconRequest[] = [];
 
   // Canvas area in EMU
   const left = emu(1.0);
@@ -86,5 +88,5 @@ export function buildTimelineShapes(
       event.date, { size: 9, color: '888888' });
   }
 
-  return { shapes, nextId: id };
+  return { shapes, nextId: id, iconRequests };
 }

@@ -5,6 +5,26 @@ import { buildTimelineShapes } from './timelineDrawer.js';
 import { buildArchitectureShapes } from './architectureDrawer.js';
 
 /**
+ * Describes an icon to be resolved and embedded by the renderer.
+ * Drawers emit these synchronously; renderToBuffer resolves them in batch.
+ */
+export interface IconRequest {
+  name: string;
+  color: string;
+  sizePx: number;
+  x: number;
+  y: number;
+  cx: number;
+  cy: number;
+}
+
+export interface SlideShapeResult {
+  shapes: string;
+  nextId: number;
+  iconRequests: IconRequest[];
+}
+
+/**
  * Extracts the first element of a given type from a slide's elements.
  */
 function findElement<T extends Element['type']>(
@@ -30,10 +50,11 @@ export function buildSlideShapes(
   slide: Slide,
   startId: number,
   templateInfo: TemplateInfo,
-): { shapes: string; nextId: number } {
+): SlideShapeResult {
   const layout = slide._resolvedLayout ?? slide.layout;
   let id = startId;
   let shapes = '';
+  const iconRequests: IconRequest[] = [];
 
   switch (layout) {
     case 'title':
@@ -101,10 +122,12 @@ export function buildSlideShapes(
         const result = buildTimelineShapes(slide, id, accentColors);
         shapes += result.shapes;
         id = result.nextId;
+        iconRequests.push(...result.iconRequests);
       } else {
         const result = buildArchitectureShapes(slide, id, accentColors);
         shapes += result.shapes;
         id = result.nextId;
+        iconRequests.push(...result.iconRequests);
       }
       break;
     }
@@ -121,5 +144,5 @@ export function buildSlideShapes(
     }
   }
 
-  return { shapes, nextId: id };
+  return { shapes, nextId: id, iconRequests };
 }

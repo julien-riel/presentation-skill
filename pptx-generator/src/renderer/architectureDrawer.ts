@@ -1,4 +1,5 @@
 import type { Slide, Element } from '../schema/presentation.js';
+import type { IconRequest } from './placeholderFiller.js';
 import { emu, rectShape, lineShape, textBoxShape } from './xmlHelpers.js';
 
 const NODE_H = emu(0.55);
@@ -26,17 +27,18 @@ export function buildArchitectureShapes(
   slide: Slide,
   startId: number,
   accentColors: string[],
-): { shapes: string; nextId: number } {
+): { shapes: string; nextId: number; iconRequests: IconRequest[] } {
   const diagramEl = slide.elements.find(
     (el): el is Extract<Element, { type: 'diagram' }> => el.type === 'diagram',
   );
   if (!diagramEl || diagramEl.nodes.length === 0) {
-    return { shapes: '', nextId: startId };
+    return { shapes: '', nextId: startId, iconRequests: [] };
   }
 
   const { nodes, edges } = diagramEl;
   let id = startId;
   let shapes = '';
+  const iconRequests: IconRequest[] = [];
 
   // Group nodes by layer
   const layerMap = new Map<string, typeof nodes>();
@@ -120,5 +122,5 @@ export function buildArchitectureShapes(
     });
   }
 
-  return { shapes, nextId: id };
+  return { shapes, nextId: id, iconRequests };
 }
