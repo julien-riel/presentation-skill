@@ -133,8 +133,14 @@ export function buildSlideShapes(
       } else if (bulletsEl) {
         shapes += bulletPlaceholderShape(id++, 1, bulletsEl.items);
       } else {
+        const quoteEl = findElement(slide.elements, 'quote');
         const textEl = findElement(slide.elements, 'text');
-        if (textEl) {
+        if (quoteEl) {
+          const quoteText = quoteEl.author
+            ? `\u201C${quoteEl.text}\u201D \u2014 ${quoteEl.author}`
+            : `\u201C${quoteEl.text}\u201D`;
+          shapes += placeholderShape(id++, 'body', 1, [quoteText]);
+        } else if (textEl) {
           shapes += placeholderShape(id++, 'body', 1, [textEl.text]);
         }
       }
@@ -212,6 +218,23 @@ export function buildSlideShapes(
       }
       break;
     }
+  }
+
+  // Check for quote element with decorative icon (applies to any layout)
+  const quoteEl = findElement(slide.elements, 'quote');
+  if (quoteEl?.icon) {
+    const accentColor = templateInfo.theme.accentColors[0]?.replace('#', '') ?? '2D7DD2';
+    const iconSizePx = 48;
+    const iconEmu = emuFromPx(iconSizePx);
+    iconRequests.push({
+      name: quoteEl.icon,
+      color: accentColor,
+      sizePx: iconSizePx,
+      x: emu(0.5),
+      y: emu(1.5),
+      cx: iconEmu,
+      cy: iconEmu,
+    });
   }
 
   return { shapes, nextId: id, iconRequests };

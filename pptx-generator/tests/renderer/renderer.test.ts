@@ -293,6 +293,33 @@ describe('renderToBuffer', () => {
     expect(mediaFiles.length).toBe(3);
   });
 
+  it('renders quote with decorative icon', async () => {
+    const presentation: Presentation = {
+      title: 'Quote Icon Test',
+      slides: [
+        {
+          layout: 'generic',
+          _resolvedLayout: 'generic',
+          elements: [
+            { type: 'title', text: 'Inspiration' },
+            { type: 'quote', text: 'Be the change', author: 'Gandhi', icon: 'quote' },
+          ],
+        },
+      ],
+    };
+
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH);
+    const zip = await JSZip.loadAsync(buffer);
+    const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
+    expect(slideXml).toBeDefined();
+
+    expect(slideXml).toContain('<p:pic>');
+    expect(slideXml).toContain('Be the change');
+
+    const mediaFiles = Object.keys(zip.files).filter(name => name.startsWith('ppt/media/') && !zip.files[name].dir);
+    expect(mediaFiles.length).toBe(1);
+  });
+
   it('slides reference the correct slideLayout', async () => {
     const presentation: Presentation = {
       title: 'Layout Ref Test',
