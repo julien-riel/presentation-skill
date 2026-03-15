@@ -12,11 +12,13 @@ export function makeLayout(
     y?: number;
     cx?: number;
     cy?: number;
-  }>
+  }>,
+  layoutIndex?: number
 ): LayoutInfo {
+  const idx = layoutIndex ?? 1;
   return {
     name,
-    filePath: `ppt/slideLayouts/slideLayout1.xml`,
+    filePath: `ppt/slideLayouts/slideLayout${idx}.xml`,
     placeholders: placeholders.map(p => ({
       index: p.index,
       type: p.type,
@@ -39,19 +41,19 @@ export function makeTier1Template(): TemplateInfo {
       makeLayout('LAYOUT_TITLE', [
         { index: 0, type: 'ctrTitle' },
         { index: 1, type: 'subTitle' },
-      ]),
+      ], 1),
       makeLayout('LAYOUT_SECTION', [
         { index: 0, type: 'title' },
         { index: 1, type: 'body' },
-      ]),
+      ], 2),
       makeLayout('LAYOUT_BULLETS', [
         { index: 0, type: 'title' },
         { index: 1, type: 'body', cy: 2500000 },
-      ]),
+      ], 3),
       makeLayout('LAYOUT_GENERIC', [
         { index: 0, type: 'title' },
         { index: 1, type: 'body' },
-      ]),
+      ], 4),
     ],
     theme: {
       titleFont: 'Calibri',
@@ -75,11 +77,11 @@ export function makeTier2Template(): TemplateInfo {
         { index: 0, type: 'title' },
         { index: 1, type: 'body', x: 457200, cx: 5000000 },
         { index: 2, type: 'body', x: 5800000, cx: 5000000 },
-      ]),
+      ], 5),
       makeLayout('LAYOUT_TIMELINE', [
         { index: 0, type: 'title' },
         { index: 1, type: 'body', cy: 4500000 },
-      ]),
+      ], 6),
     ],
   };
 }

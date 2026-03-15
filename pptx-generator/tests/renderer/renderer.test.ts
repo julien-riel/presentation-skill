@@ -2,47 +2,18 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import JSZip from 'jszip';
 import * as path from 'path';
 import type { Presentation, Slide } from '../../src/schema/presentation.js';
-import type { TemplateCapabilities } from '../../src/schema/capabilities.js';
 import type { TemplateInfo } from '../../src/validator/types.js';
 import { transformPresentation } from '../../src/transform/index.js';
 import { renderToBuffer } from '../../src/renderer/pptxRenderer.js';
 import { readTemplate } from '../../src/validator/templateReader.js';
+import { makeTier1Capabilities } from '../helpers/capabilitiesHelpers.js';
 
 const TEMPLATE_PATH = path.resolve(__dirname, '../../assets/default-template.pptx');
 
 let templateInfo: TemplateInfo;
 beforeAll(async () => {
   templateInfo = await readTemplate(TEMPLATE_PATH);
-});
-
-/**
- * Helper: creates a minimal Tier 1 capabilities manifest.
- */
-function makeTier1Capabilities(extra: string[] = []): TemplateCapabilities {
-  const supported = ['title', 'section', 'bullets', 'generic', ...extra];
-  return {
-    template: 'test-template.pptx',
-    generated_at: '2026-03-14T00:00:00Z',
-    validator_version: '1.0.0',
-    tier: 1,
-    supported_layouts: supported as TemplateCapabilities['supported_layouts'],
-    unsupported_layouts: [],
-    fallback_map: {
-      kpi: 'bullets',
-      chart: 'bullets',
-      table: 'bullets',
-      quote: 'bullets',
-      architecture: 'bullets',
-      imageText: 'twoColumns',
-      roadmap: 'timeline',
-      process: 'timeline',
-      comparison: 'twoColumns',
-    },
-    placeholders: {},
-    theme: { title_font: 'Calibri Light', body_font: 'Calibri', accent_colors: ['#1B2A4A', '#2D7DD2', '#17A2B8'] },
-    slide_dimensions: { width_emu: 12192000, height_emu: 6858000 },
-  };
-}
+})
 
 // ─── Buffer Output + JSZip Validation ─────────────────────────────────────────
 
