@@ -132,6 +132,7 @@ export const SlideSchema = z.object({
   layout: LayoutTypeSchema,
   elements: z.array(ElementSchema),
   notes: z.string().optional(),
+  // Fields added by the Transform pipeline (prefixed with _)
   _resolvedLayout: LayoutTypeSchema.optional(),
   _splitIndex: z.string().optional(),
   _warnings: z.array(z.string()).optional(),

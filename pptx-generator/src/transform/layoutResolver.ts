@@ -1,21 +1,6 @@
 import type { Slide, LayoutType } from '../schema/presentation.js';
 import type { TemplateCapabilities } from '../schema/capabilities.js';
-
-/**
- * Full degradation cascade per the spec section 4.4.
- * Each key maps to its ordered fallback chain ending at generic.
- */
-const FALLBACK_CASCADE: Record<string, LayoutType[]> = {
-  kpi: ['bullets', 'generic'],
-  chart: ['bullets', 'generic'],
-  table: ['bullets', 'generic'],
-  quote: ['bullets', 'generic'],
-  architecture: ['bullets', 'generic'],
-  imageText: ['twoColumns', 'bullets', 'generic'],
-  roadmap: ['timeline', 'bullets', 'generic'],
-  process: ['timeline', 'bullets', 'generic'],
-  comparison: ['twoColumns', 'bullets', 'generic'],
-};
+import { FALLBACK_CASCADES } from '../validator/types.js';
 
 /**
  * Resolves the layout for a single slide against the template capabilities.
@@ -35,7 +20,7 @@ export function resolveSlideLayout(
   }
 
   // Walk the cascade
-  const cascade = FALLBACK_CASCADE[layout];
+  const cascade = FALLBACK_CASCADES[layout];
   if (cascade) {
     for (const fallback of cascade) {
       if (supported.has(fallback)) {

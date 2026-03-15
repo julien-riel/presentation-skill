@@ -1,6 +1,6 @@
 # pptx-generator — Reste à faire
 
-Ce document liste ce qui manque pour transformer le projet en un **skill Claude Code** prêt à distribuer dans l'entreprise.
+Ce document liste ce qui manque pour transformer le projet en un **plugin Claude Code** prêt à distribuer.
 
 ---
 
@@ -48,15 +48,13 @@ Le template actuel (`assets/default-template.pptx`) est fonctionnellement correc
 
 ---
 
-## 7. Packaging et distribution — PARTIELLEMENT FAIT
+## ~~7. Packaging et distribution~~ FAIT
 
-Les éléments suivants sont en place :
-- ~~`"type": "module"` dans package.json~~ FAIT
-- ~~Scripts npm `validate` et `generate`~~ FAIT
-- ~~`.npmignore`~~ FAIT
-
-**Reste à faire :**
-- Nettoyer les dépendances : `pptxgenjs` a été retiré, mais `xmlbuilder` reste dans les dépendances — vérifier s'il est encore utilisé et le retirer si non
+- `"type": "module"` dans package.json
+- Scripts npm `validate` et `generate`
+- `.npmignore`
+- `.claude-plugin/plugin.json` pour la distribution via marketplace
+- `xmlbuilder` et `pptxgenjs` ont été retirés des dépendances
 
 ---
 
@@ -76,7 +74,6 @@ Ces éléments ne sont pas bloquants pour une v1 mais sont dans la spec :
 | Gabarit par défaut professionnel | Haute | Le template actuel est fonctionnel mais visuellement vide |
 | Renderers KPI/Chart/Table natifs | Moyenne | Actuellement dégradés en bullets — acceptable pour v1 |
 | Cache du manifeste (comparaison dates) | Basse | Spec section 8.3 — re-générer si .pptx plus récent |
-| Nettoyage dépendance `xmlbuilder` | Basse | `pptxgenjs` a été retiré, mais `xmlbuilder` reste |
 | Mode génération depuis données avec LLM | Moyenne | `dataParser.ts` fait l'analyse, mais la narration LLM manque |
 | Support Tier 3 layouts (roadmap, process, comparison, etc.) | Basse | La dégradation fonctionne, les renderers spécialisés sont du bonus |
 
@@ -87,4 +84,3 @@ Ces éléments ne sont pas bloquants pour une v1 mais sont dans la spec :
 1. **Gabarit professionnel** — créer dans PowerPoint, valider avec le CLI
 2. **Renderers KPI/Chart/Table** — pour une couverture complète des types de slides
 3. **Cache manifeste** — re-générer si .pptx plus récent
-4. **Nettoyage `xmlbuilder`** — vérifier et retirer si inutilisé

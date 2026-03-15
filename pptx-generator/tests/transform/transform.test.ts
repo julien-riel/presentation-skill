@@ -3,7 +3,6 @@ import type { Slide } from '../../src/schema/presentation.js';
 import type { TemplateCapabilities } from '../../src/schema/capabilities.js';
 import { resolveLayouts } from '../../src/transform/layoutResolver.js';
 import { validateContent } from '../../src/transform/contentValidator.js';
-import { handleOverflow } from '../../src/transform/overflowHandler.js';
 import { transformPresentation } from '../../src/transform/index.js';
 
 /**
@@ -163,27 +162,10 @@ describe('contentValidator', () => {
   });
 });
 
-// ─── Overflow Handler ───────────────────────────────────────────────────────
-
-describe('overflowHandler', () => {
-  it('returns slides unchanged (pass-through)', () => {
-    const slides: Slide[] = [{
-      layout: 'bullets',
-      elements: [
-        { type: 'title', text: 'Test' },
-        { type: 'bullets', items: ['A', 'B', 'C', 'D'] },
-      ],
-    }];
-
-    const result = handleOverflow(slides);
-    expect(result).toEqual(slides);
-  });
-});
-
 // ─── Full Pipeline ──────────────────────────────────────────────────────────
 
 describe('transformPresentation (full pipeline)', () => {
-  it('resolves layout, validates content, and handles overflow', () => {
+  it('resolves layout and validates content', () => {
     const caps = makeTier1Capabilities();
     const longBullet = Array.from({ length: 15 }, (_, i) => `word${i}`).join(' ');
 

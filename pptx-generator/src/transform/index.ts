@@ -2,13 +2,11 @@ import type { Presentation } from '../schema/presentation.js';
 import type { TemplateCapabilities } from '../schema/capabilities.js';
 import { resolveLayouts } from './layoutResolver.js';
 import { validateContent } from './contentValidator.js';
-import { handleOverflow } from './overflowHandler.js';
 
 /**
- * Transform pipeline: resolveLayouts → contentValidator → overflowHandler.
+ * Transform pipeline: resolveLayouts → contentValidator.
  * Takes a raw presentation AST and template capabilities,
- * returns an enriched AST with resolved layouts, content adjustments,
- * and overflow handling.
+ * returns an enriched AST with resolved layouts and content adjustments.
  */
 export function transformPresentation(
   presentation: Presentation,
@@ -22,12 +20,8 @@ export function transformPresentation(
   // Step 2: Validate and adjust content (split, truncate)
   slides = validateContent(slides);
 
-  // Step 3: Handle overflow (font sizing)
-  slides = handleOverflow(slides);
-
   return { ...presentation, slides };
 }
 
 export { resolveLayouts } from './layoutResolver.js';
 export { validateContent } from './contentValidator.js';
-export { handleOverflow } from './overflowHandler.js';

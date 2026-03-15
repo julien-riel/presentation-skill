@@ -24,14 +24,6 @@ claude plugin install pptx-generator@<marketplace-name>
 
 Or install interactively using `/plugin` inside Claude Code.
 
-### As a standalone skill (legacy)
-
-Copy the `SKILL.md` file at the project root into your Claude Code skills directory:
-
-```bash
-cp pptx-generator/SKILL.md ~/.claude/skills/pptx-generator/SKILL.md
-```
-
 ### Dependencies
 
 Before using the plugin, install Node.js dependencies:
@@ -50,7 +42,6 @@ pptx-generator/
 ├── skills/
 │   └── pptx-generator/
 │       └── SKILL.md           # Main skill definition
-├── SKILL.md                   # Standalone skill (backward compat)
 ├── CLAUDE.md                  # Project conventions for Claude
 ├── src/                       # Source code (TypeScript)
 ├── tests/                     # Test suite

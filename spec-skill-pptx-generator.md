@@ -98,9 +98,7 @@ Responsable de la validation et de l'adaptation de l'AST aux capacités du gabar
    - Nœuds de diagramme > 8 → regroupement automatique des nœuds par layer.
    - Événements timeline > 6 → split ou regroupement par période.
 
-5. **Font sizing adaptatif** — si une slide bullets contient 4-5 puces, réduire la taille de corps de 2pt (jamais sous 12pt). Annoter l'AST avec un champ `_fontSizeOverride` pour le renderer.
-
-6. **Sortie** — AST enrichi avec les champs ajoutés : `_resolvedLayout` (layout effectif), `_fontSizeOverride`, `_splitIndex`, `_warnings[]`.
+5. **Sortie** — AST enrichi avec les champs ajoutés : `_resolvedLayout` (layout effectif), `_splitIndex`, `_warnings[]`.
 
 ### 3.3 Renderer
 
@@ -355,7 +353,6 @@ interface Slide {
   notes?: string;
   // Champs ajoutés par le Transform (préfixe _)
   _resolvedLayout?: LayoutType;
-  _fontSizeOverride?: number;
   _splitIndex?: string;        // ex: "(1/2)"
   _warnings?: string[];
 }
@@ -619,7 +616,6 @@ pptx-generator/
 │   ├── transform/
 │   │   ├── layoutResolver.ts         # Résolution + dégradation des layouts
 │   │   ├── contentValidator.ts       # Règles max bullets, mots, etc.
-│   │   ├── overflowHandler.ts        # Auto-split, font sizing adaptatif
 │   │   └── index.ts                  # Orchestrateur du transform
 │   ├── renderer/
 │   │   ├── pptxRenderer.ts           # Moteur principal (JSZip + OOXML brut)

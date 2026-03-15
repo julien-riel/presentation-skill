@@ -3,7 +3,7 @@
 ## Contexte
 Système de génération de présentations PowerPoint piloté par un AST,
 avec validation de gabarits et dégradation gracieuse.
-La spec complète est dans docs/spec.md. Lis-la au début de chaque phase.
+La spec complète est dans spec-skill-pptx-generator.md à la racine du dépôt.
 
 ## Stack
 - TypeScript strict, Node.js, ESM

@@ -45,7 +45,6 @@ L'AST est un objet JSON conforme au schema Zod defini dans
 | `elements`         | `Element[]`   | oui    | Liste des elements de contenu                       |
 | `notes`            | `string`      | non    | Notes du presentateur (non affichees sur la diapo)  |
 | `_resolvedLayout`  | `LayoutType`  | non    | Layout effectivement utilise apres resolution       |
-| `_fontSizeOverride`| `number`      | non    | Taille de police ajustee par le transform           |
 | `_splitIndex`      | `string`      | non    | Indicateur de decoupage, ex. `"(1/2)"`              |
 | `_warnings`        | `string[]`    | non    | Avertissements generes lors du transform            |
 
@@ -347,7 +346,6 @@ doivent **jamais** etre fournis dans l'AST d'entree.
 |---------------------|-------------|-----------------------------------------------------------------------------|
 | `_resolvedLayout`   | `LayoutType`| Layout effectivement utilise apres resolution. Si le gabarit ne supporte pas le layout demande, un layout de repli est choisi et inscrit ici. |
 | `_warnings`         | `string[]`  | Liste des avertissements generes (troncatures, splits, layouts non supportes). |
-| `_fontSizeOverride` | `number`    | Taille de police du corps ajustee a la baisse quand une diapositive contient 4-5 puces. Reduction de 2pt, minimum 12pt. |
 | `_splitIndex`       | `string`    | Marqueur de decoupage au format `"(n/N)"` quand une liste de puces depasse la limite et est repartie sur plusieurs diapositives. |
 
 ---

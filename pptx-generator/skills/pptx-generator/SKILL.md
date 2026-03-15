@@ -114,7 +114,7 @@ const demoBuffer = await generateDemo(manifest, cheminGabarit); // optionnel
 L'utilisateur peut fournir son propre gabarit `.pptx` :
 - Passer `templatePath` (ou `--template` en CLI) a toute fonction de generation
 - Sans gabarit explicite, le gabarit par defaut (`assets/default-template.pptx`) est utilise
-- Consulter `docs/spec.md` pour les regles de creation de gabarit
+- Consulter `references/guide-designer.md` pour les regles de creation de gabarit
 
 ## Reference rapide du schema AST
 
