@@ -41,8 +41,12 @@ describe('computeTier', () => {
     expect(computeTier(all)).toBe(3);
   });
 
-  it('returns 1 when Tier 1 is incomplete', () => {
-    expect(computeTier(['title', 'section'])).toBe(1);
+  it('returns 0 when Tier 1 is incomplete', () => {
+    expect(computeTier(['title', 'section'])).toBe(0);
+  });
+
+  it('returns 0 for empty layout list', () => {
+    expect(computeTier([])).toBe(0);
   });
 
   it('returns 1 for Tier 1 + partial Tier 2', () => {
@@ -105,5 +109,17 @@ describe('generateManifest', () => {
     const manifest = generateManifest(makeTier1Template(), 'test.pptx');
     expect(manifest.generated_at).toBeDefined();
     expect(manifest.validator_version).toBe('1.0.0');
+  });
+
+  it('preserves all placeholders for TWO_COLUMNS (no key collision)', () => {
+    const manifest = generateManifest(makeTier2Template(), 'test.pptx');
+    const tcPh = manifest.placeholders['LAYOUT_TWO_COLUMNS'];
+    expect(tcPh).toBeDefined();
+    // Both body placeholders (index 1 and 2) must be present with indexed keys
+    const values = Object.values(tcPh);
+    expect(values).toContain(1);
+    expect(values).toContain(2);
+    // Title placeholder at index 0 must also be present
+    expect(values).toContain(0);
   });
 });

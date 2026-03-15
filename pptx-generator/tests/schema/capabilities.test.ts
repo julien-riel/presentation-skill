@@ -61,8 +61,12 @@ describe('TemplateCapabilitiesSchema', () => {
     expect(() => TemplateCapabilitiesSchema.parse(noTemplate)).toThrow();
   });
 
+  it('accepts a Tier 0 manifest (sub-Tier-1 template)', () => {
+    expect(TemplateCapabilitiesSchema.parse({ ...validManifest, tier: 0 }).tier).toBe(0);
+  });
+
   it('rejects a manifest with invalid tier', () => {
-    expect(() => TemplateCapabilitiesSchema.parse({ ...validManifest, tier: 0 })).toThrow();
+    expect(() => TemplateCapabilitiesSchema.parse({ ...validManifest, tier: -1 })).toThrow();
     expect(() => TemplateCapabilitiesSchema.parse({ ...validManifest, tier: 4 })).toThrow();
   });
 

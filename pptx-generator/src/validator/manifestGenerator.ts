@@ -1,3 +1,6 @@
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import * as path from 'path';
 import type { TemplateInfo } from './types.js';
 import type { TemplateCapabilities } from '../schema/capabilities.js';
 import type { LayoutType } from '../schema/presentation.js';
@@ -8,6 +11,11 @@ import {
   TIER2_LAYOUTS,
   FALLBACK_CASCADES,
 } from './types.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const { version: VERSION } = JSON.parse(
+  readFileSync(path.resolve(__dirname, '../../package.json'), 'utf-8')
+);
 
 /**
  * Returns layout type names supported by the template.
@@ -26,7 +34,7 @@ export function getSupportedLayoutTypes(template: TemplateInfo): string[] {
  */
 export function computeTier(supportedTypes: string[]): number {
   const hasTier1 = TIER1_LAYOUTS.every(t => supportedTypes.includes(t));
-  if (!hasTier1) return 1;
+  if (!hasTier1) return 0;
 
   const hasTier2 = TIER2_LAYOUTS.every(t => supportedTypes.includes(t));
   if (!hasTier2) return 1;
@@ -57,6 +65,8 @@ export function computeFallbackMap(supportedTypes: string[]): Record<string, str
 
 /**
  * Extracts placeholder map from the template for the manifest.
+ * Uses indexed keys (e.g. "BODY_1", "BODY_2") when multiple placeholders
+ * share the same type within a layout.
  */
 function extractPlaceholderMap(template: TemplateInfo): Record<string, Record<string, number>> {
   const map: Record<string, Record<string, number>> = {};
@@ -64,9 +74,18 @@ function extractPlaceholderMap(template: TemplateInfo): Record<string, Record<st
   for (const layout of template.layouts) {
     if (!LAYOUT_PPT_NAME_TO_TYPE[layout.name]) continue;
     const phMap: Record<string, number> = {};
+    const typeCount: Record<string, number> = {};
+
+    // Count occurrences of each type to detect duplicates
     for (const ph of layout.placeholders) {
       const label = ph.type.toUpperCase();
-      phMap[label] = ph.index;
+      typeCount[label] = (typeCount[label] ?? 0) + 1;
+    }
+
+    for (const ph of layout.placeholders) {
+      const label = ph.type.toUpperCase();
+      const key = typeCount[label] > 1 ? `${label}_${ph.index}` : label;
+      phMap[key] = ph.index;
     }
     if (Object.keys(phMap).length > 0) {
       map[layout.name] = phMap;
@@ -89,7 +108,7 @@ export function generateManifest(template: TemplateInfo, templateName: string): 
   return {
     template: templateName,
     generated_at: new Date().toISOString(),
-    validator_version: '1.0.0',
+    validator_version: VERSION,
     tier,
     supported_layouts: supportedTypes as LayoutType[],
     unsupported_layouts: unsupportedTypes as LayoutType[],

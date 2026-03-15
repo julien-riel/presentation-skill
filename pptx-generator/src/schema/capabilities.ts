@@ -9,7 +9,7 @@ export const TemplateCapabilitiesSchema = z.object({
   template: z.string(),
   generated_at: z.string(),
   validator_version: z.string(),
-  tier: z.number().int().min(1).max(3),
+  tier: z.number().int().min(0).max(3),
   supported_layouts: z.array(LayoutTypeSchema),
   unsupported_layouts: z.array(LayoutTypeSchema),
   fallback_map: z.record(z.string(), z.string()),
