@@ -10,6 +10,10 @@
 import JSZip from 'jszip';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // ---------- Constants ----------
 const SLIDE_W = 12192000; // 16:9 width in EMU
