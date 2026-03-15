@@ -1,12 +1,6 @@
-import type { ValidationRule, TemplateInfo, Severity } from '../types.js';
+import type { ValidationRule, Severity } from '../types.js';
 import { KNOWN_LAYOUT_PPT_NAMES } from '../types.js';
-
-/**
- * Finds a layout by PPT name in the template.
- */
-function findLayout(template: TemplateInfo, name: string) {
-  return template.layouts.find(l => l.name === name);
-}
+import { findLayout } from './ruleHelpers.js';
 
 /**
  * Creates a rule checking that a layout exists.

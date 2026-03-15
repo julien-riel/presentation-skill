@@ -1,6 +1,6 @@
 {
   "template": "default-template.pptx",
-  "generated_at": "2026-03-14T22:50:46.924Z",
+  "generated_at": "2026-03-15T22:46:44.577Z",
   "validator_version": "1.0.0",
   "tier": 2,
   "supported_layouts": [
@@ -52,7 +52,8 @@
     },
     "LAYOUT_TWO_COLUMNS": {
       "TITLE": 0,
-      "BODY": 2
+      "BODY_1": 1,
+      "BODY_2": 2
     },
     "LAYOUT_TIMELINE": {
       "TITLE": 0,

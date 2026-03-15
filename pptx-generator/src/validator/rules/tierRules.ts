@@ -1,19 +1,10 @@
 import type { ValidationRule } from '../types.js';
 import {
-  LAYOUT_PPT_NAME_TO_TYPE,
   TIER1_LAYOUTS,
   TIER2_LAYOUTS,
   ALL_LAYOUT_TYPES,
 } from '../types.js';
-
-/**
- * Returns layout type names supported by the template.
- */
-function getSupportedTypes(template: { layouts: { name: string }[] }): string[] {
-  return template.layouts
-    .map(l => LAYOUT_PPT_NAME_TO_TYPE[l.name])
-    .filter((t): t is string => !!t);
-}
+import { getSupportedLayoutTypes } from '../manifestGenerator.js';
 
 export const tierRules: ValidationRule[] = [
   // TIER-001: must satisfy Tier 1
@@ -22,7 +13,7 @@ export const tierRules: ValidationRule[] = [
     severity: 'ERROR',
     description: 'Le gabarit doit satisfaire le Tier 1 (title, section, bullets, generic)',
     validate: (template) => {
-      const supported = getSupportedTypes(template);
+      const supported = getSupportedLayoutTypes(template);
       const missing = TIER1_LAYOUTS.filter(t => !supported.includes(t));
       return {
         id: 'TIER-001',
@@ -42,7 +33,7 @@ export const tierRules: ValidationRule[] = [
     severity: 'WARNING',
     description: 'Layouts Tier 2 manquants (twoColumns, timeline)',
     validate: (template) => {
-      const supported = getSupportedTypes(template);
+      const supported = getSupportedLayoutTypes(template);
       const tier2Only = TIER2_LAYOUTS.filter(t => !TIER1_LAYOUTS.includes(t));
       const missing = tier2Only.filter(t => !supported.includes(t));
       return {
@@ -63,7 +54,7 @@ export const tierRules: ValidationRule[] = [
     severity: 'INFO',
     description: 'Layouts Tier 3+ manquants',
     validate: (template) => {
-      const supported = getSupportedTypes(template);
+      const supported = getSupportedLayoutTypes(template);
       const tier3Only = ALL_LAYOUT_TYPES.filter(t => !TIER2_LAYOUTS.includes(t));
       const missing = tier3Only.filter(t => !supported.includes(t));
       return {

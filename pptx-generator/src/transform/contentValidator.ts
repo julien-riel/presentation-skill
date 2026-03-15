@@ -1,8 +1,8 @@
 import type { Slide, Element } from '../schema/presentation.js';
 
-const MAX_BULLETS = 5;
-const MAX_WORDS_PER_BULLET = 12;
-const MAX_TITLE_CHARS = 60;
+export const MAX_BULLETS = 5;
+export const MAX_WORDS_PER_BULLET = 12;
+export const MAX_TITLE_CHARS = 60;
 
 /**
  * Counts words in a string (split by whitespace).

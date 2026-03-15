@@ -1,15 +1,9 @@
-import type { ValidationRule, TemplateInfo, LayoutInfo } from '../types.js';
+import type { ValidationRule } from '../types.js';
+import { findLayout } from './ruleHelpers.js';
 
 const HALF_INCH_EMU = 457200;
 const MIN_BODY_HEIGHT_EMU = 2286000;
 const CANVAS_HEIGHT_RATIO = 0.6;
-
-/**
- * Finds a layout by PPT name.
- */
-function findLayout(template: TemplateInfo, name: string): LayoutInfo | undefined {
-  return template.layouts.find(l => l.name === name);
-}
 
 export const dimensionRules: ValidationRule[] = [
   // DIM-001: slide ratio 16:9 (between 1.7 and 1.8)

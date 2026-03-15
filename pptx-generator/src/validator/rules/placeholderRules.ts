@@ -1,11 +1,5 @@
-import type { ValidationRule, TemplateInfo, LayoutInfo, Severity } from '../types.js';
-
-/**
- * Finds a layout by PPT name.
- */
-function findLayout(template: TemplateInfo, name: string): LayoutInfo | undefined {
-  return template.layouts.find(l => l.name === name);
-}
+import type { ValidationRule, LayoutInfo, Severity } from '../types.js';
+import { findLayout } from './ruleHelpers.js';
 
 /**
  * Checks if a placeholder of the expected type exists at the given index.

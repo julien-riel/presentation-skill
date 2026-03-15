@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readFileSync } from 'fs';
 import { Command } from 'commander';
 import { formatText, formatJson } from './validator/formatter.js';
 import {
@@ -10,13 +11,19 @@ import {
 import { validateAST } from './parser/astValidator.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const { version } = JSON.parse(
+  readFileSync(path.resolve(__dirname, '../package.json'), 'utf-8')
+);
 
 const program = new Command();
 
 program
   .name('pptx-generator')
   .description('PPTX template validator and presentation generator')
-  .version('1.0.0');
+  .version(version);
 
 program
   .command('validate')

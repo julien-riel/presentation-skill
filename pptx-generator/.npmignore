@@ -1,6 +1,6 @@
 tests/
 scripts/
-docs/
+references/
 *.test.ts
 tsconfig.json
 vitest.config.ts

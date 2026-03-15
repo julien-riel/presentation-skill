@@ -288,7 +288,7 @@ export function pictureShape(
 /**
  * Creates a notes slide XML.
  */
-export function notesSlideXml(text: string, slideRId: string): string {
+export function notesSlideXml(text: string): string {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <p:notes xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
          xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
