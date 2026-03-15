@@ -1,6 +1,6 @@
 import type { Slide, Element } from '../schema/presentation.js';
 import type { IconRequest } from './placeholderFiller.js';
-import { emu, ellipseShape, rectShape, lineShape, textBoxShape } from './xmlHelpers.js';
+import { emu, ellipseShape, rectShape, lineShape, textBoxShape, emuFromPx } from './xmlHelpers.js';
 
 /**
  * Status colors: uses template accent colors when available,
@@ -67,12 +67,26 @@ export function buildTimelineShapes(
     const status = event.status ?? 'planned';
     const color = statusColor(status, accentColors);
 
-    // Colored circle
-    shapes += ellipseShape(id++, {
-      x: cx - circleR, y: lineY - circleR,
-      cx: circleR * 2, cy: circleR * 2,
-      fill: color,
-    });
+    // Colored circle or icon
+    if (event.icon) {
+      const iconSizePx = 24;
+      const iconEmu = emuFromPx(iconSizePx);
+      iconRequests.push({
+        name: event.icon,
+        color: color,
+        sizePx: iconSizePx,
+        x: cx - Math.round(iconEmu / 2),
+        y: lineY - Math.round(iconEmu / 2),
+        cx: iconEmu,
+        cy: iconEmu,
+      });
+    } else {
+      shapes += ellipseShape(id++, {
+        x: cx - circleR, y: lineY - circleR,
+        cx: circleR * 2, cy: circleR * 2,
+        fill: color,
+      });
+    }
 
     // Alternate labels above/below
     const isAbove = i % 2 === 0;

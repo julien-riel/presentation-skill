@@ -54,6 +54,43 @@ describe('timelineDrawer', () => {
     expect(slideXml).toContain('prstGeom prst="ellipse"');
   });
 
+  it('emits icon requests for events with icon, replacing ellipse', async () => {
+    const presentation: Presentation = {
+      title: 'Icon Timeline Test',
+      slides: [
+        {
+          layout: 'timeline',
+          _resolvedLayout: 'timeline',
+          elements: [
+            { type: 'title', text: 'Timeline With Icons' },
+            {
+              type: 'timeline',
+              events: [
+                { date: '2026-Q1', label: 'Planning', status: 'done', icon: 'clipboard-check' },
+                { date: '2026-Q2', label: 'Dev', status: 'in-progress' },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH);
+    const zip = await JSZip.loadAsync(buffer);
+    const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
+    expect(slideXml).toBeDefined();
+
+    // Should contain a p:pic element for the first event's icon
+    expect(slideXml).toContain('<p:pic>');
+
+    // Second event (no icon) should still have an ellipse
+    expect(slideXml).toContain('prstGeom prst="ellipse"');
+
+    // Should have an image file in ppt/media/
+    const mediaFiles = Object.keys(zip.files).filter(name => name.startsWith('ppt/media/'));
+    expect(mediaFiles.length).toBeGreaterThan(0);
+  });
+
   it('handles a single event timeline', async () => {
     const presentation: Presentation = {
       title: 'Single Event',
