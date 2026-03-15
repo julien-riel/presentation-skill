@@ -1,10 +1,17 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import JSZip from 'jszip';
 import * as path from 'path';
 import type { Presentation } from '../../src/schema/presentation.js';
+import type { TemplateInfo } from '../../src/validator/types.js';
 import { renderToBuffer } from '../../src/renderer/pptxRenderer.js';
+import { readTemplate } from '../../src/validator/templateReader.js';
 
 const TEMPLATE_PATH = path.resolve(__dirname, '../../assets/default-template.pptx');
+
+let templateInfo: TemplateInfo;
+beforeAll(async () => {
+  templateInfo = await readTemplate(TEMPLATE_PATH);
+});
 
 describe('architectureDrawer', () => {
   it('draws architecture shapes (rounded rects + connectors) in the PPTX XML', async () => {
@@ -33,7 +40,7 @@ describe('architectureDrawer', () => {
       ],
     };
 
-    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH);
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH, templateInfo);
     const zip = await JSZip.loadAsync(buffer);
     const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
     expect(slideXml).toBeDefined();
@@ -73,7 +80,7 @@ describe('architectureDrawer', () => {
       ],
     };
 
-    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH);
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH, templateInfo);
     const zip = await JSZip.loadAsync(buffer);
     const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
     expect(slideXml).toContain('App A');
@@ -103,7 +110,7 @@ describe('architectureDrawer', () => {
       ],
     };
 
-    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH);
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH, templateInfo);
     const zip = await JSZip.loadAsync(buffer);
     const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
     expect(slideXml).toBeDefined();
@@ -146,7 +153,7 @@ describe('architectureDrawer', () => {
       ],
     };
 
-    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH);
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH, templateInfo);
     const zip = await JSZip.loadAsync(buffer);
     const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
     expect(slideXml).toContain('FF5733');

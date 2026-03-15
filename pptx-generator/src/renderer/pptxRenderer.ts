@@ -2,9 +2,8 @@ import * as fs from 'fs/promises';
 import JSZip from 'jszip';
 import type { Presentation } from '../schema/presentation.js';
 import type { TemplateCapabilities } from '../schema/capabilities.js';
-import type { LayoutInfo } from '../validator/types.js';
+import type { LayoutInfo, TemplateInfo } from '../validator/types.js';
 import { LAYOUT_TYPE_TO_PPT_NAME } from '../validator/types.js';
-import { readTemplate } from '../validator/templateReader.js';
 import { buildSlideShapes } from './placeholderFiller.js';
 import type { IconRequest } from './placeholderFiller.js';
 import { resolveIcon, createIconCache } from './iconResolver.js';
@@ -35,13 +34,13 @@ function buildLayoutFileMap(layouts: LayoutInfo[]): Map<string, { filePath: stri
 export async function renderToBuffer(
   presentation: Presentation,
   templatePath: string,
+  templateInfo: TemplateInfo,
 ): Promise<Buffer> {
   // Open the template
   const templateBuffer = await fs.readFile(templatePath);
   const zip = await JSZip.loadAsync(templateBuffer);
 
-  // Read template structure
-  const templateInfo = await readTemplate(templatePath);
+  // Build layout map from already-read template info
   const layoutFileMap = buildLayoutFileMap(templateInfo.layouts);
 
   // Read and parse presentation.xml to get the relationship base
@@ -147,7 +146,7 @@ export async function renderToBuffer(
     // Handle speaker notes
     if (entry.notes) {
       const notesPath = `ppt/notesSlides/notesSlide${entry.slideNum}.xml`;
-      const notesXml = notesSlideXml(entry.notes, 'rId1');
+      const notesXml = notesSlideXml(entry.notes);
       zip.file(notesPath, notesXml);
 
       // Notes relationships

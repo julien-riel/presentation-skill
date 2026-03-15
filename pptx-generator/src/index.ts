@@ -34,8 +34,8 @@ export function getDefaultTemplatePath(): string {
 export function getDefaultManifest(): TemplateCapabilities {
   if (cachedDefaultManifest) return cachedDefaultManifest;
   const raw = readFileSync(DEFAULT_MANIFEST_PATH, 'utf-8');
-  cachedDefaultManifest = JSON.parse(raw);
-  return cachedDefaultManifest!;
+  cachedDefaultManifest = JSON.parse(raw) as TemplateCapabilities;
+  return cachedDefaultManifest;
 }
 
 /**
@@ -84,11 +84,12 @@ export async function generateFromAST(
   }
 
   const tplPath = templatePath ?? DEFAULT_TEMPLATE;
+  const templateInfo = await readTemplate(tplPath);
   const manifest = templatePath
-    ? generateManifest(await readTemplate(tplPath), path.basename(tplPath))
+    ? generateManifest(templateInfo, path.basename(tplPath))
     : getDefaultManifest();
   const enriched = transformPresentation(result.data, manifest);
-  return renderToBuffer(enriched, tplPath);
+  return renderToBuffer(enriched, tplPath, templateInfo);
 }
 
 /**
@@ -114,11 +115,12 @@ export async function generateFromData(
   }
 
   const tplPath = templatePath ?? DEFAULT_TEMPLATE;
+  const templateInfo = await readTemplate(tplPath);
   const manifest = templatePath
-    ? generateManifest(await readTemplate(tplPath), path.basename(tplPath))
+    ? generateManifest(templateInfo, path.basename(tplPath))
     : getDefaultManifest();
   const enriched = transformPresentation(validationResult.data, manifest);
-  return renderToBuffer(enriched, tplPath);
+  return renderToBuffer(enriched, tplPath, templateInfo);
 }
 
 /**

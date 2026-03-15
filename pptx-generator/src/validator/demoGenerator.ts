@@ -2,6 +2,7 @@ import type { Presentation, Slide } from '../schema/presentation.js';
 import type { TemplateCapabilities } from '../schema/capabilities.js';
 import { transformPresentation } from '../transform/index.js';
 import { renderToBuffer } from '../renderer/pptxRenderer.js';
+import { readTemplate } from './templateReader.js';
 
 /**
  * Builds the demo AST per spec section 6.1 (14-16 slides).
@@ -281,7 +282,8 @@ export function buildDemoAST(capabilities: TemplateCapabilities): Presentation {
  * Opens the template file and adds demo slides to it.
  */
 export async function generateDemo(capabilities: TemplateCapabilities, templatePath: string): Promise<Buffer> {
+  const templateInfo = await readTemplate(templatePath);
   const ast = buildDemoAST(capabilities);
   const enriched = transformPresentation(ast, capabilities);
-  return renderToBuffer(enriched, templatePath);
+  return renderToBuffer(enriched, templatePath, templateInfo);
 }
