@@ -1,6 +1,6 @@
 import type { Slide, Element } from '../schema/presentation.js';
 import type { IconRequest } from './placeholderFiller.js';
-import { emu, rectShape, lineShape, textBoxShape } from './xmlHelpers.js';
+import { emu, rectShape, lineShape, textBoxShape, emuFromPx } from './xmlHelpers.js';
 
 const NODE_H = emu(0.55);
 const NODE_MIN_W = emu(1.5);
@@ -89,8 +89,27 @@ export function buildArchitectureShapes(
       });
 
       // Node label (white text on colored background)
-      shapes += textBoxShape(id++, x, y, nodeW, NODE_H,
-        node.label, { size: 10, bold: true, color: 'FFFFFF' });
+      if (node.style?.icon) {
+        const iconSizePx = 32;
+        const iconEmu = emuFromPx(iconSizePx);
+        iconRequests.push({
+          name: node.style.icon,
+          color: 'FFFFFF',
+          sizePx: iconSizePx,
+          x: x + Math.round((nodeW - iconEmu) / 2),
+          y: y + Math.round((NODE_H - iconEmu) / 4),
+          cx: iconEmu,
+          cy: iconEmu,
+        });
+
+        // Label shifted down to make room for icon
+        shapes += textBoxShape(id++, x, y + Math.round(NODE_H * 0.55), nodeW, Math.round(NODE_H * 0.45),
+          node.label, { size: 9, bold: true, color: 'FFFFFF' });
+      } else {
+        // Original: centered label
+        shapes += textBoxShape(id++, x, y, nodeW, NODE_H,
+          node.label, { size: 10, bold: true, color: 'FFFFFF' });
+      }
     }
   }
 
