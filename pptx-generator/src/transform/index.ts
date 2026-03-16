@@ -4,6 +4,11 @@ import { resolveLayouts } from './layoutResolver.js';
 import { degradeElements } from './elementDegrader.js';
 import { validateContent } from './contentValidator.js';
 
+/**
+ * Transform pipeline: resolveLayouts → degradeElements → validateContent.
+ * Takes a raw presentation AST and template capabilities,
+ * returns an enriched AST with resolved layouts, degraded elements, and content adjustments.
+ */
 export function transformPresentation(
   presentation: Presentation,
   capabilities: TemplateCapabilities,

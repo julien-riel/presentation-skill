@@ -82,7 +82,7 @@ export const ChartOptionsSchema = z.object({
   yAxisMin: z.number().optional(),
   yAxisMax: z.number().optional(),
   valueFormat: z.enum(['number', 'percent', 'currency']).optional(),
-  currencySymbol: z.string().optional(),
+  currencySymbol: z.string().max(5).regex(/^[^<>&"']*$/).optional(),
   showDataLabels: z.boolean().optional(),
   showLegend: z.boolean().optional(),
   legendPosition: z.enum(['top', 'bottom', 'right', 'left']).optional(),

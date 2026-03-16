@@ -16,7 +16,7 @@ export function buildValueXml(
 ): string {
   let formatCode = 'General';
   if (valueFormat === 'percent') formatCode = '0%';
-  else if (valueFormat === 'currency') formatCode = `${currencySymbol ?? '$'}#,##0`;
+  else if (valueFormat === 'currency') formatCode = `${escapeXml(currencySymbol ?? '$')}#,##0`;
 
   const pts = values.map((v, i) => `<c:pt idx="${i}"><c:v>${v}</c:v></c:pt>`).join('');
   return `<c:val><c:numRef><c:numCache><c:formatCode>${formatCode}</c:formatCode><c:ptCount val="${values.length}"/>${pts}</c:numCache></c:numRef></c:val>`;

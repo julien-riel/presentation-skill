@@ -40,6 +40,10 @@ export function buildPieChartXml(element: ChartElement): string {
 
   // Pie/donut uses only the first series
   const firstSeries = series[0];
+  if (!firstSeries) {
+    const tag = isDonut ? 'doughnutChart' : 'pieChart';
+    return wrapChartXml(`<c:${tag}><c:varyColors val="1"/></c:${tag}>`, '', opts?.title);
+  }
 
   const colorOverrides = opts?.colors
     ? buildDataPointColors(opts.colors)
