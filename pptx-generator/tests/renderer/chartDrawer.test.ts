@@ -4,6 +4,8 @@ import { buildChartStyleXml, buildChartColorsXml, buildChartRelsXml } from '../.
 import { buildBarChartXml } from '../../src/renderer/charts/barChartBuilder.js';
 import { buildLineChartXml } from '../../src/renderer/charts/lineChartBuilder.js';
 import { buildPieChartXml } from '../../src/renderer/charts/pieChartBuilder.js';
+import { buildChart } from '../../src/renderer/chartDrawer.js';
+import type { Element } from '../../src/schema/presentation.js';
 
 describe('chartXmlHelpers', () => {
   describe('buildCategoryXml', () => {
@@ -266,5 +268,67 @@ describe('pieChartBuilder', () => {
     });
     expect(xml).toContain('Traffic Sources');
     expect(xml).toContain('<c:autoTitleDeleted val="0"/>');
+  });
+});
+
+describe('chartDrawer', () => {
+  it('dispatches bar chart and returns BuildChartResult', () => {
+    const chart: Extract<Element, { type: 'chart' }> = {
+      type: 'chart', chartType: 'bar',
+      data: { labels: ['A', 'B'], series: [{ name: 'S', values: [1, 2] }] },
+    };
+    const result = buildChart(chart, 100, ['1E3A5F', '2C7DA0']);
+    expect(result.anchorShape).toContain('<p:graphicFrame>');
+    expect(result.anchorShape).toContain('__CHART_RELID__');
+    expect(result.nextId).toBe(101);
+    expect(result.chartRequest.chartXml).toContain('<c:barChart>');
+    expect(result.chartRequest.styleXml).toContain('cs:chartStyle');
+    expect(result.chartRequest.colorsXml).toContain('cs:colorStyle');
+  });
+
+  it('dispatches pie chart', () => {
+    const chart: Extract<Element, { type: 'chart' }> = {
+      type: 'chart', chartType: 'pie',
+      data: { labels: ['A', 'B'], series: [{ name: 'S', values: [60, 40] }] },
+    };
+    const result = buildChart(chart, 200, []);
+    expect(result.chartRequest.chartXml).toContain('<c:pieChart>');
+  });
+
+  it('dispatches donut chart', () => {
+    const chart: Extract<Element, { type: 'chart' }> = {
+      type: 'chart', chartType: 'donut',
+      data: { labels: ['A', 'B'], series: [{ name: 'S', values: [60, 40] }] },
+    };
+    const result = buildChart(chart, 200, []);
+    expect(result.chartRequest.chartXml).toContain('<c:doughnutChart>');
+  });
+
+  it('dispatches line chart', () => {
+    const chart: Extract<Element, { type: 'chart' }> = {
+      type: 'chart', chartType: 'line',
+      data: { labels: ['A', 'B'], series: [{ name: 'S', values: [1, 2] }] },
+    };
+    const result = buildChart(chart, 200, []);
+    expect(result.chartRequest.chartXml).toContain('<c:lineChart>');
+  });
+
+  it('dispatches stackedBar chart', () => {
+    const chart: Extract<Element, { type: 'chart' }> = {
+      type: 'chart', chartType: 'stackedBar',
+      data: { labels: ['A'], series: [{ name: 'S', values: [1] }] },
+    };
+    const result = buildChart(chart, 200, []);
+    expect(result.chartRequest.chartXml).toContain('<c:grouping val="stacked"/>');
+  });
+
+  it('anchor shape has correct EMU positioning', () => {
+    const chart: Extract<Element, { type: 'chart' }> = {
+      type: 'chart', chartType: 'bar',
+      data: { labels: ['A'], series: [{ name: 'S', values: [1] }] },
+    };
+    const result = buildChart(chart, 100, []);
+    expect(result.anchorShape).toContain(`x="${Math.round(0.8 * 914400)}"`);
+    expect(result.anchorShape).toContain(`y="${Math.round(1.6 * 914400)}"`);
   });
 });
