@@ -391,6 +391,9 @@ function contentTypesXml(): string {
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
   <Default Extension="xml" ContentType="application/xml"/>
   <Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>
+  <Override PartName="/ppt/presProps.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presProps+xml"/>
+  <Override PartName="/ppt/viewProps.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.viewProps+xml"/>
+  <Override PartName="/ppt/tableStyles.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.tableStyles+xml"/>
   <Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/>
   <Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>
   <Override PartName="/ppt/slideLayouts/slideLayout2.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>
@@ -399,6 +402,8 @@ function contentTypesXml(): string {
   <Override PartName="/ppt/slideLayouts/slideLayout5.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>
   <Override PartName="/ppt/slideLayouts/slideLayout6.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>
   <Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>
+  <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
+  <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
 </Types>`;
 }
 
@@ -406,6 +411,8 @@ function rootRels(): string {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
 </Relationships>`;
 }
 
@@ -427,6 +434,9 @@ function presentationRels(): string {
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>
   <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="theme/theme1.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/presProps" Target="presProps.xml"/>
+  <Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/viewProps" Target="viewProps.xml"/>
+  <Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles" Target="tableStyles.xml"/>
 </Relationships>`;
 }
 
@@ -529,6 +539,67 @@ function themeXml(): string {
 </a:theme>`;
 }
 
+// ---------- Required auxiliary parts (PowerPoint refuses to open without these) ----------
+
+function presPropsXml(): string {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:presentationPr xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+                  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+                  xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"/>`;
+}
+
+function viewPropsXml(): string {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:viewPr xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+          xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+          xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+  <p:normalViewPr>
+    <p:restoredLeft sz="15620"/>
+    <p:restoredTop sz="94660"/>
+  </p:normalViewPr>
+  <p:slideViewPr>
+    <p:cSldViewPr>
+      <p:cViewPr varScale="1">
+        <p:scale><a:sx n="100" d="100"/><a:sy n="100" d="100"/></p:scale>
+        <p:origin x="0" y="0"/>
+      </p:cViewPr>
+    </p:cSldViewPr>
+  </p:slideViewPr>
+</p:viewPr>`;
+}
+
+function tableStylesXml(): string {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<a:tblStyleLst xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" def="{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}"/>`;
+}
+
+function corePropsXml(): string {
+  const now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
+                   xmlns:dc="http://purl.org/dc/elements/1.1/"
+                   xmlns:dcterms="http://purl.org/dc/terms/"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <dc:title>Default Template</dc:title>
+  <dc:creator>pptx-generator</dc:creator>
+  <dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created>
+  <dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified>
+</cp:coreProperties>`;
+}
+
+function appPropsXml(): string {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"
+            xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
+  <Application>pptx-generator</Application>
+  <Slides>0</Slides>
+  <ScaleCrop>false</ScaleCrop>
+  <LinksUpToDate>false</LinksUpToDate>
+  <SharedDoc>false</SharedDoc>
+  <HyperlinksChanged>false</HyperlinksChanged>
+</Properties>`;
+}
+
 // ---------- Main ----------
 
 async function main() {
@@ -566,6 +637,13 @@ async function main() {
 
   // Theme
   zip.file('ppt/theme/theme1.xml', themeXml());
+
+  // Auxiliary parts required by PowerPoint
+  zip.file('ppt/presProps.xml', presPropsXml());
+  zip.file('ppt/viewProps.xml', viewPropsXml());
+  zip.file('ppt/tableStyles.xml', tableStylesXml());
+  zip.file('docProps/core.xml', corePropsXml());
+  zip.file('docProps/app.xml', appPropsXml());
 
   // Generate the zip buffer
   const buffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
