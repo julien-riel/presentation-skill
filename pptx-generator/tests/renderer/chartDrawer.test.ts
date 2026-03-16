@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { buildSeriesXml, buildCategoryXml, buildValueXml } from '../../src/renderer/charts/chartXmlHelpers.js';
 import { buildChartStyleXml, buildChartColorsXml, buildChartRelsXml } from '../../src/renderer/charts/chartStyleBuilder.js';
 import { buildBarChartXml } from '../../src/renderer/charts/barChartBuilder.js';
+import { buildLineChartXml } from '../../src/renderer/charts/lineChartBuilder.js';
 
 describe('chartXmlHelpers', () => {
   describe('buildCategoryXml', () => {
@@ -128,6 +129,66 @@ describe('barChartBuilder', () => {
       options: { title: 'Quarterly Revenue' },
     });
     expect(xml).toContain('Quarterly Revenue');
+    expect(xml).toContain('<c:autoTitleDeleted val="0"/>');
+  });
+});
+
+describe('lineChartBuilder', () => {
+  const baseElement = {
+    type: 'chart' as const,
+    chartType: 'line' as const,
+    data: {
+      labels: ['Jan', 'Feb', 'Mar'],
+      series: [
+        { name: 'Users', values: [100, 150, 200] },
+      ],
+    },
+  };
+
+  it('generates a line chart with standard grouping', () => {
+    const xml = buildLineChartXml(baseElement);
+    expect(xml).toContain('<c:lineChart>');
+    expect(xml).toContain('<c:grouping val="standard"/>');
+    expect(xml).toContain('Users');
+    expect(xml).toContain('<c:catAx>');
+    expect(xml).toContain('<c:valAx>');
+  });
+
+  it('includes circle markers per series', () => {
+    const xml = buildLineChartXml(baseElement);
+    expect(xml).toContain('<c:marker>');
+    expect(xml).toContain('<c:symbol val="circle"/>');
+    expect(xml).toContain('<c:size val="5"/>');
+  });
+
+  it('applies custom colors to series', () => {
+    const xml = buildLineChartXml({
+      ...baseElement,
+      options: { colors: ['00FF00'] },
+    });
+    expect(xml).toContain('<a:srgbClr val="00FF00"/>');
+  });
+
+  it('includes legend by default', () => {
+    const xml = buildLineChartXml(baseElement);
+    expect(xml).toContain('<c:legend>');
+  });
+
+  it('includes data labels when enabled', () => {
+    const xml = buildLineChartXml({
+      ...baseElement,
+      options: { showDataLabels: true },
+    });
+    expect(xml).toContain('<c:dLbls>');
+    expect(xml).toContain('<c:showVal val="1"/>');
+  });
+
+  it('includes chart title when provided', () => {
+    const xml = buildLineChartXml({
+      ...baseElement,
+      options: { title: 'User Growth' },
+    });
+    expect(xml).toContain('User Growth');
     expect(xml).toContain('<c:autoTitleDeleted val="0"/>');
   });
 });
