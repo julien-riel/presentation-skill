@@ -102,6 +102,10 @@ export async function renderToBuffer(
       slideCharts.push({ chartNum, chartRelId, chartRequest: chartReq });
     }
 
+    if (allShapes.includes('__CHART_RELID__')) {
+      throw new Error(`Unreplaced __CHART_RELID__ token in slide ${i + 1}`);
+    }
+
     const slideXml = wrapSlideXml(allShapes);
 
     slideEntries.push({

@@ -302,6 +302,101 @@ describe('contentValidator', () => {
     }
   });
 
+  it('reduces donut chart to single series', () => {
+    const slides: Slide[] = [{
+      layout: 'chart',
+      elements: [
+        { type: 'title', text: 'Donut' },
+        {
+          type: 'chart',
+          chartType: 'donut',
+          data: {
+            labels: ['A', 'B'],
+            series: [
+              { name: 'S1', values: [60, 40] },
+              { name: 'S2', values: [30, 70] },
+            ],
+          },
+        },
+      ],
+    }];
+    const result = validateContent(slides);
+    const chartEl = result[0].elements.find(el => el.type === 'chart');
+    if (chartEl?.type === 'chart') {
+      expect(chartEl.data.series).toHaveLength(1);
+    }
+    expect(result[0]._warnings?.some(w => w.includes('donut'))).toBe(true);
+  });
+
+  it('trims values longer than labels', () => {
+    const slides: Slide[] = [{
+      layout: 'chart',
+      elements: [
+        { type: 'title', text: 'Chart' },
+        {
+          type: 'chart',
+          chartType: 'bar',
+          data: {
+            labels: ['A', 'B'],
+            series: [{ name: 'S1', values: [1, 2, 3, 4] }],
+          },
+        },
+      ],
+    }];
+    const result = validateContent(slides);
+    const chartEl = result[0].elements.find(el => el.type === 'chart');
+    if (chartEl?.type === 'chart') {
+      expect(chartEl.data.series[0].values).toEqual([1, 2]);
+    }
+  });
+
+  it('keeps only first chart when multiple chart elements on same slide', () => {
+    const slides: Slide[] = [{
+      layout: 'chart',
+      elements: [
+        { type: 'title', text: 'Multi' },
+        {
+          type: 'chart', chartType: 'bar',
+          data: { labels: ['A'], series: [{ name: 'First', values: [1] }] },
+        },
+        {
+          type: 'chart', chartType: 'pie',
+          data: { labels: ['A'], series: [{ name: 'Second', values: [2] }] },
+        },
+      ],
+    }];
+    const result = validateContent(slides);
+    const charts = result[0].elements.filter(el => el.type === 'chart');
+    expect(charts).toHaveLength(1);
+    if (charts[0]?.type === 'chart') {
+      expect(charts[0].data.series[0].name).toBe('First');
+    }
+    expect(result[0]._warnings?.some(w => w.includes('Multiple chart'))).toBe(true);
+  });
+
+  it('replaces NaN/Infinity values with 0', () => {
+    const slides: Slide[] = [{
+      layout: 'chart',
+      elements: [
+        { type: 'title', text: 'Chart' },
+        {
+          type: 'chart',
+          chartType: 'bar',
+          data: {
+            labels: ['A', 'B', 'C'],
+            series: [{ name: 'S1', values: [NaN, Infinity, 42] }],
+          },
+        },
+      ],
+    }];
+    const result = validateContent(slides);
+    const chartEl = result[0].elements.find(el => el.type === 'chart');
+    if (chartEl?.type === 'chart') {
+      expect(chartEl.data.series[0].values).toEqual([0, 0, 42]);
+    }
+    expect(result[0]._warnings?.some(w => w.includes('Non-finite'))).toBe(true);
+  });
+
   it('truncates table columns beyond 6', () => {
     const presentation: Presentation = {
       title: 'Wide Table',

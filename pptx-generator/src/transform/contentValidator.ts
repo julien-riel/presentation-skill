@@ -142,6 +142,18 @@ export function validateSlideContent(slide: Slide): Slide[] {
       return s;
     });
 
+    // Sanitize NaN/Infinity values
+    series = series.map(s => ({
+      ...s,
+      values: s.values.map(v => {
+        if (!Number.isFinite(v)) {
+          warnings.push(`Non-finite value in series "${s.name}" replaced with 0`);
+          return 0;
+        }
+        return v;
+      }),
+    }));
+
     return { ...el, data: { labels, series } };
   });
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildSeriesXml, buildCategoryXml, buildValueXml } from '../../src/renderer/charts/chartXmlHelpers.js';
+import { buildSeriesXml, buildCategoryXml, buildValueXml, buildLegendXml, buildCatAxisXml, buildValAxisXml } from '../../src/renderer/charts/chartXmlHelpers.js';
 import { buildChartStyleXml, buildChartColorsXml, buildChartRelsXml } from '../../src/renderer/charts/chartStyleBuilder.js';
 import { buildBarChartXml } from '../../src/renderer/charts/barChartBuilder.js';
 import { buildLineChartXml } from '../../src/renderer/charts/lineChartBuilder.js';
@@ -41,6 +41,53 @@ describe('chartXmlHelpers', () => {
     it('applies custom color to series', () => {
       const xml = buildSeriesXml(0, 'Rev', ['A'], [1], { color: 'FF0000' });
       expect(xml).toContain('<a:srgbClr val="FF0000"/>');
+    });
+    it('escapes XML special characters in labels and names', () => {
+      const xml = buildSeriesXml(0, 'R&D', ['Q1 < Q2', 'AT&T'], [100, 200]);
+      expect(xml).toContain('R&amp;D');
+      expect(xml).toContain('Q1 &lt; Q2');
+      expect(xml).toContain('AT&amp;T');
+      expect(xml).not.toContain('R&D</');
+    });
+  });
+  describe('buildLegendXml', () => {
+    it('maps position names to OOXML codes', () => {
+      expect(buildLegendXml('right')).toContain('<c:legendPos val="r"/>');
+      expect(buildLegendXml('top')).toContain('<c:legendPos val="t"/>');
+      expect(buildLegendXml('left')).toContain('<c:legendPos val="l"/>');
+    });
+    it('defaults to bottom for unknown position', () => {
+      expect(buildLegendXml('unknown')).toContain('<c:legendPos val="b"/>');
+    });
+  });
+  describe('buildCatAxisXml', () => {
+    it('includes title when label is provided', () => {
+      const xml = buildCatAxisXml(111, 222, 'Quarters');
+      expect(xml).toContain('Quarters');
+      expect(xml).toContain('<c:title>');
+    });
+  });
+  describe('buildValAxisXml', () => {
+    it('includes min/max scaling and hides gridlines', () => {
+      const xml = buildValAxisXml(222, 111, { min: 0, max: 500, gridLines: false });
+      expect(xml).toContain('<c:min val="0"/>');
+      expect(xml).toContain('<c:max val="500"/>');
+      expect(xml).not.toContain('<c:majorGridlines/>');
+    });
+    it('includes axis label', () => {
+      const xml = buildValAxisXml(222, 111, { label: 'Revenue ($)' });
+      expect(xml).toContain('Revenue ($)');
+      expect(xml).toContain('<c:title>');
+    });
+  });
+  describe('buildValueXml defaults', () => {
+    it('uses General format for number type', () => {
+      const xml = buildValueXml([42], 'number');
+      expect(xml).toContain('<c:formatCode>General</c:formatCode>');
+    });
+    it('defaults currency symbol to $', () => {
+      const xml = buildValueXml([1000], 'currency');
+      expect(xml).toContain('<c:formatCode>$#,##0</c:formatCode>');
     });
   });
 });

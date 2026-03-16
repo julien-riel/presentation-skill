@@ -64,8 +64,10 @@ export function buildChart(
     case 'donut':
       chartXml = buildPieChartXml(chart);
       break;
-    default:
-      chartXml = buildBarChartXml(chart);
+    default: {
+      const _exhaustive: never = chart.chartType;
+      throw new Error(`Unsupported chart type: ${chart.chartType}`);
+    }
   }
   return {
     anchorShape: graphicFrameShape(startId),
