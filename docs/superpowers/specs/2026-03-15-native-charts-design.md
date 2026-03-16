@@ -43,8 +43,8 @@ export const ChartElementSchema = z.object({
     // Legend
     showLegend: z.boolean().optional(),
     legendPosition: z.enum(['top', 'bottom', 'right', 'left']).optional(),
-    // Styling
-    colors: z.array(z.string()).optional(),
+    // Styling — 6-char hex without # prefix (consistent with codebase convention)
+    colors: z.array(z.string().regex(/^[0-9A-Fa-f]{6}$/)).optional(),
     // Layout
     gridLines: z.boolean().optional(),
   }).optional(),
@@ -52,6 +52,20 @@ export const ChartElementSchema = z.object({
 ```
 
 All `options` fields are optional. Without options, the chart uses theme colors and sensible defaults.
+
+**Backward compatibility:** Adding `stackedBar` to the enum and the optional `options` field are additive changes. Existing ASTs with `chart` elements remain valid — `options` defaults to `undefined`, and existing `chartType` values are still in the enum.
+
+### PromptParser Update
+
+In `promptParser.ts`, the chart layout description (line 48) and element type (line 65) must be updated:
+
+```typescript
+// Layout description
+'- "chart": Chart slide. Use chart element with chartType (bar/line/pie/donut/stackedBar) and data series. Options: valueFormat, showDataLabels, legendPosition, colors, gridLines, axis labels/limits.'
+
+// Element type
+'- { type: "chart", chartType: "bar"|"line"|"pie"|"donut"|"stackedBar", data: { labels: [...], series: [{ name, values }] }, options?: { valueFormat?, showDataLabels?, legendPosition?, colors?, ... } } — Chart'
+```
 
 ## Content Validation
 
@@ -64,12 +78,47 @@ export const MAX_CHART_SERIES = 4;
 
 ### Rules
 
-| Condition | Action |
-|-----------|--------|
-| labels > 8 | Truncate to 8 + warning |
-| series > 4 | Truncate to 4 + warning |
-| series.values.length !== labels.length | Pad with 0 or truncate to align |
-| pie/donut with > 1 series | Keep first series only + warning |
+Added as a new block in `validateSlideContent()` in `contentValidator.ts`, following the same pattern as the KPI and table validation blocks (lines 69-98):
+
+```typescript
+// --- Chart category/series limit ---
+elements = elements.map((el) => {
+  if (el.type !== 'chart') return el;
+  let { labels, series } = el.data;
+
+  // Truncate series
+  if (series.length > MAX_CHART_SERIES) {
+    warnings.push(`Chart series truncated from ${series.length} to ${MAX_CHART_SERIES}`);
+    series = series.slice(0, MAX_CHART_SERIES);
+  }
+
+  // Pie/donut: single series only
+  if ((el.chartType === 'pie' || el.chartType === 'donut') && series.length > 1) {
+    warnings.push(`${el.chartType} chart reduced to single series`);
+    series = [series[0]];
+  }
+
+  // Truncate categories
+  if (labels.length > MAX_CHART_CATEGORIES) {
+    warnings.push(`Chart categories truncated from ${labels.length} to ${MAX_CHART_CATEGORIES}`);
+    labels = labels.slice(0, MAX_CHART_CATEGORIES);
+    series = series.map(s => ({ ...s, values: s.values.slice(0, MAX_CHART_CATEGORIES) }));
+  }
+
+  // Align values to labels length
+  series = series.map(s => {
+    if (s.values.length < labels.length) {
+      return { ...s, values: [...s.values, ...Array(labels.length - s.values.length).fill(0)] };
+    }
+    if (s.values.length > labels.length) {
+      return { ...s, values: s.values.slice(0, labels.length) };
+    }
+    return s;
+  });
+
+  return { ...el, data: { labels, series } };
+});
+```
 
 ### Degradation Cascade
 
@@ -78,23 +127,58 @@ export const MAX_CHART_SERIES = 4;
 // After:  chart: ['table', 'bullets', 'generic']
 ```
 
-When chart degrades to table, the transformer converts the data:
-- `headers = ["", ...series.map(s => s.name)]`
-- `rows = labels.map((label, i) => [label, ...series.map(s => String(s.values[i]))])`
+### Chart-to-Table Element Transformation
+
+When chart degrades to table, the slide's `ChartElement` must be replaced with a `TableElement`. This transformation happens in a **new transform step** `elementDegrader.ts`, executed after `layoutResolver` (which sets `_resolvedLayout`) and before `contentValidator`:
+
+```typescript
+// src/transform/elementDegrader.ts
+
+/**
+ * Transforms elements when their layout has been degraded.
+ * Called after layoutResolver, before contentValidator.
+ *
+ * When chart → table: converts ChartElement data to TableElement.
+ */
+export function degradeElements(slides: Slide[]): Slide[] {
+  return slides.map((slide) => {
+    if (slide.layout === 'chart' && slide._resolvedLayout === 'table') {
+      const chartEl = slide.elements.find(el => el.type === 'chart');
+      if (chartEl && chartEl.type === 'chart') {
+        const tableEl = {
+          type: 'table' as const,
+          headers: ['', ...chartEl.data.series.map(s => s.name)],
+          rows: chartEl.data.labels.map((label, i) =>
+            [label, ...chartEl.data.series.map(s => String(s.values[i] ?? 0))]
+          ),
+        };
+        const elements = slide.elements.map(el => el.type === 'chart' ? tableEl : el);
+        return { ...slide, elements };
+      }
+    }
+    return slide;
+  });
+}
+```
+
+**Pipeline order:** parse → layoutResolver → **elementDegrader** → contentValidator → render
 
 ## Renderer Architecture
 
 ### Files Generated Per Chart
 
-Each chart produces three files in the PPTX ZIP:
+Each chart produces four files in the PPTX ZIP:
 
 | File | Content |
 |------|---------|
 | `ppt/charts/chart{N}.xml` | Chart definition (`<c:chartSpace>`) |
 | `ppt/charts/style{N}.xml` | Visual style |
 | `ppt/charts/colors{N}.xml` | Color palette |
+| `ppt/charts/_rels/chart{N}.xml.rels` | Internal relationships (chart → style, colors) |
 
 Plus relationships in `slide{M}.xml.rels` and overrides in `[Content_Types].xml`.
+
+`{N}` is a **global counter** across all slides (not per-slide). Multiple chart slides produce chart1, chart2, chart3, etc.
 
 ### Content Types
 
@@ -107,6 +191,54 @@ Plus relationships in `slide{M}.xml.rels` and overrides in `[Content_Types].xml`
   ContentType="application/vnd.ms-office.chartcolorstyle+xml"/>
 ```
 
+### Chart Internal Relationships
+
+Each chart needs `ppt/charts/_rels/chart{N}.xml.rels`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.microsoft.com/office/2011/relationships/chartStyle" Target="style{N}.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.microsoft.com/office/2011/relationships/chartColorStyle" Target="colors{N}.xml"/>
+</Relationships>
+```
+
+### Slide XML: graphicFrame Embedding
+
+A chart is embedded in the slide via a `<p:graphicFrame>`, not a `<p:sp>`. This is the anchor shape:
+
+```xml
+<p:graphicFrame>
+  <p:nvGraphicFramePr>
+    <p:cNvPr id="{id}" name="Chart {N}"/>
+    <p:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr>
+    <p:nvPr/>
+  </p:nvGraphicFramePr>
+  <p:xfrm>
+    <a:off x="{x}" y="{y}"/>
+    <a:ext cx="{cx}" cy="{cy}"/>
+  </p:xfrm>
+  <a:graphic>
+    <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart">
+      <c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" r:id="{chartRelId}"/>
+    </a:graphicData>
+  </a:graphic>
+</p:graphicFrame>
+```
+
+### Slide XML Namespace
+
+`wrapSlideXml()` in `xmlHelpers.ts` currently declares `a:`, `r:`, and `p:` namespaces. For slides with charts, the `c:` namespace is needed. Add it conditionally when `chartRequests.length > 0`, or always add it (harmless if unused):
+
+```xml
+<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+       xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+       xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+       xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart">
+```
+
+Recommendation: always add the `c:` namespace — it is harmless and avoids conditional logic.
+
 ### Module Structure
 
 ```
@@ -117,8 +249,17 @@ src/renderer/
     lineChartBuilder.ts       — line chart
     pieChartBuilder.ts        — pie + donut (holeSize 0% vs 50%)
     chartXmlHelpers.ts        — shared functions (axes, legend, data labels, series)
-    chartStyleBuilder.ts      — generates style{N}.xml and colors{N}.xml
+    chartStyleBuilder.ts      — generates style{N}.xml and colors{N}.xml (static boilerplate)
 ```
+
+### Style and Colors XML
+
+`style{N}.xml` and `colors{N}.xml` are **static boilerplate** — they define PowerPoint's default chart appearance. Their content is reverse-engineered from a real PowerPoint file. `chartStyleBuilder.ts` generates these as hardcoded templates:
+
+- `style{N}.xml`: Contains `<cs:chartStyle>` with default entries for `dataPoint`, `dataPointLine`, `dataPointMarker`, `dataPointWireframe`, `gridlineMajor`, etc. Uses theme references (`<a:schemeClr>`) so the chart inherits the template's color scheme.
+- `colors{N}.xml`: Contains `<cs:colorStyle meth="cycle">` with a sequence of `<a:schemeClr val="accent1"/>` through `accent6` — PowerPoint cycles these across data series.
+
+These files are the same for every chart type. The actual visual differences come from the chart XML itself.
 
 ### ChartRequest Interface
 
@@ -127,9 +268,8 @@ export interface ChartRequest {
   chartXml: string;      // content of chart{N}.xml
   styleXml: string;      // content of style{N}.xml
   colorsXml: string;     // content of colors{N}.xml
-  anchorShape: string;   // shape XML with <c:chart r:id="..."/> for the slide
-  width: number;         // EMU
-  height: number;        // EMU
+  chartRelsXml: string;  // content of chart{N}.xml.rels
+  anchorShape: string;   // <p:graphicFrame> XML for the slide
 }
 ```
 
@@ -144,6 +284,28 @@ export interface SlideShapeResult {
 }
 ```
 
+### placeholderFiller.ts Integration
+
+New `case 'chart'` in the `buildSlideShapes` switch:
+
+```typescript
+case 'chart': {
+  const title = getTitleText(slide);
+  shapes += placeholderShape(id++, 'title', 0, [title]);
+  const chartEl = findElement(slide.elements, 'chart');
+  if (chartEl) {
+    const accentColors = templateInfo.theme.accentColors.map(c => c.replace('#', ''));
+    const result = buildChart(chartEl, id, accentColors);
+    shapes += result.anchorShape;
+    id = result.nextId;
+    chartRequests.push(result.chartRequest);
+  }
+  break;
+}
+```
+
+Note: the `anchorShape` (`<p:graphicFrame>`) is concatenated into `shapes` alongside other shapes. It uses a placeholder `r:id` that the renderer will resolve when writing slide rels.
+
 ### Chart Type to OOXML Mapping
 
 | chartType | OOXML element | Notes |
@@ -157,17 +319,60 @@ export interface SlideShapeResult {
 ### Chart Positioning
 
 - Title rendered via placeholder (same as other canvas layouts)
-- Chart area centered below title: approximately 8.5" x 4.5"
+- Chart frame position (consistent with existing layout grid):
+  - `x = emu(0.8)` (same left margin as other canvas layouts)
+  - `y = emu(1.6)` (below title, same as table/kpi top)
+  - `cx = emu(10.6)` (width: 10.6 inches, matches slide content area)
+  - `cy = emu(4.8)` (height: fills remaining slide space)
 
-### Renderer Integration (pptxRenderer.ts)
+### pptxRenderer.ts Integration
 
-Charts follow the same pattern as images and notes — additional files written to the ZIP:
+The `slideEntries` type is extended:
 
-1. Detect `chartRequests` in `SlideShapeResult`
-2. Write chart/style/colors XML files to ZIP
-3. Add relationships in `slide{M}.xml.rels`
-4. Add internal rels: `chart{N}.xml.rels` → style + colors
-5. Add Content_Types overrides
+```typescript
+const slideEntries: Array<{
+  slideNum: number;
+  slideXml: string;
+  layoutIndex: number;
+  notes?: string;
+  images: Array<{ relId: string; mediaPath: string; pngBuffer: Buffer }>;
+  charts: Array<{                    // new
+    chartNum: number;
+    relId: string;
+    chartXml: string;
+    styleXml: string;
+    colorsXml: string;
+    chartRelsXml: string;
+  }>;
+}> = [];
+```
+
+A global `nextChartNum` counter (starting at 1) is tracked alongside `nextImageNum`. For each chart in `chartRequests`:
+
+```typescript
+// In the slide loop:
+for (const chartReq of chartRequests) {
+  const chartNum = nextChartNum++;
+  const chartRelId = `rIdChart${chartNum}`;
+  slideCharts.push({
+    chartNum,
+    relId: chartRelId,
+    chartXml: chartReq.chartXml,
+    styleXml: chartReq.styleXml,
+    colorsXml: chartReq.colorsXml,
+    chartRelsXml: chartReq.chartRelsXml,
+  });
+}
+
+// After the slide loop, for each chart:
+zip.file(`ppt/charts/chart${chart.chartNum}.xml`, chart.chartXml);
+zip.file(`ppt/charts/style${chart.chartNum}.xml`, chart.styleXml);
+zip.file(`ppt/charts/colors${chart.chartNum}.xml`, chart.colorsXml);
+zip.file(`ppt/charts/_rels/chart${chart.chartNum}.xml.rels`, chart.chartRelsXml);
+
+// Add chart relationship to slide rels
+// Add 3 content-type overrides per chart
+```
 
 ## DataParser Auto-Detection
 
@@ -208,31 +413,37 @@ The LLM has final say — it can override or ignore suggestions.
 - ChartElement with valid/invalid options
 - `stackedBar` accepted, unknown types rejected
 - `options` absent = valid
-- Invalid hex in `colors` rejected
+- Invalid hex in `colors` rejected by regex (`/^[0-9A-Fa-f]{6}$/`)
+- Valid 6-char hex without `#` accepted
 
 ### Transform Tests (`tests/transform/`)
 
 - Truncation to 8 categories / 4 series with warnings
 - Pie/donut with 2+ series reduced to 1
-- Values/labels alignment (pad with 0)
-- Chart → table degradation: data converted to headers/rows correctly
+- Values/labels alignment (pad with 0, truncate)
+- `elementDegrader`: chart → table conversion produces correct headers/rows
 - Chart → table → bullets cascade if table also unsupported
 
 ### Renderer Tests (`tests/renderer/`)
 
 - `chartDrawer.test.ts`: each type (bar, stackedBar, line, pie, donut) produces valid XML
-- Correct `<c:chartSpace>` structure with proper nodes
+- Correct `<c:chartSpace>` structure with proper nodes (`<c:barChart>`, `<c:pieChart>`, etc.)
+- `<p:graphicFrame>` anchor shape has correct `c:chart` reference
 - Theme colors used by default, custom colors when `options.colors` provided
 - Data labels present/absent per `showDataLabels`
 - Legend positioned correctly
+- Style and colors XML contain expected boilerplate
 
 ### Integration Tests (`tests/renderer/pptxRenderer.test.ts`)
 
-- Chart slide produces `ppt/charts/chart1.xml`, `style1.xml`, `colors1.xml` in ZIP
-- Relationships and Content_Types are correct
-- Multiple chart slides → correct numbering (chart1, chart2, ...)
+- Chart slide produces `ppt/charts/chart1.xml`, `style1.xml`, `colors1.xml`, `_rels/chart1.xml.rels` in ZIP
+- Slide rels contain chart relationship with correct type URI
+- `[Content_Types].xml` contains 3 overrides per chart
+- Multiple chart slides → correct global numbering (chart1, chart2, ...)
+- `wrapSlideXml` includes `xmlns:c` namespace
 
 ### Parser Tests (`tests/parser/`)
 
 - CSV with numeric columns → `chart-candidate` hint emitted
 - Suggestion heuristics (temporal → line, few categories → pie, etc.)
+- promptParser includes `stackedBar` in chart description
