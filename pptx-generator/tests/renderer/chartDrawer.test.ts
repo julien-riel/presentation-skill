@@ -3,6 +3,7 @@ import { buildSeriesXml, buildCategoryXml, buildValueXml } from '../../src/rende
 import { buildChartStyleXml, buildChartColorsXml, buildChartRelsXml } from '../../src/renderer/charts/chartStyleBuilder.js';
 import { buildBarChartXml } from '../../src/renderer/charts/barChartBuilder.js';
 import { buildLineChartXml } from '../../src/renderer/charts/lineChartBuilder.js';
+import { buildPieChartXml } from '../../src/renderer/charts/pieChartBuilder.js';
 
 describe('chartXmlHelpers', () => {
   describe('buildCategoryXml', () => {
@@ -189,6 +190,81 @@ describe('lineChartBuilder', () => {
       options: { title: 'User Growth' },
     });
     expect(xml).toContain('User Growth');
+    expect(xml).toContain('<c:autoTitleDeleted val="0"/>');
+  });
+});
+
+describe('pieChartBuilder', () => {
+  const basePieElement = {
+    type: 'chart' as const,
+    chartType: 'pie' as const,
+    data: {
+      labels: ['Desktop', 'Mobile', 'Tablet'],
+      series: [
+        { name: 'Traffic', values: [60, 30, 10] },
+      ],
+    },
+  };
+
+  it('generates a pie chart with varyColors', () => {
+    const xml = buildPieChartXml(basePieElement);
+    expect(xml).toContain('<c:pieChart>');
+    expect(xml).toContain('<c:varyColors val="1"/>');
+    expect(xml).toContain('Traffic');
+  });
+
+  it('does not include axes for pie charts', () => {
+    const xml = buildPieChartXml(basePieElement);
+    expect(xml).not.toContain('<c:catAx>');
+    expect(xml).not.toContain('<c:valAx>');
+  });
+
+  it('shows percent and category data labels by default', () => {
+    const xml = buildPieChartXml(basePieElement);
+    expect(xml).toContain('<c:showPercent val="1"/>');
+    expect(xml).toContain('<c:showCatName val="1"/>');
+  });
+
+  it('hides data labels when showDataLabels is false', () => {
+    const xml = buildPieChartXml({
+      ...basePieElement,
+      options: { showDataLabels: false },
+    });
+    expect(xml).not.toContain('<c:dLbls>');
+  });
+
+  it('applies custom colors as data point overrides', () => {
+    const xml = buildPieChartXml({
+      ...basePieElement,
+      options: { colors: ['FF0000', '00FF00', '0000FF'] },
+    });
+    expect(xml).toContain('<c:dPt><c:idx val="0"/>');
+    expect(xml).toContain('<a:srgbClr val="FF0000"/>');
+    expect(xml).toContain('<c:dPt><c:idx val="2"/>');
+    expect(xml).toContain('<a:srgbClr val="0000FF"/>');
+  });
+
+  it('generates a donut chart with holeSize', () => {
+    const xml = buildPieChartXml({
+      ...basePieElement,
+      chartType: 'donut',
+    });
+    expect(xml).toContain('<c:doughnutChart>');
+    expect(xml).toContain('<c:holeSize val="50"/>');
+    expect(xml).not.toContain('<c:pieChart>');
+  });
+
+  it('includes legend by default', () => {
+    const xml = buildPieChartXml(basePieElement);
+    expect(xml).toContain('<c:legend>');
+  });
+
+  it('includes chart title when provided', () => {
+    const xml = buildPieChartXml({
+      ...basePieElement,
+      options: { title: 'Traffic Sources' },
+    });
+    expect(xml).toContain('Traffic Sources');
     expect(xml).toContain('<c:autoTitleDeleted val="0"/>');
   });
 });
