@@ -6,6 +6,8 @@ export const MAX_TITLE_CHARS = 60;
 export const MAX_KPI_INDICATORS = 6;
 export const MAX_TABLE_ROWS = 8;
 export const MAX_TABLE_COLS = 6;
+export const MAX_CHART_CATEGORIES = 8;
+export const MAX_CHART_SERIES = 4;
 
 /**
  * Counts words in a string (split by whitespace).
@@ -95,6 +97,52 @@ export function validateSlideContent(slide: Slide): Slide[] {
       return { ...el, headers, rows };
     }
     return el;
+  });
+
+  // --- Chart: max 1 per slide ---
+  const chartElements = elements.filter(el => el.type === 'chart');
+  if (chartElements.length > 1) {
+    warnings.push(`Multiple chart elements reduced to 1`);
+    let kept = false;
+    elements = elements.filter(el => {
+      if (el.type !== 'chart') return true;
+      if (!kept) { kept = true; return true; }
+      return false;
+    });
+  }
+
+  // --- Chart category/series limit ---
+  elements = elements.map((el) => {
+    if (el.type !== 'chart') return el;
+    let { labels, series } = el.data;
+
+    if (series.length > MAX_CHART_SERIES) {
+      warnings.push(`Chart series truncated from ${series.length} to ${MAX_CHART_SERIES}`);
+      series = series.slice(0, MAX_CHART_SERIES);
+    }
+
+    if ((el.chartType === 'pie' || el.chartType === 'donut') && series.length > 1) {
+      warnings.push(`${el.chartType} chart reduced to single series`);
+      series = [series[0]];
+    }
+
+    if (labels.length > MAX_CHART_CATEGORIES) {
+      warnings.push(`Chart categories truncated from ${labels.length} to ${MAX_CHART_CATEGORIES}`);
+      labels = labels.slice(0, MAX_CHART_CATEGORIES);
+      series = series.map(s => ({ ...s, values: s.values.slice(0, MAX_CHART_CATEGORIES) }));
+    }
+
+    series = series.map(s => {
+      if (s.values.length < labels.length) {
+        return { ...s, values: [...s.values, ...Array(labels.length - s.values.length).fill(0)] };
+      }
+      if (s.values.length > labels.length) {
+        return { ...s, values: s.values.slice(0, labels.length) };
+      }
+      return s;
+    });
+
+    return { ...el, data: { labels, series } };
   });
 
   // --- Bullet count split ---

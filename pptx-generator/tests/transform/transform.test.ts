@@ -185,6 +185,110 @@ describe('contentValidator', () => {
     expect(result.slides[0]._warnings?.some(w => w.includes('Table'))).toBe(true);
   });
 
+  it('truncates chart series beyond 4', () => {
+    const slides: Slide[] = [{
+      layout: 'chart',
+      elements: [
+        { type: 'title', text: 'Chart' },
+        {
+          type: 'chart',
+          chartType: 'bar',
+          data: {
+            labels: ['A', 'B'],
+            series: [
+              { name: 'S1', values: [1, 2] },
+              { name: 'S2', values: [3, 4] },
+              { name: 'S3', values: [5, 6] },
+              { name: 'S4', values: [7, 8] },
+              { name: 'S5', values: [9, 10] },
+            ],
+          },
+        },
+      ],
+    }];
+    const result = validateContent(slides);
+    const chartEl = result[0].elements.find(el => el.type === 'chart');
+    expect(chartEl).toBeDefined();
+    if (chartEl?.type === 'chart') {
+      expect(chartEl.data.series).toHaveLength(4);
+    }
+    expect(result[0]._warnings?.some(w => w.includes('series truncated'))).toBe(true);
+  });
+
+  it('truncates chart categories beyond 8', () => {
+    const labels = Array.from({ length: 12 }, (_, i) => `Cat${i}`);
+    const slides: Slide[] = [{
+      layout: 'chart',
+      elements: [
+        { type: 'title', text: 'Chart' },
+        {
+          type: 'chart',
+          chartType: 'line',
+          data: {
+            labels,
+            series: [{ name: 'S1', values: Array.from({ length: 12 }, (_, i) => i) }],
+          },
+        },
+      ],
+    }];
+    const result = validateContent(slides);
+    const chartEl = result[0].elements.find(el => el.type === 'chart');
+    if (chartEl?.type === 'chart') {
+      expect(chartEl.data.labels).toHaveLength(8);
+      expect(chartEl.data.series[0].values).toHaveLength(8);
+    }
+    expect(result[0]._warnings?.some(w => w.includes('categories truncated'))).toBe(true);
+  });
+
+  it('reduces pie chart to single series', () => {
+    const slides: Slide[] = [{
+      layout: 'chart',
+      elements: [
+        { type: 'title', text: 'Pie' },
+        {
+          type: 'chart',
+          chartType: 'pie',
+          data: {
+            labels: ['A', 'B'],
+            series: [
+              { name: 'S1', values: [60, 40] },
+              { name: 'S2', values: [30, 70] },
+            ],
+          },
+        },
+      ],
+    }];
+    const result = validateContent(slides);
+    const chartEl = result[0].elements.find(el => el.type === 'chart');
+    if (chartEl?.type === 'chart') {
+      expect(chartEl.data.series).toHaveLength(1);
+      expect(chartEl.data.series[0].name).toBe('S1');
+    }
+    expect(result[0]._warnings?.some(w => w.includes('single series'))).toBe(true);
+  });
+
+  it('pads short values array with zeros', () => {
+    const slides: Slide[] = [{
+      layout: 'chart',
+      elements: [
+        { type: 'title', text: 'Chart' },
+        {
+          type: 'chart',
+          chartType: 'bar',
+          data: {
+            labels: ['A', 'B', 'C'],
+            series: [{ name: 'S1', values: [1] }],
+          },
+        },
+      ],
+    }];
+    const result = validateContent(slides);
+    const chartEl = result[0].elements.find(el => el.type === 'chart');
+    if (chartEl?.type === 'chart') {
+      expect(chartEl.data.series[0].values).toEqual([1, 0, 0]);
+    }
+  });
+
   it('truncates table columns beyond 6', () => {
     const presentation: Presentation = {
       title: 'Wide Table',
