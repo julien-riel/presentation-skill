@@ -70,15 +70,16 @@ Ces éléments ne sont pas bloquants pour une v1 mais sont dans la spec :
 |---|---|---|
 | ~~Support des icônes Lucide~~ | ~~Haute~~ | ~~FAIT — icônes sur bullets, timeline, KPI, quote, diagram~~ |
 | ~~Gabarit par défaut professionnel~~ | ~~Haute~~ | ~~FAIT — fond coloré, styles de texte, puces, ligne d'accent~~ |
-| Renderers KPI/Chart/Table natifs | Moyenne | Actuellement dégradés en bullets — acceptable pour v1 |
-| Cache du manifeste (comparaison dates) | Basse | Spec section 8.3 — re-générer si .pptx plus récent |
+| ~~Renderers KPI/Table/Quote natifs~~ | ~~Moyenne~~ | ~~FAIT — KPI (cards colorées + trend icons), Table (header accent + alternating rows), Quote (centré + attribution)~~ |
+| ~~Cache du manifeste (comparaison dates)~~ | ~~Basse~~ | ~~FAIT — sidecar `.capabilities.json` avec invalidation mtime~~ |
+| ~~Support Tier 3 layouts (roadmap, process, comparison)~~ | ~~Basse~~ | ~~FAIT — roadmap (barres de phase), process (boîtes numérotées + flèches), comparison (colonnes avec headers)~~ |
+| ~~Validation contenu KPI/Table~~ | ~~Moyenne~~ | ~~FAIT — max 6 indicateurs KPI, max 8 lignes / 6 colonnes table~~ |
+| Renderer Chart natif | Basse | La dégradation en bullets est appropriée — les charts OOXML sont très complexes |
 | Mode génération depuis données avec LLM | Moyenne | `dataParser.ts` fait l'analyse, mais la narration LLM manque |
-| Support Tier 3 layouts (roadmap, process, comparison, etc.) | Basse | La dégradation fonctionne, les renderers spécialisés sont du bonus |
 
 ---
 
 ## Ordre de priorité suggéré
 
-1. **Renderers KPI/Chart/Table** — pour une couverture complète des types de slides
-2. **Cache manifeste** — re-générer si .pptx plus récent
-3. **Mode données avec narration LLM** — enrichir les slides générées depuis CSV/JSON
+1. **Mode données avec narration LLM** — enrichir les slides générées depuis CSV/JSON
+2. **Renderer Chart natif** — complexité élevée, la dégradation fonctionne bien
