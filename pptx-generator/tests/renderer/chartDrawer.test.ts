@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildSeriesXml, buildCategoryXml, buildValueXml } from '../../src/renderer/charts/chartXmlHelpers.js';
+import { buildChartStyleXml, buildChartColorsXml, buildChartRelsXml } from '../../src/renderer/charts/chartStyleBuilder.js';
 
 describe('chartXmlHelpers', () => {
   describe('buildCategoryXml', () => {
@@ -36,5 +37,28 @@ describe('chartXmlHelpers', () => {
       const xml = buildSeriesXml(0, 'Rev', ['A'], [1], { color: 'FF0000' });
       expect(xml).toContain('<a:srgbClr val="FF0000"/>');
     });
+  });
+});
+
+describe('chartStyleBuilder', () => {
+  it('generates valid chart style XML', () => {
+    const xml = buildChartStyleXml();
+    expect(xml).toContain('<?xml version="1.0"');
+    expect(xml).toContain('cs:chartStyle');
+    expect(xml).toContain('cs:dataPoint');
+  });
+  it('generates valid chart colors XML', () => {
+    const xml = buildChartColorsXml();
+    expect(xml).toContain('cs:colorStyle');
+    expect(xml).toContain('meth="cycle"');
+    expect(xml).toContain('accent1');
+    expect(xml).toContain('accent6');
+  });
+  it('generates chart rels XML with correct targets', () => {
+    const xml = buildChartRelsXml(3);
+    expect(xml).toContain('Target="style3.xml"');
+    expect(xml).toContain('Target="colors3.xml"');
+    expect(xml).toContain('chartStyle');
+    expect(xml).toContain('chartColorStyle');
   });
 });
