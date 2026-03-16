@@ -44,6 +44,19 @@ describe('layoutResolver', () => {
     expect(result[0]._warnings).toContain('Layout "roadmap" degraded to "timeline"');
   });
 
+  it('"chart" on Tier 1 with table available → degrades to "table"', () => {
+    const caps = makeTier1Capabilities(['table']);
+    const slides: Slide[] = [{
+      layout: 'chart',
+      elements: [
+        { type: 'title', text: 'Chart' },
+        { type: 'chart', chartType: 'bar', data: { labels: ['A'], series: [{ name: 'S', values: [1] }] } },
+      ],
+    }];
+    const result = resolveLayouts(slides, caps);
+    expect(result[0]._resolvedLayout).toBe('table');
+  });
+
   it('supported layout is kept as-is', () => {
     const caps = makeTier1Capabilities();
     const slides: Slide[] = [{
@@ -361,8 +374,34 @@ describe('transformPresentation (full pipeline)', () => {
     expect(result.slides[1]._warnings).toContain('Layout "kpi" degraded to "bullets"');
 
     // Slide 3: long bullet truncated
+
     const contentSlide = result.slides[2];
     const bullets = contentSlide.elements.find((el) => el.type === 'bullets');
     expect(bullets && bullets.type === 'bullets' && bullets.items[0]).toContain('…');
+  });
+
+  it('chart → table degradation converts elements', () => {
+    const caps = makeTier1Capabilities(['table']);
+    const presentation: Presentation = {
+      title: 'Chart Degrade Test',
+      slides: [{
+        layout: 'chart',
+        elements: [
+          { type: 'title', text: 'Revenue' },
+          {
+            type: 'chart', chartType: 'bar',
+            data: { labels: ['Q1', 'Q2'], series: [{ name: 'Sales', values: [100, 200] }] },
+          },
+        ],
+      }],
+    };
+    const result = transformPresentation(presentation, caps);
+    expect(result.slides[0]._resolvedLayout).toBe('table');
+    const tableEl = result.slides[0].elements.find(el => el.type === 'table');
+    expect(tableEl).toBeDefined();
+    if (tableEl?.type === 'table') {
+      expect(tableEl.headers).toEqual(['', 'Sales']);
+      expect(tableEl.rows).toEqual([['Q1', '100'], ['Q2', '200']]);
+    }
   });
 });

@@ -33,7 +33,7 @@ export const TIER2_LAYOUTS: LayoutType[] = [...TIER1_LAYOUTS, 'twoColumns', 'tim
 
 export const FALLBACK_CASCADES: Record<string, LayoutType[]> = {
   kpi: ['bullets', 'generic'],
-  chart: ['bullets', 'generic'],
+  chart: ['table', 'bullets', 'generic'],
   table: ['bullets', 'generic'],
   quote: ['bullets', 'generic'],
   architecture: ['bullets', 'generic'],

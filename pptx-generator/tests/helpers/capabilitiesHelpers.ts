@@ -14,7 +14,7 @@ export function makeTier1Capabilities(extra: string[] = []): TemplateCapabilitie
     unsupported_layouts: [],
     fallback_map: {
       kpi: 'bullets',
-      chart: 'bullets',
+      chart: 'table',
       table: 'bullets',
       quote: 'bullets',
       architecture: 'bullets',
