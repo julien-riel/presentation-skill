@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildSeriesXml, buildCategoryXml, buildValueXml } from '../../src/renderer/charts/chartXmlHelpers.js';
 import { buildChartStyleXml, buildChartColorsXml, buildChartRelsXml } from '../../src/renderer/charts/chartStyleBuilder.js';
+import { buildBarChartXml } from '../../src/renderer/charts/barChartBuilder.js';
 
 describe('chartXmlHelpers', () => {
   describe('buildCategoryXml', () => {
@@ -60,5 +61,73 @@ describe('chartStyleBuilder', () => {
     expect(xml).toContain('Target="colors3.xml"');
     expect(xml).toContain('chartStyle');
     expect(xml).toContain('chartColorStyle');
+  });
+});
+
+describe('barChartBuilder', () => {
+  const baseElement = {
+    type: 'chart' as const,
+    chartType: 'bar' as const,
+    data: {
+      labels: ['Q1', 'Q2', 'Q3'],
+      series: [
+        { name: 'Revenue', values: [100, 200, 150] },
+      ],
+    },
+  };
+
+  it('generates a bar chart with clustered grouping', () => {
+    const xml = buildBarChartXml(baseElement);
+    expect(xml).toContain('<c:barChart>');
+    expect(xml).toContain('<c:barDir val="col"/>');
+    expect(xml).toContain('<c:grouping val="clustered"/>');
+    expect(xml).toContain('Revenue');
+    expect(xml).toContain('<c:catAx>');
+    expect(xml).toContain('<c:valAx>');
+  });
+
+  it('generates stacked grouping for stackedBar', () => {
+    const xml = buildBarChartXml({ ...baseElement, chartType: 'stackedBar' });
+    expect(xml).toContain('<c:grouping val="stacked"/>');
+  });
+
+  it('includes legend by default', () => {
+    const xml = buildBarChartXml(baseElement);
+    expect(xml).toContain('<c:legend>');
+    expect(xml).toContain('<c:legendPos val="b"/>');
+  });
+
+  it('hides legend when showLegend is false', () => {
+    const xml = buildBarChartXml({
+      ...baseElement,
+      options: { showLegend: false },
+    });
+    expect(xml).not.toContain('<c:legend>');
+  });
+
+  it('applies custom colors to series', () => {
+    const xml = buildBarChartXml({
+      ...baseElement,
+      options: { colors: ['FF0000'] },
+    });
+    expect(xml).toContain('<a:srgbClr val="FF0000"/>');
+  });
+
+  it('includes data labels when enabled', () => {
+    const xml = buildBarChartXml({
+      ...baseElement,
+      options: { showDataLabels: true },
+    });
+    expect(xml).toContain('<c:dLbls>');
+    expect(xml).toContain('<c:showVal val="1"/>');
+  });
+
+  it('includes chart title when provided', () => {
+    const xml = buildBarChartXml({
+      ...baseElement,
+      options: { title: 'Quarterly Revenue' },
+    });
+    expect(xml).toContain('Quarterly Revenue');
+    expect(xml).toContain('<c:autoTitleDeleted val="0"/>');
   });
 });
