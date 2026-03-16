@@ -1,15 +1,16 @@
 import type { Slide, Element } from '../schema/presentation.js';
 import type { DrawerResult, IconRequest } from './placeholderFiller.js';
 import { emu, rectShape, lineShape, textBoxShape, emuFromPx } from './xmlHelpers.js';
+import { CANVAS, GAP, HEIGHT } from './layoutConstants.js';
 
-const NODE_H = emu(0.55);
+const NODE_H = HEIGHT.HEADER;
 const NODE_MIN_W = emu(1.5);
-const NODE_H_GAP = emu(0.35);
-const LAYER_V_GAP = emu(0.35);
-const CANVAS_LEFT = emu(0.8);
-const CANVAS_RIGHT = emu(9.2);
-const CANVAS_TOP = emu(1.6);
-const CANVAS_BOTTOM = emu(6.3);
+const NODE_H_GAP = GAP.LARGE;
+const LAYER_V_GAP = GAP.LARGE;
+const CANVAS_LEFT = CANVAS.LEFT;
+const CANVAS_RIGHT = CANVAS.RIGHT_NARROW;
+const CANVAS_TOP = CANVAS.TOP;
+const CANVAS_BOTTOM = CANVAS.BOTTOM;
 
 interface NodePosition {
   id: string;

@@ -3,11 +3,8 @@ import type { ChartElementSchema } from '../../schema/presentation.js';
 import {
   buildCategoryXml,
   buildValueXml,
-  buildCatAxisXml,
-  buildValAxisXml,
-  buildLegendXml,
   buildDataLabelsXml,
-  wrapChartXml,
+  buildAxisChartXml,
   escapeXml,
   CAT_AX_ID,
   VAL_AX_ID,
@@ -54,19 +51,5 @@ export function buildLineChartXml(element: ChartElement): string {
 
   const lineChart = `<c:lineChart><c:grouping val="standard"/><c:varyColors val="0"/>${seriesXml}${dataLabelsXml}<c:marker val="1"/><c:axId val="${CAT_AX_ID}"/><c:axId val="${VAL_AX_ID}"/></c:lineChart>`;
 
-  const catAxis = buildCatAxisXml(CAT_AX_ID, VAL_AX_ID, opts?.xAxisLabel);
-  const valAxis = buildValAxisXml(VAL_AX_ID, CAT_AX_ID, {
-    label: opts?.yAxisLabel,
-    min: opts?.yAxisMin,
-    max: opts?.yAxisMax,
-    gridLines: opts?.gridLines,
-  });
-
-  const plotAreaContent = `${lineChart}${catAxis}${valAxis}`;
-
-  const legendXml = opts?.showLegend !== false
-    ? buildLegendXml(opts?.legendPosition ?? 'bottom')
-    : '';
-
-  return wrapChartXml(plotAreaContent, legendXml, opts?.title);
+  return buildAxisChartXml(lineChart, opts);
 }

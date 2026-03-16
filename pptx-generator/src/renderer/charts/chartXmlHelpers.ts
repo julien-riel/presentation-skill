@@ -82,5 +82,37 @@ export function wrapChartXml(plotAreaContent: string, extras: string = '', chart
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><c:chart>${titleXml}<c:plotArea><c:layout/>${plotAreaContent}</c:plotArea>${extras}<c:plotVisOnly val="1"/></c:chart></c:chartSpace>`;
 }
 
+/**
+ * Builds complete chart XML for axis-based charts (bar, line).
+ * Handles the common pattern of assembling axes, legend, and wrapping
+ * into a chartSpace document.
+ */
+export function buildAxisChartXml(
+  chartContent: string,
+  opts?: {
+    xAxisLabel?: string;
+    yAxisLabel?: string;
+    yAxisMin?: number;
+    yAxisMax?: number;
+    gridLines?: boolean;
+    showLegend?: boolean;
+    legendPosition?: string;
+    title?: string;
+  },
+): string {
+  const catAxis = buildCatAxisXml(CAT_AX_ID, VAL_AX_ID, opts?.xAxisLabel);
+  const valAxis = buildValAxisXml(VAL_AX_ID, CAT_AX_ID, {
+    label: opts?.yAxisLabel,
+    min: opts?.yAxisMin,
+    max: opts?.yAxisMax,
+    gridLines: opts?.gridLines,
+  });
+  const plotAreaContent = `${chartContent}${catAxis}${valAxis}`;
+  const legendXml = opts?.showLegend !== false
+    ? buildLegendXml(opts?.legendPosition ?? 'bottom')
+    : '';
+  return wrapChartXml(plotAreaContent, legendXml, opts?.title);
+}
+
 /** Re-export escapeXml for use by chart builders. */
 export { escapeXml } from '../xmlHelpers.js';

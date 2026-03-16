@@ -1,6 +1,7 @@
 import type { Slide, Element } from '../schema/presentation.js';
 import type { DrawerResult } from './placeholderFiller.js';
 import { emu, rectShape, textBoxShape } from './xmlHelpers.js';
+import { CANVAS, HEIGHT } from './layoutConstants.js';
 
 /**
  * Builds table shapes using rect + textBox primitives.
@@ -23,12 +24,12 @@ export function buildTableShapes(
   let shapes = '';
   const headerColor = accentColors[0] ?? '2D7DD2';
 
-  const left = emu(0.8);
-  const right = emu(11.4);
-  const top = emu(1.6);
+  const left = CANVAS.LEFT;
+  const right = CANVAS.RIGHT_WIDE;
+  const top = CANVAS.TOP;
   const canvasW = right - left;
   const cols = tableEl.headers.length;
-  const rowH = emu(0.45);
+  const rowH = HEIGHT.ROW;
   const colW = Math.round(canvasW / cols);
 
   for (let c = 0; c < cols; c++) {

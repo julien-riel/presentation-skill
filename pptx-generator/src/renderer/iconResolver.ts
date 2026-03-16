@@ -21,7 +21,8 @@ function getLucideIconPath(name: string): string | null {
   try {
     const lucideDir = path.dirname(require.resolve('lucide-static/package.json'));
     return path.join(lucideDir, 'icons', `${name}.svg`);
-  } catch {
+  } catch (err) {
+    console.warn(`[pptx-generator] Could not locate lucide-static package: ${err instanceof Error ? err.message : err}`);
     return null;
   }
 }
@@ -44,7 +45,8 @@ export async function resolveIcon(
   let svgContent: string;
   try {
     svgContent = await fs.readFile(iconPath, 'utf-8');
-  } catch {
+  } catch (err) {
+    console.warn(`[pptx-generator] Icon file not found: ${iconPath} (${err instanceof Error ? err.message : err})`);
     return null;
   }
 
@@ -62,7 +64,8 @@ export async function resolveIcon(
     const result: ResolvedIcon = { pngBuffer, widthPx: sizePx, heightPx: sizePx };
     cache.set(cacheKey, result);
     return result;
-  } catch {
+  } catch (err) {
+    console.warn(`[pptx-generator] Icon rendering failed for "${name}": ${err instanceof Error ? err.message : err}`);
     return null;
   }
 }

@@ -1,6 +1,7 @@
 import type { Slide, Element } from '../schema/presentation.js';
 import type { DrawerResult, IconRequest } from './placeholderFiller.js';
 import { emu, rectShape, textBoxShape, lineShape, emuFromPx } from './xmlHelpers.js';
+import { CANVAS, GAP, HEIGHT } from './layoutConstants.js';
 
 /**
  * Builds process step shapes: numbered boxes connected by arrows.
@@ -23,12 +24,12 @@ export function buildProcessShapes(
   let shapes = '';
   const iconRequests: IconRequest[] = [];
 
-  const left = emu(0.8);
-  const right = emu(11.4);
+  const left = CANVAS.LEFT;
+  const right = CANVAS.RIGHT_WIDE;
   const canvasW = right - left;
   const boxY = emu(2.6);
-  const boxH = emu(1.6);
-  const arrowGap = emu(0.4);
+  const boxH = HEIGHT.BOX;
+  const arrowGap = GAP.ARROW;
 
   const totalArrowW = (count - 1) * arrowGap;
   const boxW = Math.round((canvasW - totalArrowW) / count);
@@ -43,13 +44,13 @@ export function buildProcessShapes(
       fill: primaryColor, rectRadius: 0.06,
     });
 
-    shapes += textBoxShape(id++, x, boxY + emu(0.15), boxW, emu(0.45),
+    shapes += textBoxShape(id++, x, boxY + GAP.MEDIUM, boxW, HEIGHT.ROW,
       `${i + 1}`, { size: 22, bold: true, color: 'FFFFFF', align: 'ctr', valign: 'ctr' });
 
     shapes += textBoxShape(id++, x, boxY + emu(0.6), boxW, emu(0.7),
       event.label, { size: 12, color: 'FFFFFF', align: 'ctr', valign: 'ctr' });
 
-    shapes += textBoxShape(id++, x, boxY + boxH + emu(0.1), boxW, emu(0.3),
+    shapes += textBoxShape(id++, x, boxY + boxH + GAP.SMALL, boxW, emu(0.3),
       event.date, { size: 9, color: '888888', align: 'ctr', valign: 't' });
 
     if (i < count - 1) {
@@ -68,8 +69,8 @@ export function buildProcessShapes(
         name: event.icon,
         color: 'FFFFFF',
         sizePx: iconSizePx,
-        x: x + boxW - iconEmu - emu(0.1),
-        y: boxY + emu(0.1),
+        x: x + boxW - iconEmu - GAP.SMALL,
+        y: boxY + GAP.SMALL,
         cx: iconEmu,
         cy: iconEmu,
       });

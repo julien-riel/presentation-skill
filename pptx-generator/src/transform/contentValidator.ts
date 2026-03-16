@@ -132,6 +132,12 @@ export function validateSlideContent(slide: Slide): Slide[] {
     if (el.type !== 'chart') return el;
     let { labels, series } = el.data;
 
+    // Guard: empty chart data
+    if (labels.length === 0 || series.length === 0) {
+      warnings.push('Chart has no data, skipping');
+      return el;
+    }
+
     if (series.length > MAX_CHART_SERIES) {
       warnings.push(`Chart series truncated from ${series.length} to ${MAX_CHART_SERIES}`);
       series = series.slice(0, MAX_CHART_SERIES);
@@ -170,12 +176,34 @@ export function validateSlideContent(slide: Slide): Slide[] {
       }),
     }));
 
+    // Guard: negative values in pie/donut charts
+    if (el.chartType === 'pie' || el.chartType === 'donut') {
+      series = series.map(s => ({
+        ...s,
+        values: s.values.map(v => {
+          if (v < 0) {
+            warnings.push('Negative value in pie/donut series replaced with 0');
+            return 0;
+          }
+          return v;
+        }),
+      }));
+    }
+
     return { ...el, data: { labels, series } };
   });
 
-  // --- Diagram node limit ---
+  // --- Diagram node limit + self-referencing edge guard ---
   elements = elements.map((el) => {
     if (el.type !== 'diagram') return el;
+
+    // Guard: remove self-referencing edges
+    const filteredEdges = el.edges.filter(e => e.from !== e.to);
+    if (filteredEdges.length < el.edges.length) {
+      warnings.push('Self-referencing edge removed');
+    }
+    el = { ...el, edges: filteredEdges };
+
     if (el.nodes.length > MAX_DIAGRAM_NODES) {
       warnings.push(`Diagram nodes truncated from ${el.nodes.length} to ${MAX_DIAGRAM_NODES}`);
       const kept = el.nodes.slice(0, MAX_DIAGRAM_NODES);

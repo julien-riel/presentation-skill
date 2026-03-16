@@ -1,6 +1,7 @@
 import type { Slide, Element } from '../schema/presentation.js';
 import type { DrawerResult, IconRequest } from './placeholderFiller.js';
 import { emu, rectShape, textBoxShape, emuFromPx } from './xmlHelpers.js';
+import { CANVAS, GAP, HEIGHT } from './layoutConstants.js';
 
 const TREND_ICONS: Record<string, string> = {
   up: 'trending-up',
@@ -34,13 +35,13 @@ export function buildKpiShapes(
   const cols = count <= 3 ? count : Math.ceil(count / 2);
   const rows = count <= 3 ? 1 : 2;
 
-  const canvasLeft = emu(0.8);
-  const canvasRight = emu(11.4);
-  const canvasTop = emu(1.6);
-  const canvasBottom = emu(6.5);
+  const canvasLeft = CANVAS.LEFT;
+  const canvasRight = CANVAS.RIGHT_WIDE;
+  const canvasTop = CANVAS.TOP;
+  const canvasBottom = CANVAS.BOTTOM_TALL;
   const canvasW = canvasRight - canvasLeft;
   const canvasH = canvasBottom - canvasTop;
-  const gap = emu(0.2);
+  const gap = GAP.STANDARD;
 
   const cardW = Math.round((canvasW - (cols - 1) * gap) / cols);
   const cardH = Math.round((canvasH - (rows - 1) * gap) / rows);
@@ -64,14 +65,14 @@ export function buildKpiShapes(
       indicator.value, { size: 36, bold: true, color: 'FFFFFF', align: 'ctr', valign: 'ctr' });
 
     if (indicator.unit) {
-      const unitH = emu(0.35);
-      const unitY = valueY + valueH - emu(0.1);
+      const unitH = GAP.LARGE;
+      const unitY = valueY + valueH - GAP.SMALL;
       shapes += textBoxShape(id++, x, unitY, cardW, unitH,
         indicator.unit, { size: 11, color: 'EEEEEE', align: 'ctr', valign: 't' });
     }
 
-    const labelH = emu(0.45);
-    const labelY = y + cardH - labelH - emu(0.1);
+    const labelH = HEIGHT.ROW;
+    const labelY = y + cardH - labelH - GAP.SMALL;
     shapes += textBoxShape(id++, x, labelY, cardW, labelH,
       indicator.label, { size: 14, color: 'FFFFFF', align: 'ctr', valign: 'b' });
 
@@ -84,8 +85,8 @@ export function buildKpiShapes(
           name: trendIconName,
           color: 'FFFFFF',
           sizePx: iconSizePx,
-          x: x + cardW - iconEmu - emu(0.15),
-          y: y + emu(0.15),
+          x: x + cardW - iconEmu - GAP.MEDIUM,
+          y: y + GAP.MEDIUM,
           cx: iconEmu,
           cy: iconEmu,
         });
@@ -99,8 +100,8 @@ export function buildKpiShapes(
         name: indicator.icon,
         color: 'FFFFFF',
         sizePx: iconSizePx,
-        x: x + emu(0.15),
-        y: y + emu(0.15),
+        x: x + GAP.MEDIUM,
+        y: y + GAP.MEDIUM,
         cx: iconEmu,
         cy: iconEmu,
       });

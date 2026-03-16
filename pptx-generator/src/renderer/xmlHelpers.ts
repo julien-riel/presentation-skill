@@ -39,13 +39,14 @@ export function placeholderShape(
   phType: string,
   phIdx: number,
   paragraphs: string[],
+  lang?: string,
 ): string {
   const phAttr = phType
     ? `type="${phType}" idx="${phIdx}"`
     : `idx="${phIdx}"`;
 
   const parasXml = paragraphs.map(text =>
-    `<a:p><a:r><a:rPr lang="en-US" dirty="0"/><a:t>${escapeXml(text)}</a:t></a:r></a:p>`
+    `<a:p><a:r><a:rPr lang="${lang ?? 'en-US'}" dirty="0"/><a:t>${escapeXml(text)}</a:t></a:r></a:p>`
   ).join('');
 
   return `<p:sp>
@@ -71,9 +72,10 @@ export function bulletPlaceholderShape(
   id: number,
   phIdx: number,
   items: string[],
+  lang?: string,
 ): string {
   const parasXml = items.map(text =>
-    `<a:p><a:pPr lvl="0"/><a:r><a:rPr lang="en-US" dirty="0"/><a:t>${escapeXml(text)}</a:t></a:r></a:p>`
+    `<a:p><a:pPr lvl="0"/><a:r><a:rPr lang="${lang ?? 'en-US'}" dirty="0"/><a:t>${escapeXml(text)}</a:t></a:r></a:p>`
   ).join('');
 
   return `<p:sp>
@@ -203,6 +205,7 @@ export function textBoxShape(
     color?: string;
     align?: 'l' | 'ctr' | 'r';
     valign?: 'ctr' | 't' | 'b';
+    lang?: string;
   },
 ): string {
   const sz = (fontOpts?.size ?? 10) * 100;
@@ -210,6 +213,7 @@ export function textBoxShape(
   const color = fontOpts?.color ?? '000000';
   const align = fontOpts?.align ?? 'ctr';
   const anchor = fontOpts?.valign ?? 'ctr';
+  const lang = fontOpts?.lang ?? 'en-US';
 
   return `<p:sp>
   <p:nvSpPr>
@@ -228,7 +232,59 @@ export function textBoxShape(
     <a:lstStyle/>
     <a:p>
       <a:pPr algn="${align}"/>
-      <a:r><a:rPr lang="en-US" sz="${sz}"${bold} dirty="0"><a:solidFill><a:srgbClr val="${color}"/></a:solidFill></a:rPr><a:t>${escapeXml(text)}</a:t></a:r>
+      <a:r><a:rPr lang="${lang}" sz="${sz}"${bold} dirty="0"><a:solidFill><a:srgbClr val="${color}"/></a:solidFill></a:rPr><a:t>${escapeXml(text)}</a:t></a:r>
+    </a:p>
+  </p:txBody>
+</p:sp>`;
+}
+
+/**
+ * Creates a text box shape that wraps text in a clickable hyperlink.
+ * The hyperlink is referenced by a relationship ID (relId) pointing to an external URL.
+ */
+export function hyperlinkTextBoxShape(
+  id: number,
+  x: number,
+  y: number,
+  cx: number,
+  cy: number,
+  text: string,
+  url: string,
+  relId: string,
+  fontOpts?: {
+    size?: number;
+    bold?: boolean;
+    color?: string;
+    align?: 'l' | 'ctr' | 'r';
+    valign?: 'ctr' | 't' | 'b';
+    lang?: string;
+  },
+): string {
+  const sz = (fontOpts?.size ?? 10) * 100;
+  const bold = fontOpts?.bold ? ' b="1"' : '';
+  const color = fontOpts?.color ?? '0563C1'; // default link blue
+  const align = fontOpts?.align ?? 'l';
+  const anchor = fontOpts?.valign ?? 'ctr';
+  const lang = fontOpts?.lang ?? 'en-US';
+
+  return `<p:sp>
+  <p:nvSpPr>
+    <p:cNvPr id="${id}" name="TextBox ${id}"/>
+    <p:cNvSpPr txBox="1"/>
+    <p:nvPr/>
+  </p:nvSpPr>
+  <p:spPr>
+    <a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm>
+    <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+    <a:noFill/>
+    <a:ln><a:noFill/></a:ln>
+  </p:spPr>
+  <p:txBody>
+    <a:bodyPr wrap="square" anchor="${anchor}"/>
+    <a:lstStyle/>
+    <a:p>
+      <a:pPr algn="${align}"/>
+      <a:r><a:rPr lang="${lang}" sz="${sz}"${bold} dirty="0"><a:solidFill><a:srgbClr val="${color}"/></a:solidFill><a:hlinkClick r:id="${relId}"/></a:rPr><a:t>${escapeXml(text)}</a:t></a:r>
     </a:p>
   </p:txBody>
 </p:sp>`;
@@ -268,10 +324,11 @@ export function pictureShape(
   y: number,
   cx: number,
   cy: number,
+  altText?: string,
 ): string {
   return `<p:pic>
   <p:nvPicPr>
-    <p:cNvPr id="${id}" name="Icon ${id}"/>
+    <p:cNvPr id="${id}" name="Icon ${id}" descr="${escapeXml(altText ?? '')}"/>
     <p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr>
     <p:nvPr/>
   </p:nvPicPr>
@@ -289,7 +346,7 @@ export function pictureShape(
 /**
  * Creates a notes slide XML.
  */
-export function notesSlideXml(text: string): string {
+export function notesSlideXml(text: string, lang?: string): string {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <p:notes xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
          xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
@@ -312,7 +369,7 @@ export function notesSlideXml(text: string): string {
         <p:txBody>
           <a:bodyPr/>
           <a:lstStyle/>
-          <a:p><a:r><a:rPr lang="en-US" dirty="0"/><a:t>${escapeXml(text)}</a:t></a:r></a:p>
+          <a:p><a:r><a:rPr lang="${lang ?? 'en-US'}" dirty="0"/><a:t>${escapeXml(text)}</a:t></a:r></a:p>
         </p:txBody>
       </p:sp>
     </p:spTree>

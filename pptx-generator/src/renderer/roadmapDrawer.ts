@@ -1,6 +1,7 @@
 import type { Slide, Element } from '../schema/presentation.js';
 import type { DrawerResult, IconRequest } from './placeholderFiller.js';
 import { emu, rectShape, textBoxShape, emuFromPx } from './xmlHelpers.js';
+import { CANVAS, GAP, HEIGHT } from './layoutConstants.js';
 import { statusColor } from './drawerHelpers.js';
 
 /**
@@ -24,12 +25,12 @@ export function buildRoadmapShapes(
   let shapes = '';
   const iconRequests: IconRequest[] = [];
 
-  const left = emu(0.8);
-  const right = emu(11.4);
+  const left = CANVAS.LEFT;
+  const right = CANVAS.RIGHT_WIDE;
   const canvasW = right - left;
   const barY = emu(2.8);
-  const barH = emu(1.4);
-  const gap = emu(0.15);
+  const barH = HEIGHT.BAR;
+  const gap = GAP.MEDIUM;
 
   const blockW = Math.round((canvasW - (count - 1) * gap) / count);
 
@@ -46,7 +47,7 @@ export function buildRoadmapShapes(
     shapes += textBoxShape(id++, x, barY, blockW, barH,
       event.label, { size: 13, bold: true, color: 'FFFFFF', align: 'ctr', valign: 'ctr' });
 
-    shapes += textBoxShape(id++, x, barY + barH + emu(0.1), blockW, emu(0.35),
+    shapes += textBoxShape(id++, x, barY + barH + GAP.SMALL, blockW, GAP.LARGE,
       event.date, { size: 9, color: '888888', align: 'ctr', valign: 't' });
 
     if (event.icon) {
@@ -56,8 +57,8 @@ export function buildRoadmapShapes(
         name: event.icon,
         color: 'FFFFFF',
         sizePx: iconSizePx,
-        x: x + blockW - iconEmu - emu(0.1),
-        y: barY + emu(0.1),
+        x: x + blockW - iconEmu - GAP.SMALL,
+        y: barY + GAP.SMALL,
         cx: iconEmu,
         cy: iconEmu,
       });

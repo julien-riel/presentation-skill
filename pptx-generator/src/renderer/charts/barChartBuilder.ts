@@ -2,11 +2,8 @@ import type { z } from 'zod';
 import type { ChartElementSchema } from '../../schema/presentation.js';
 import {
   buildSeriesXml,
-  buildCatAxisXml,
-  buildValAxisXml,
-  buildLegendXml,
   buildDataLabelsXml,
-  wrapChartXml,
+  buildAxisChartXml,
   CAT_AX_ID,
   VAL_AX_ID,
 } from './chartXmlHelpers.js';
@@ -35,19 +32,5 @@ export function buildBarChartXml(element: ChartElement): string {
 
   const barChart = `<c:barChart><c:barDir val="col"/><c:grouping val="${grouping}"/><c:varyColors val="0"/>${seriesXml}${dataLabelsXml}<c:axId val="${CAT_AX_ID}"/><c:axId val="${VAL_AX_ID}"/></c:barChart>`;
 
-  const catAxis = buildCatAxisXml(CAT_AX_ID, VAL_AX_ID, opts?.xAxisLabel);
-  const valAxis = buildValAxisXml(VAL_AX_ID, CAT_AX_ID, {
-    label: opts?.yAxisLabel,
-    min: opts?.yAxisMin,
-    max: opts?.yAxisMax,
-    gridLines: opts?.gridLines,
-  });
-
-  const plotAreaContent = `${barChart}${catAxis}${valAxis}`;
-
-  const legendXml = opts?.showLegend !== false
-    ? buildLegendXml(opts?.legendPosition ?? 'bottom')
-    : '';
-
-  return wrapChartXml(plotAreaContent, legendXml, opts?.title);
+  return buildAxisChartXml(barChart, opts);
 }

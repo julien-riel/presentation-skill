@@ -1,6 +1,7 @@
 import type { Slide, Element } from '../schema/presentation.js';
 import type { DrawerResult } from './placeholderFiller.js';
 import { emu, rectShape, textBoxShape } from './xmlHelpers.js';
+import { CANVAS, GAP, HEIGHT } from './layoutConstants.js';
 
 /**
  * Builds comparison layout: two columns with colored headers and bullet lists.
@@ -24,13 +25,13 @@ export function buildComparisonShapes(
   let id = startId;
   let shapes = '';
 
-  const colLeft = emu(0.8);
+  const colLeft = CANVAS.LEFT;
   const colRight = emu(6.3);
   const colW = emu(5.0);
-  const headerY = emu(1.6);
-  const headerH = emu(0.55);
-  const bodyY = headerY + headerH + emu(0.1);
-  const lineH = emu(0.5);
+  const headerY = CANVAS.TOP;
+  const headerH = HEIGHT.HEADER;
+  const bodyY = headerY + headerH + GAP.SMALL;
+  const lineH = HEIGHT.LINE;
   const leftColor = accentColors[0] ?? '2D7DD2';
   const rightColor = accentColors[1] ?? '27AE60';
 

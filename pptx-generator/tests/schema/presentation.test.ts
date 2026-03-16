@@ -275,7 +275,12 @@ describe('PresentationSchema', () => {
         },
       ],
     };
-    expect(PresentationSchema.parse(pres)).toEqual(pres);
+    const parsed = PresentationSchema.parse(pres);
+    expect(parsed.title).toBe('Test');
+    expect(parsed.slides).toHaveLength(1);
+    // Default values are applied by Zod
+    expect(parsed.showSlideNumbers).toBe(false);
+    expect(parsed.locale).toBe('en-US');
   });
 
   it('accepts a full presentation with metadata and theme', () => {
@@ -324,5 +329,37 @@ describe('PresentationSchema', () => {
       title: 'Bad',
       slides: [{ layout: 'nonexistent', elements: [] }],
     })).toThrow();
+  });
+
+  it('accepts showSlideNumbers and footer options', () => {
+    const pres = {
+      title: 'With Metadata',
+      showSlideNumbers: true,
+      footer: 'Confidential',
+      slides: [
+        {
+          layout: 'title',
+          elements: [{ type: 'title', text: 'Hello' }],
+        },
+      ],
+    };
+    const parsed = PresentationSchema.parse(pres);
+    expect(parsed.showSlideNumbers).toBe(true);
+    expect(parsed.footer).toBe('Confidential');
+  });
+
+  it('accepts a text element with url', () => {
+    const el = { type: 'text', text: 'Click here', url: 'https://example.com' };
+    expect(ElementSchema.parse(el)).toEqual(el);
+  });
+
+  it('rejects a text element with invalid url', () => {
+    const el = { type: 'text', text: 'Bad link', url: 'not-a-url' };
+    expect(() => ElementSchema.parse(el)).toThrow();
+  });
+
+  it('accepts a text element without url (backward compat)', () => {
+    const el = { type: 'text', text: 'Just text' };
+    expect(ElementSchema.parse(el)).toEqual(el);
   });
 });

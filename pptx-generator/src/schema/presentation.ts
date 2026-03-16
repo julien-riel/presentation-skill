@@ -29,6 +29,7 @@ export const SubtitleElementSchema = z.object({
 export const TextElementSchema = z.object({
   type: z.literal('text'),
   text: z.string(),
+  url: z.string().url().optional(),
 });
 
 export const BulletsElementSchema = z.object({
@@ -128,6 +129,12 @@ export const QuoteElementSchema = z.object({
   icon: z.string().optional(),
 });
 
+export const ImageElementSchema = z.object({
+  type: z.literal('image'),
+  path: z.string(),
+  altText: z.string().optional(),
+});
+
 export const ElementSchema = z.discriminatedUnion('type', [
   TitleElementSchema,
   SubtitleElementSchema,
@@ -139,6 +146,7 @@ export const ElementSchema = z.discriminatedUnion('type', [
   TableElementSchema,
   KpiElementSchema,
   QuoteElementSchema,
+  ImageElementSchema,
 ]);
 
 export type Element = z.infer<typeof ElementSchema>;
@@ -170,6 +178,9 @@ export const PresentationSchema = z.object({
   title: z.string(),
   metadata: PresentationMetadataSchema.optional(),
   theme: z.string().optional(),
+  locale: z.string().default('en-US').optional(),
+  showSlideNumbers: z.boolean().default(false).optional(),
+  footer: z.string().optional(),
   slides: z.array(SlideSchema),
 });
 

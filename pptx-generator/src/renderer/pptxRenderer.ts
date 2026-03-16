@@ -1,15 +1,16 @@
 import * as fs from 'fs/promises';
+import * as path from 'path';
 import JSZip from 'jszip';
 import type { Presentation } from '../schema/presentation.js';
 import type { TemplateCapabilities } from '../schema/capabilities.js';
 import type { LayoutInfo, TemplateInfo } from '../validator/types.js';
 import { LAYOUT_TYPE_TO_PPT_NAME } from '../validator/constants.js';
 import { buildSlideShapes } from './placeholderFiller.js';
-import type { IconRequest } from './placeholderFiller.js';
+import type { IconRequest, ImageRequest, HyperlinkRequest } from './placeholderFiller.js';
 import type { ChartRequest } from './chartDrawer.js';
 import { buildChartRelsXml } from './charts/chartStyleBuilder.js';
 import { resolveIcon, createIconCache } from './iconResolver.js';
-import { wrapSlideXml, notesSlideXml, pictureShape } from './xmlHelpers.js';
+import { wrapSlideXml, notesSlideXml, pictureShape, textBoxShape, emu } from './xmlHelpers.js';
 
 /**
  * Adds a relationship entry to a slide's .rels file.
@@ -20,14 +21,16 @@ async function addSlideRelationship(
   relId: string,
   type: string,
   target: string,
+  targetMode?: string,
 ): Promise<void> {
   const relsPath = `ppt/slides/_rels/slide${slideNum}.xml.rels`;
   const relsEntry = zip.file(relsPath);
   if (!relsEntry) throw new Error(`Missing slide rels: ${relsPath}`);
   const currentRels = await relsEntry.async('text');
+  const modeAttr = targetMode ? ` TargetMode="${targetMode}"` : '';
   const updated = currentRels.replace(
     '</Relationships>',
-    `  <Relationship Id="${relId}" Type="${type}" Target="${target}"/>\n</Relationships>`,
+    `  <Relationship Id="${relId}" Type="${type}" Target="${target}"${modeAttr}/>\n</Relationships>`,
   );
   zip.file(relsPath, updated);
 }
@@ -132,6 +135,24 @@ async function embedSlideCharts(
   }
 }
 
+/** Maps file extensions to OOXML content types for image embedding. */
+const IMAGE_CONTENT_TYPES: Record<string, string> = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+};
+
+/**
+ * Returns the OOXML-compatible extension (without dot) for a file path.
+ * Falls back to 'png' for unrecognised extensions.
+ */
+function imageExtension(filePath: string): string {
+  const ext = path.extname(filePath).toLowerCase();
+  return ext && ext in IMAGE_CONTENT_TYPES ? ext.slice(1) : 'png';
+}
+
 /**
  * Maps layout type names (e.g. "bullets") to their slideLayout file index
  * inside the template ZIP.
@@ -139,7 +160,7 @@ async function embedSlideCharts(
 function buildLayoutFileMap(layouts: LayoutInfo[]): Map<string, { filePath: string; index: number }> {
   const map = new Map<string, { filePath: string; index: number }>();
   for (const layout of layouts) {
-    // Extract index from path like "ppt/slideLayouts/slideLayout3.xml" → 3
+    // Extract index from path like "ppt/slideLayouts/slideLayout3.xml" -> 3
     const match = layout.filePath.match(/slideLayout(\d+)\.xml$/);
     const index = match ? parseInt(match[1], 10) : 0;
     map.set(layout.name, { filePath: layout.filePath, index });
@@ -179,6 +200,7 @@ export async function renderToBuffer(
     notes?: string;
     images: Array<{ relId: string; mediaPath: string; pngBuffer: Buffer }>;
     charts: Array<{ chartNum: number; chartRelId: string; chartRequest: ChartRequest }>;
+    hyperlinks: Array<{ relId: string; url: string }>;
   }> = [];
 
   const iconCache = createIconCache();
@@ -186,6 +208,7 @@ export async function renderToBuffer(
   let nextImageNum = 1;
   let nextChartNum = 1;
   let hasImages = false;
+  const imageExtensionsUsed = new Set<string>();
   let nextShapeId = 100; // Start high to avoid conflicts with layout shapes
 
   for (let i = 0; i < presentation.slides.length; i++) {
@@ -196,7 +219,7 @@ export async function renderToBuffer(
     const layoutIndex = layoutEntry?.index ?? 1;
 
     // Build the shapes XML for this slide
-    const { shapes, nextId, iconRequests, pendingCharts } = buildSlideShapes(slide, nextShapeId, templateInfo);
+    const { shapes, nextId, iconRequests, pendingCharts, imageRequests, hyperlinkRequests } = buildSlideShapes(slide, nextShapeId, templateInfo);
     nextShapeId = nextId;
 
     let allShapes = shapes;
@@ -213,9 +236,28 @@ export async function renderToBuffer(
       const relId = `rIdImg${nextImageNum}`;
       nextImageNum++;
 
-      allShapes += pictureShape(nextShapeId++, relId, req.x, req.y, req.cx, req.cy);
+      allShapes += pictureShape(nextShapeId++, relId, req.x, req.y, req.cx, req.cy, req.name);
       slideImages.push({ relId, mediaPath, pngBuffer: icon.pngBuffer });
       hasImages = true;
+      imageExtensionsUsed.add('png');
+    }
+
+    // Process user-provided image elements
+    for (const imgReq of imageRequests) {
+      try {
+        const fileBuffer = await fs.readFile(imgReq.filePath);
+        const ext = imageExtension(imgReq.filePath);
+        const mediaPath = `ppt/media/image${nextImageNum}.${ext}`;
+        const relId = `rIdImg${nextImageNum}`;
+        nextImageNum++;
+
+        allShapes += pictureShape(nextShapeId++, relId, imgReq.x, imgReq.y, imgReq.cx, imgReq.cy, imgReq.altText);
+        slideImages.push({ relId, mediaPath, pngBuffer: fileBuffer as Buffer });
+        hasImages = true;
+        imageExtensionsUsed.add(ext);
+      } catch (err) {
+        console.warn(`[pptx-generator] Could not read image "${imgReq.filePath}": ${err instanceof Error ? err.message : err}`);
+      }
     }
 
     // Process pending charts: resolve relIds and build anchor shapes
@@ -227,6 +269,27 @@ export async function renderToBuffer(
       slideCharts.push({ chartNum, chartRelId, chartRequest: pending.chartRequest });
     }
 
+    // Process pending hyperlinks: resolve relIds and build shapes
+    const slideHyperlinks: Array<{ relId: string; url: string }> = [];
+    let nextHlinkNum = 1;
+    for (const hlReq of hyperlinkRequests) {
+      const relId = `rIdHlink${nextHlinkNum++}`;
+      allShapes += hlReq.shapeXmlBuilder(relId);
+      slideHyperlinks.push({ relId, url: hlReq.url });
+    }
+
+    // Add slide number if enabled
+    if (presentation.showSlideNumbers) {
+      allShapes += textBoxShape(nextShapeId++, emu(8.5), emu(6.8), emu(1.5), emu(0.4),
+        `${i + 1}`, { size: 8, color: '999999', align: 'r', valign: 'b' });
+    }
+
+    // Add footer if set
+    if (presentation.footer) {
+      allShapes += textBoxShape(nextShapeId++, emu(3.0), emu(6.8), emu(4.0), emu(0.4),
+        presentation.footer, { size: 8, color: '999999', align: 'ctr', valign: 'b' });
+    }
+
     const slideXml = wrapSlideXml(allShapes);
 
     slideEntries.push({
@@ -236,6 +299,7 @@ export async function renderToBuffer(
       notes: slide.notes,
       images: slideImages,
       charts: slideCharts,
+      hyperlinks: slideHyperlinks,
     });
   }
 
@@ -294,10 +358,27 @@ export async function renderToBuffer(
     const chartContentTypes: string[] = [];
     await embedSlideCharts(zip, entry.slideNum, entry.charts, chartContentTypes);
     newContentTypes += chartContentTypes.join('');
+
+    // Embed hyperlink relationships
+    for (const hl of entry.hyperlinks) {
+      await addSlideRelationship(
+        zip,
+        entry.slideNum,
+        hl.relId,
+        'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink',
+        hl.url,
+        'External',
+      );
+    }
   }
 
-  if (hasImages && !newContentTypes.includes('Extension="png"')) {
-    newContentTypes += '\n  <Default Extension="png" ContentType="image/png"/>';
+  // Add content type defaults for all image extensions used
+  for (const ext of imageExtensionsUsed) {
+    const dotExt = `.${ext}`;
+    const contentType = IMAGE_CONTENT_TYPES[dotExt] ?? 'image/png';
+    if (!newContentTypes.includes(`Extension="${ext}"`)) {
+      newContentTypes += `\n  <Default Extension="${ext}" ContentType="${contentType}"/>`;
+    }
   }
   newContentTypes += '\n</Types>';
   newPresRels += '\n</Relationships>';

@@ -75,6 +75,15 @@ Le systeme supporte 15 types de layout :
 | `process`      | Processus etape par etape                          | title, diagram                     |
 | `comparison`   | Comparaison cote a cote                            | title, bullets (left/right)        |
 
+> **Note :** Les layouts avances reutilisent les types d'elements d'autres layouts :
+>
+> | Layout avance  | Type d'element utilise | Equivalent                      |
+> |----------------|------------------------|---------------------------------|
+> | `imageText`    | `text`                 | Meme element que le layout `generic` |
+> | `roadmap`      | `timeline`             | Meme element que le layout `timeline` |
+> | `process`      | `diagram`              | Meme element que le layout `architecture` |
+> | `comparison`   | `bullets`              | Meme element que le layout `twoColumns` (avec `label`) |
+
 ---
 
 ## 5. Types d'elements
@@ -368,6 +377,32 @@ Citation avec attribution optionnelle.
   "author": "Steve Jobs"
 }
 ```
+
+### 5.11 `image`
+
+Image utilisateur embarquee dans la diapositive. Le fichier est lu depuis
+le chemin fourni et insere dans le PPTX au moment du rendu.
+
+| Champ     | Type       | Requis | Description                                    |
+|-----------|------------|--------|------------------------------------------------|
+| `type`    | `"image"`  | oui    | Discriminant                                   |
+| `path`    | `string`   | oui    | Chemin absolu ou relatif vers le fichier image |
+| `altText` | `string`   | non    | Texte alternatif (accessibilite)               |
+
+Formats supportes : PNG, JPEG, GIF, SVG.
+
+```json
+{
+  "type": "image",
+  "path": "/tmp/uploads/photo.png",
+  "altText": "Photo de l'equipe"
+}
+```
+
+> **Positionnement** : sur un layout `imageText`, l'image est placee dans la
+> moitie gauche de la diapositive. Sur les autres layouts (`bullets`, `generic`,
+> etc.), elle occupe la zone de contenu principale. Si le fichier est introuvable
+> au moment du rendu, un avertissement est emis et l'image est ignoree.
 
 ---
 

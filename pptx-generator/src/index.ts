@@ -72,16 +72,16 @@ function getOrGenerateManifest(
         }
       }
     }
-  } catch {
-    // On any cache read error, fall through to regeneration
+  } catch (err) {
+    console.warn(`[pptx-generator] Sidecar cache read failed for ${templatePath}: ${err instanceof Error ? err.message : err}`);
   }
 
   const manifest = generateManifest(templateInfo, path.basename(templatePath));
 
   try {
     writeFileSync(sidecar, JSON.stringify(manifest, null, 2));
-  } catch {
-    // Non-fatal: sidecar write failure doesn't block generation
+  } catch (err) {
+    console.warn(`[pptx-generator] Sidecar write failed for ${sidecar}: ${err instanceof Error ? err.message : err}`);
   }
 
   return manifest;

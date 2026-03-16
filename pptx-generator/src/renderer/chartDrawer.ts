@@ -1,5 +1,5 @@
 import type { Element } from '../schema/presentation.js';
-import { emu } from './xmlHelpers.js';
+import { emu, escapeXml } from './xmlHelpers.js';
 import { buildBarChartXml } from './charts/barChartBuilder.js';
 import { buildLineChartXml } from './charts/lineChartBuilder.js';
 import { buildPieChartXml } from './charts/pieChartBuilder.js';
@@ -24,10 +24,10 @@ const CHART_Y = emu(1.6);
 const CHART_CX = emu(10.6);
 const CHART_CY = emu(4.8);
 
-function graphicFrameShape(id: number, relId: string): string {
+function graphicFrameShape(id: number, relId: string, altText?: string): string {
   return `<p:graphicFrame>
   <p:nvGraphicFramePr>
-    <p:cNvPr id="${id}" name="Chart ${id}"/>
+    <p:cNvPr id="${id}" name="Chart ${id}" descr="${escapeXml(altText ?? '')}"/>
     <p:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr>
     <p:nvPr/>
   </p:nvGraphicFramePr>
@@ -69,8 +69,11 @@ export function buildChart(
       throw new Error(`Unsupported chart type: ${chart.chartType}`);
     }
   }
+  const seriesNames = chart.data.series.map(s => s.name).join(', ');
+  const altText = `${chart.chartType} chart: ${seriesNames}`;
+
   return {
-    buildAnchorShape: (relId: string) => graphicFrameShape(startId, relId),
+    buildAnchorShape: (relId: string) => graphicFrameShape(startId, relId, altText),
     nextId: startId + 1,
     chartRequest: {
       chartXml,

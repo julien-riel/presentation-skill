@@ -1,6 +1,6 @@
 import type { Slide, Element } from '../schema/presentation.js';
 import type { TemplateInfo } from '../validator/types.js';
-import { placeholderShape, bulletPlaceholderShape, textBoxShape, emuFromPx, emu } from './xmlHelpers.js';
+import { placeholderShape, bulletPlaceholderShape, textBoxShape, hyperlinkTextBoxShape, emuFromPx, emu } from './xmlHelpers.js';
 import { buildTimelineShapes } from './timelineDrawer.js';
 import { buildArchitectureShapes } from './architectureDrawer.js';
 import { buildKpiShapes } from './kpiDrawer.js';
@@ -45,11 +45,33 @@ export interface PendingChart {
   chartRequest: ChartRequest;
 }
 
+/**
+ * Describes a user-provided image to be read from disk and embedded.
+ */
+export interface ImageRequest {
+  filePath: string;
+  altText?: string;
+  x: number;
+  y: number;
+  cx: number;
+  cy: number;
+}
+
+/**
+ * Describes a hyperlink whose shape XML is deferred until the relationship ID is known.
+ */
+export interface HyperlinkRequest {
+  url: string;
+  shapeXmlBuilder: (relId: string) => string;
+}
+
 export interface SlideShapeResult {
   shapes: string;
   nextId: number;
   iconRequests: IconRequest[];
   pendingCharts: PendingChart[];
+  imageRequests: ImageRequest[];
+  hyperlinkRequests: HyperlinkRequest[];
 }
 
 /**
@@ -128,6 +150,8 @@ export function buildSlideShapes(
   let shapes = '';
   const iconRequests: IconRequest[] = [];
   const pendingCharts: PendingChart[] = [];
+  const imageRequests: ImageRequest[] = [];
+  const hyperlinkRequests: HyperlinkRequest[] = [];
   const accentColors = templateInfo.theme.accentColors.map(c => c.replace('#', ''));
 
   switch (layout) {
@@ -143,8 +167,19 @@ export function buildSlideShapes(
       shapes += placeholderShape(id++, phType, 0, [title]);
 
       if (subtitle) {
-        const subType = layout === 'title' ? 'subTitle' : 'body';
-        shapes += placeholderShape(id++, subType, 1, [subtitle]);
+        if (textEl?.url) {
+          const shapeId = id++;
+          hyperlinkRequests.push({
+            url: textEl.url,
+            shapeXmlBuilder: (relId) => hyperlinkTextBoxShape(
+              shapeId, emu(1.0), emu(4.0), emu(8.0), emu(0.5),
+              textEl.text, textEl.url!, relId, { size: 14, align: 'ctr' },
+            ),
+          });
+        } else {
+          const subType = layout === 'title' ? 'subTitle' : 'body';
+          shapes += placeholderShape(id++, subType, 1, [subtitle]);
+        }
       }
       break;
     }
@@ -171,7 +206,18 @@ export function buildSlideShapes(
             : `\u201C${quoteEl.text}\u201D`;
           shapes += placeholderShape(id++, 'body', 1, [quoteText]);
         } else if (textEl) {
-          shapes += placeholderShape(id++, 'body', 1, [textEl.text]);
+          if (textEl.url) {
+            const shapeId = id++;
+            hyperlinkRequests.push({
+              url: textEl.url,
+              shapeXmlBuilder: (relId) => hyperlinkTextBoxShape(
+                shapeId, emu(0.8), emu(1.8), emu(8.4), emu(0.5),
+                textEl.text, textEl.url!, relId, { size: 14, align: 'l' },
+              ),
+            });
+          } else {
+            shapes += placeholderShape(id++, 'body', 1, [textEl.text]);
+          }
         }
       }
       break;
@@ -302,11 +348,34 @@ export function buildSlideShapes(
       const title = getTitleText(slide);
       shapes += placeholderShape(id++, 'title', 0, [title]);
 
-      // TEXT_BODY is at placeholder index 2; IMAGE at index 1 is left for user to fill
+      const imageEl = findElement(slide.elements, 'image');
+      if (imageEl) {
+        imageRequests.push({
+          filePath: imageEl.path,
+          altText: imageEl.altText,
+          x: emu(0.5),
+          y: emu(1.5),
+          cx: emu(5.0),
+          cy: emu(5.0),
+        });
+      }
+
+      // TEXT_BODY is at placeholder index 2
       const textEl = findElement(slide.elements, 'text');
       const bulletsEl = findElement(slide.elements, 'bullets');
       if (textEl) {
-        shapes += placeholderShape(id++, 'body', 2, [textEl.text]);
+        if (textEl.url) {
+          const shapeId = id++;
+          hyperlinkRequests.push({
+            url: textEl.url,
+            shapeXmlBuilder: (relId) => hyperlinkTextBoxShape(
+              shapeId, emu(5.5), emu(1.8), emu(4.5), emu(0.5),
+              textEl.text, textEl.url!, relId, { size: 14, align: 'l' },
+            ),
+          });
+        } else {
+          shapes += placeholderShape(id++, 'body', 2, [textEl.text]);
+        }
       } else if (bulletsEl) {
         shapes += bulletPlaceholderShape(id++, 2, bulletsEl.items);
       }
@@ -356,5 +425,20 @@ export function buildSlideShapes(
     }
   }
 
-  return { shapes, nextId: id, iconRequests, pendingCharts };
+  // Handle standalone image elements on non-imageText layouts
+  if (layout !== 'imageText') {
+    const imageEl = findElement(slide.elements, 'image');
+    if (imageEl) {
+      imageRequests.push({
+        filePath: imageEl.path,
+        altText: imageEl.altText,
+        x: emu(0.8),
+        y: emu(1.6),
+        cx: emu(10.6),
+        cy: emu(5.0),
+      });
+    }
+  }
+
+  return { shapes, nextId: id, iconRequests, pendingCharts, imageRequests, hyperlinkRequests };
 }
