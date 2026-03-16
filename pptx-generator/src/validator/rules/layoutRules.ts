@@ -6,7 +6,7 @@ import { findLayout } from './ruleHelpers.js';
  * Creates a rule checking that a layout exists.
  */
 function layoutExistsRule(id: string, layoutName: string, severity: Severity, tierNote?: string): ValidationRule {
-  const desc = `${layoutName} ${severity === 'ERROR' ? 'doit' : 'devrait'} exister${tierNote ? ` (${tierNote})` : ''}`;
+  const desc = `${layoutName} ${severity === 'ERROR' ? 'must' : 'should'} exist${tierNote ? ` (${tierNote})` : ''}`;
   return {
     id,
     severity,
@@ -37,7 +37,7 @@ export const layoutRules: ValidationRule[] = [
   {
     id: 'LAY-008',
     severity: 'WARNING',
-    description: 'Aucun layout inattendu ne devrait être présent',
+    description: 'No unexpected layouts should be present',
     validate: (template) => {
       const unexpected = template.layouts
         .map(l => l.name)
@@ -58,7 +58,7 @@ export const layoutRules: ValidationRule[] = [
   {
     id: 'LAY-009',
     severity: 'ERROR',
-    description: 'Aucun layout ne doit être dupliqué',
+    description: 'No layout should be duplicated',
     validate: (template) => {
       const names = template.layouts.map(l => l.name).filter(Boolean);
       const seen = new Set<string>();
@@ -85,7 +85,7 @@ export const layoutRules: ValidationRule[] = [
   {
     id: 'LAY-010',
     severity: 'WARNING',
-    description: 'Noms de layouts en ASCII uniquement',
+    description: 'Layout names must be ASCII only',
     validate: (template) => {
       const nonAscii = template.layouts
         .map(l => l.name)

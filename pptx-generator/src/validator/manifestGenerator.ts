@@ -12,10 +12,14 @@ import {
   FALLBACK_CASCADES,
 } from './types.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const { version: VERSION } = JSON.parse(
-  readFileSync(path.resolve(__dirname, '../../package.json'), 'utf-8')
-);
+let _version: string | undefined;
+function getVersion(): string {
+  if (!_version) {
+    const dir = path.dirname(fileURLToPath(import.meta.url));
+    _version = JSON.parse(readFileSync(path.resolve(dir, '../../package.json'), 'utf-8')).version;
+  }
+  return _version;
+}
 
 /**
  * Returns layout type names supported by the template.
@@ -108,7 +112,7 @@ export function generateManifest(template: TemplateInfo, templateName: string): 
   return {
     template: templateName,
     generated_at: new Date().toISOString(),
-    validator_version: VERSION,
+    validator_version: getVersion(),
     tier,
     supported_layouts: supportedTypes as LayoutType[],
     unsupported_layouts: unsupportedTypes as LayoutType[],

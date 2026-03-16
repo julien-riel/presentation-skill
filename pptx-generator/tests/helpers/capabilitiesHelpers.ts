@@ -28,3 +28,17 @@ export function makeTier1Capabilities(extra: string[] = []): TemplateCapabilitie
     slide_dimensions: { width_emu: 12192000, height_emu: 6858000 },
   };
 }
+
+/**
+ * Creates a Tier 2 capabilities manifest (Tier 1 + twoColumns + timeline).
+ */
+export function makeTier2Capabilities(): TemplateCapabilities {
+  return {
+    ...makeTier1Capabilities(['twoColumns', 'timeline']),
+    tier: 2,
+    unsupported_layouts: [
+      'architecture', 'chart', 'table', 'kpi', 'quote',
+      'imageText', 'roadmap', 'process', 'comparison',
+    ] as TemplateCapabilities['unsupported_layouts'],
+  };
+}

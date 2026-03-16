@@ -11,7 +11,7 @@ export const tierRules: ValidationRule[] = [
   {
     id: 'TIER-001',
     severity: 'ERROR',
-    description: 'Le gabarit doit satisfaire le Tier 1 (title, section, bullets, generic)',
+    description: 'Template must satisfy Tier 1 (title, section, bullets, generic)',
     validate: (template) => {
       const supported = getSupportedLayoutTypes(template);
       const missing = TIER1_LAYOUTS.filter(t => !supported.includes(t));
@@ -31,7 +31,7 @@ export const tierRules: ValidationRule[] = [
   {
     id: 'TIER-002',
     severity: 'WARNING',
-    description: 'Layouts Tier 2 manquants (twoColumns, timeline)',
+    description: 'Missing Tier 2 layouts (twoColumns, timeline)',
     validate: (template) => {
       const supported = getSupportedLayoutTypes(template);
       const tier2Only = TIER2_LAYOUTS.filter(t => !TIER1_LAYOUTS.includes(t));
@@ -52,7 +52,7 @@ export const tierRules: ValidationRule[] = [
   {
     id: 'TIER-003',
     severity: 'INFO',
-    description: 'Layouts Tier 3+ manquants',
+    description: 'Missing Tier 3+ layouts',
     validate: (template) => {
       const supported = getSupportedLayoutTypes(template);
       const tier3Only = ALL_LAYOUT_TYPES.filter(t => !TIER2_LAYOUTS.includes(t));

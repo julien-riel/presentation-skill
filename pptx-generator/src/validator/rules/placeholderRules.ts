@@ -24,7 +24,7 @@ function requiredPhRule(
   return {
     id,
     severity,
-    description: `${layoutName} : placeholder ${phLabel} à l'index ${phIndex}`,
+    description: `${layoutName}: placeholder ${phLabel} at index ${phIndex}`,
     validate: (template) => {
       const layout = findLayout(template, layoutName);
       if (!layout) {
@@ -55,7 +55,7 @@ function optionalPhRule(
   return {
     id,
     severity,
-    description: `${layoutName} : placeholder ${phLabel} à l'index ${phIndex}`,
+    description: `${layoutName}: placeholder ${phLabel} at index ${phIndex}`,
     validate: (template) => {
       const layout = findLayout(template, layoutName);
       if (!layout) {

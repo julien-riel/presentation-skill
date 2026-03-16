@@ -29,7 +29,7 @@ export const themeRules: ValidationRule[] = [
   {
     id: 'THM-001',
     severity: 'WARNING',
-    description: 'Au moins 3 couleurs d\'accent distinctes dans le thème',
+    description: 'At least 3 distinct accent colors in the theme',
     validate: (template) => {
       const unique = new Set(template.theme.accentColors.map(c => c.toLowerCase()));
       const ok = unique.size >= 3;
@@ -48,7 +48,7 @@ export const themeRules: ValidationRule[] = [
   {
     id: 'THM-002',
     severity: 'WARNING',
-    description: 'Police de titre du thème définie',
+    description: 'Theme title font is defined',
     validate: (template) => {
       const ok = template.theme.titleFont.trim().length > 0;
       return {
@@ -66,7 +66,7 @@ export const themeRules: ValidationRule[] = [
   {
     id: 'THM-003',
     severity: 'WARNING',
-    description: 'Police de corps du thème définie',
+    description: 'Theme body font is defined',
     validate: (template) => {
       const ok = template.theme.bodyFont.trim().length > 0;
       return {
@@ -84,7 +84,7 @@ export const themeRules: ValidationRule[] = [
   {
     id: 'THM-004',
     severity: 'WARNING',
-    description: 'Contraste Primary/fond suffisant (ratio WCAG AA ≥ 4.5:1)',
+    description: 'Primary/background contrast meets WCAG AA (ratio >= 4.5:1)',
     validate: (template) => {
       const colors = template.theme.accentColors;
       if (colors.length === 0) {

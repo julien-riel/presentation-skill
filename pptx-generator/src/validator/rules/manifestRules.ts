@@ -7,7 +7,7 @@ export const manifestRules: ValidationRule[] = [
   {
     id: 'MAN-001',
     severity: 'ERROR',
-    description: 'Le manifeste doit être généré avec succès',
+    description: 'Manifest must be generated successfully',
     validate: (template) => {
       try {
         generateManifest(template, 'validation-check');
@@ -32,7 +32,7 @@ export const manifestRules: ValidationRule[] = [
   {
     id: 'MAN-002',
     severity: 'ERROR',
-    description: 'Le fallback_map doit être cohérent (chaque cascade atteint generic)',
+    description: 'Fallback map must be coherent (each cascade reaches generic)',
     validate: (template) => {
       try {
         const manifest = generateManifest(template, 'validation-check');

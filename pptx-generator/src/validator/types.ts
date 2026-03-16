@@ -89,10 +89,7 @@ export const LAYOUT_TYPE_TO_PPT_NAME: Record<string, string> = Object.fromEntrie
 
 export const KNOWN_LAYOUT_PPT_NAMES = Object.keys(LAYOUT_PPT_NAME_TO_TYPE);
 
-export const ALL_LAYOUT_TYPES = [
-  'title', 'section', 'bullets', 'twoColumns', 'timeline', 'architecture', 'generic',
-  'chart', 'table', 'kpi', 'quote', 'imageText', 'roadmap', 'process', 'comparison',
-];
+export const ALL_LAYOUT_TYPES = Object.values(LAYOUT_PPT_NAME_TO_TYPE);
 
 export const TIER1_LAYOUTS = ['title', 'section', 'bullets', 'generic'];
 export const TIER2_LAYOUTS = [...TIER1_LAYOUTS, 'twoColumns', 'timeline'];

@@ -3,36 +3,9 @@ import JSZip from 'jszip';
 import * as path from 'path';
 import type { TemplateCapabilities } from '../../src/schema/capabilities.js';
 import { buildDemoAST, generateDemo } from '../../src/validator/demoGenerator.js';
+import { makeTier2Capabilities } from '../helpers/capabilitiesHelpers.js';
 
 const TEMPLATE_PATH = path.resolve(__dirname, '../../assets/default-template.pptx');
-
-/**
- * Creates a Tier 2 capabilities manifest (supports timeline + twoColumns but not kpi/architecture).
- */
-function makeTier2Capabilities(): TemplateCapabilities {
-  return {
-    template: 'test-template.pptx',
-    generated_at: '2026-03-14T00:00:00Z',
-    validator_version: '1.0.0',
-    tier: 2,
-    supported_layouts: ['title', 'section', 'bullets', 'generic', 'twoColumns', 'timeline'],
-    unsupported_layouts: ['architecture', 'chart', 'table', 'kpi', 'quote', 'imageText', 'roadmap', 'process', 'comparison'],
-    fallback_map: {
-      kpi: 'bullets',
-      chart: 'bullets',
-      table: 'bullets',
-      quote: 'bullets',
-      architecture: 'bullets',
-      imageText: 'twoColumns',
-      roadmap: 'timeline',
-      process: 'timeline',
-      comparison: 'twoColumns',
-    },
-    placeholders: {},
-    theme: { title_font: 'Arial', body_font: 'Calibri', accent_colors: ['#1E3A5F', '#2C7DA0', '#E76F51'] },
-    slide_dimensions: { width_emu: 12192000, height_emu: 6858000 },
-  };
-}
 
 describe('buildDemoAST', () => {
   it('produces 14+ slides for a Tier 2 template', () => {

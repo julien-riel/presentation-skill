@@ -10,7 +10,7 @@ export const dimensionRules: ValidationRule[] = [
   {
     id: 'DIM-001',
     severity: 'WARNING',
-    description: 'Ratio largeur/hauteur entre 1.7 et 1.8 (16:9)',
+    description: 'Width/height ratio between 1.7 and 1.8 (16:9)',
     validate: (template) => {
       const { widthEmu, heightEmu } = template.slideDimensions;
       const ratio = widthEmu / heightEmu;
@@ -31,7 +31,7 @@ export const dimensionRules: ValidationRule[] = [
   {
     id: 'DIM-002',
     severity: 'WARNING',
-    description: 'Placeholders à au moins 0.5 po des bords',
+    description: 'Placeholders at least 0.5 in from edges',
     validate: (template) => {
       const { widthEmu, heightEmu } = template.slideDimensions;
       const violations: string[] = [];
@@ -65,7 +65,7 @@ export const dimensionRules: ValidationRule[] = [
   {
     id: 'DIM-003',
     severity: 'WARNING',
-    description: 'BODY de LAYOUT_BULLETS : hauteur ≥ 2.5 po',
+    description: 'LAYOUT_BULLETS BODY height >= 2.5 in',
     validate: (template) => {
       const layout = findLayout(template, 'LAYOUT_BULLETS');
       if (!layout) {
@@ -103,7 +103,7 @@ export const dimensionRules: ValidationRule[] = [
   {
     id: 'DIM-004',
     severity: 'WARNING',
-    description: 'LEFT et RIGHT de LAYOUT_TWO_COLUMNS ne se chevauchent pas',
+    description: 'LAYOUT_TWO_COLUMNS LEFT and RIGHT do not overlap',
     validate: (template) => {
       const layout = findLayout(template, 'LAYOUT_TWO_COLUMNS');
       if (!layout) {
@@ -143,7 +143,7 @@ export const dimensionRules: ValidationRule[] = [
   {
     id: 'DIM-005',
     severity: 'WARNING',
-    description: 'Placeholders canvas occupent ≥ 60% de la hauteur de la slide',
+    description: 'Canvas placeholders occupy >= 60% of slide height',
     validate: (template) => {
       const { heightEmu } = template.slideDimensions;
       const minHeight = heightEmu * CANVAS_HEIGHT_RATIO;

@@ -20,7 +20,7 @@ describe('validateTemplate', () => {
     const report = await validateTemplate(TEMPLATE_PATH);
     expect(report.results).toBeDefined();
     expect(report.manifest).toBeDefined();
-    expect(report.manifest.tier).toBeGreaterThanOrEqual(1);
+    expect(report.manifest.tier).toBe(2);
     expect(report.hasErrors).toBe(false);
   });
 });
@@ -108,7 +108,7 @@ describe('getDefaultTemplatePath', () => {
 describe('getDefaultManifest', () => {
   it('returns a valid manifest object', () => {
     const m = getDefaultManifest();
-    expect(m.tier).toBeGreaterThanOrEqual(1);
+    expect(m.tier).toBe(2);
     expect(m.supported_layouts.length).toBeGreaterThan(0);
     expect(m.template).toBe('default-template.pptx');
   });

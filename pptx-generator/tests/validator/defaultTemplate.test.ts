@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { readTemplate } from '../../src/validator/templateReader.ts';
-import { runValidation } from '../../src/validator/engine.ts';
-import { generateManifest } from '../../src/validator/manifestGenerator.ts';
+import { readTemplate } from '../../src/validator/templateReader.js';
+import { runValidation } from '../../src/validator/engine.js';
+import { generateManifest } from '../../src/validator/manifestGenerator.js';
 import * as path from 'path';
 
 const TEMPLATE_PATH = path.resolve(__dirname, '../../assets/default-template.pptx');
