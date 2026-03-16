@@ -6,7 +6,7 @@ import { runValidation } from './validator/engine.js';
 import { generateManifest } from './validator/manifestGenerator.js';
 import { generateDemo } from './validator/demoGenerator.js';
 import { validateAST } from './parser/astValidator.js';
-import { buildASTPrompt } from './parser/promptParser.js';
+import { buildASTPrompt, buildDataPrompt as buildDataPromptInternal } from './parser/promptParser.js';
 import { parseCSV, parseJSONData } from './parser/dataParser.js';
 import { transformPresentation } from './transform/index.js';
 import { renderToBuffer } from './renderer/pptxRenderer.js';
@@ -174,6 +174,19 @@ export function buildPrompt(
   brief: string,
 ): string {
   return buildASTPrompt(capabilities, brief);
+}
+
+/**
+ * Builds the system prompt for Claude to generate a narrated AST from raw data.
+ * Unlike buildPrompt, includes a data summary and asks for contextual narration.
+ */
+export function buildDataPrompt(
+  capabilities: TemplateCapabilities,
+  data: string | unknown,
+  format: 'csv' | 'json',
+  title: string,
+): string {
+  return buildDataPromptInternal(capabilities, data, format, title);
 }
 
 // Re-export types for consumers

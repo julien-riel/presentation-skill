@@ -63,6 +63,20 @@ npx tsx src/cli.ts generate --ast <chemin/ast.json> [-o sortie.pptx] [--template
 
 Quand l'utilisateur fournit un fichier CSV ou JSON de donnees :
 
+**Option A — Avec narration LLM (recommande)** :
+1. Charger le manifeste par defaut :
+   ```typescript
+   import { getDefaultManifest, buildDataPrompt } from './src/index.js';
+   const manifest = getDefaultManifest();
+   ```
+2. Construire le prompt de narration :
+   ```typescript
+   const prompt = buildDataPrompt(manifest, rawData, 'csv', 'Mon titre');
+   ```
+3. Toi-meme (Claude), tu generes l'AST JSON en suivant le prompt. Le prompt inclut un resume des donnees et demande une narration contextuelle.
+4. Valider et generer comme en Mode 2.
+
+**Option B — Generation directe (sans narration)** :
 1. Lire le fichier de donnees.
 2. Parser avec le bon format :
    ```typescript
@@ -140,7 +154,7 @@ L'utilisateur peut fournir son propre gabarit `.pptx` :
 | `bullets` | Liste a puces | `items`, `column?` (left/right), `icons?` (noms Lucide par item) |
 | `timeline` | Frise chronologique | `events` (date, label, status?, `icon?`) |
 | `diagram` | Diagramme d'architecture | `nodes` (id, label, layer?, style?: {icon?}), `edges` (from, to) |
-| `chart` | Graphique | `chartType` (bar/line/pie/donut), `data` |
+| `chart` | Graphique | `chartType` (bar/line/pie/donut/stackedBar), `data`, `options?` (valueFormat, colors, showDataLabels, legendPosition, gridLines, axis labels/limits) |
 | `table` | Tableau | `headers`, `rows` |
 | `kpi` | Indicateurs cles | `indicators` (label, value, unit?, trend?, `icon?`) |
 | `quote` | Citation | `text`, `author?`, `icon?` |

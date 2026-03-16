@@ -38,7 +38,6 @@ export async function resolveIcon(
 
   const iconPath = getLucideIconPath(name);
   if (!iconPath) {
-    console.warn(`[pptx-generator] Icon "${name}" not found in lucide-static`);
     return null;
   }
 
@@ -46,7 +45,6 @@ export async function resolveIcon(
   try {
     svgContent = await fs.readFile(iconPath, 'utf-8');
   } catch {
-    console.warn(`[pptx-generator] Could not read icon file for "${name}"`);
     return null;
   }
 
@@ -64,8 +62,7 @@ export async function resolveIcon(
     const result: ResolvedIcon = { pngBuffer, widthPx: sizePx, heightPx: sizePx };
     cache.set(cacheKey, result);
     return result;
-  } catch (err) {
-    console.warn(`[pptx-generator] Failed to render icon "${name}": ${err}`);
+  } catch {
     return null;
   }
 }

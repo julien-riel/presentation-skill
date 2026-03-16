@@ -102,3 +102,64 @@ ${userBrief}
 
 Generate the presentation AST now. Output ONLY the JSON, no explanations.`;
 }
+
+/**
+ * Summarizes raw data for inclusion in an LLM prompt.
+ * Extracts column names, row count, and sample values.
+ */
+function summarizeData(
+  data: string | unknown,
+  format: 'csv' | 'json',
+): string {
+  if (format === 'csv' && typeof data === 'string') {
+    const lines = data.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim().split('\n').filter(Boolean);
+    if (lines.length === 0) return 'Empty CSV.';
+    const headers = lines[0];
+    const rowCount = lines.length - 1;
+    const sample = lines.slice(1, Math.min(4, lines.length)).join('\n');
+    return `CSV with ${rowCount} rows.\nColumns: ${headers}\n\nSample rows:\n${sample}`;
+  }
+
+  if (format === 'json') {
+    if (Array.isArray(data)) {
+      const sample = data.slice(0, 3).map(item => JSON.stringify(item)).join('\n');
+      return `JSON array with ${data.length} items.\n\nSample:\n${sample}`;
+    }
+    const preview = JSON.stringify(data, null, 2).slice(0, 500);
+    return `JSON object:\n${preview}`;
+  }
+
+  return 'Unknown data format.';
+}
+
+/**
+ * Builds a system prompt for Claude to generate a narrated presentation
+ * from raw data (CSV or JSON). Unlike buildASTPrompt, this prompt
+ * includes a data summary and asks for contextual narration.
+ */
+export function buildDataPrompt(
+  capabilities: TemplateCapabilities,
+  data: string | unknown,
+  format: 'csv' | 'json',
+  title: string,
+): string {
+  const basePrompt = buildASTPrompt(capabilities, `Create a presentation titled "${title}" based on the data below.`);
+  const dataSummary = summarizeData(data, format);
+
+  return `${basePrompt}
+
+## Data to Present
+
+${dataSummary}
+
+## Additional Instructions for Data Presentations
+
+- Add narrative context: don't just list data — explain what it means, highlight trends, call out outliers.
+- Use a "title" slide as the opener with the presentation title.
+- Use "kpi" slides for key metrics if numeric aggregates are available.
+- Use "chart" slides (bar/line/pie) when data has clear numeric trends or comparisons.
+- Use "table" slides to show detailed breakdowns.
+- Use "bullets" slides for insights, analysis, and takeaways.
+- End with a summary or recommendations slide.
+- Keep the tone professional and data-driven.`;
+}

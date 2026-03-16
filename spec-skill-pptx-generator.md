@@ -115,9 +115,14 @@ Responsable de transformer l'AST enrichi en fichier `.pptx` physique.
 | twoColumns          | Remplir TITLE (idx 0), LEFT (idx 1), RIGHT (idx 2)             |
 | timeline            | Remplir TITLE (idx 0), dessiner shapes dans CANVAS (idx 1)     |
 | architecture        | Remplir TITLE (idx 0), dessiner shapes dans CANVAS (idx 1)     |
-| kpi                 | Remplir TITLE (idx 0), dessiner grands chiffres dans CANVAS     |
-| chart               | Remplir TITLE (idx 0), insérer chart PowerPoint natif           |
-| table               | Remplir TITLE (idx 0), insérer tableau PowerPoint natif         |
+| kpi                 | Remplir TITLE (idx 0), dessiner cards KPI colorées dans CANVAS  |
+| chart               | Remplir TITLE (idx 0), insérer chart OOXML natif (bar/line/pie/donut/stackedBar) |
+| table               | Remplir TITLE (idx 0), dessiner tableau natif (header + lignes alternées) |
+| quote               | Remplir TITLE (idx 0), texte citation centré + attribution      |
+| roadmap             | Remplir TITLE (idx 0), dessiner barres de phases horizontales   |
+| process             | Remplir TITLE (idx 0), dessiner boîtes numérotées + flèches    |
+| comparison          | Remplir TITLE (idx 0), dessiner colonnes avec headers colorés   |
+| imageText           | Remplir TITLE (idx 0), TEXT_BODY (idx 2). IMAGE (idx 1) réservé |
 
 **Dessin de shapes (layouts canvas)** :
 
@@ -260,7 +265,7 @@ Quand le layout demandé est absent du gabarit, le Transform applique cette casc
 
 ```
 kpi          → bullets      → generic
-chart        → bullets      → generic
+chart        → table        → bullets      → generic
 table        → bullets      → generic
 quote        → bullets      → generic
 architecture → bullets      → generic
@@ -400,10 +405,24 @@ interface TimelineElement {
 
 interface ChartElement {
   type: "chart";
-  chartType: "bar" | "line" | "pie" | "donut";
+  chartType: "bar" | "line" | "pie" | "donut" | "stackedBar";
   data: {
     labels: string[];
     series: { name: string; values: number[] }[];
+  };
+  options?: {
+    title?: string;
+    xAxisLabel?: string;
+    yAxisLabel?: string;
+    yAxisMin?: number;
+    yAxisMax?: number;
+    valueFormat?: "number" | "percent" | "currency";
+    currencySymbol?: string;
+    showDataLabels?: boolean;
+    showLegend?: boolean;
+    legendPosition?: "top" | "bottom" | "right" | "left";
+    colors?: string[];              // Hex codes (6 chars, sans #)
+    gridLines?: boolean;
   };
 }
 
@@ -617,6 +636,7 @@ pptx-generator/
 │   │   └── astValidator.ts           # Validation d'un AST fourni
 │   ├── transform/
 │   │   ├── layoutResolver.ts         # Résolution + dégradation des layouts
+│   │   ├── elementDegrader.ts        # Conversion d'éléments dégradés (chart → table/bullets)
 │   │   ├── contentValidator.ts       # Règles max bullets, mots, etc.
 │   │   └── index.ts                  # Orchestrateur du transform
 │   ├── renderer/
@@ -624,6 +644,19 @@ pptx-generator/
 │   │   ├── placeholderFiller.ts      # Remplissage texte par index
 │   │   ├── timelineDrawer.ts         # Dessin de timelines (shapes)
 │   │   ├── architectureDrawer.ts     # Dessin de diagrammes (shapes)
+│   │   ├── kpiDrawer.ts              # Cards KPI colorées avec tendances
+│   │   ├── tableDrawer.ts            # Tableau natif (header + alternance)
+│   │   ├── roadmapDrawer.ts          # Barres de phases horizontales
+│   │   ├── processDrawer.ts          # Boîtes numérotées + flèches
+│   │   ├── comparisonDrawer.ts       # Colonnes avec headers colorés
+│   │   ├── quoteLayout.ts            # Citation centrée + attribution
+│   │   ├── chartDrawer.ts            # Orchestrateur charts OOXML
+│   │   ├── charts/                   # Builders OOXML par type de chart
+│   │   │   ├── barChartBuilder.ts    # Bar/stackedBar charts
+│   │   │   ├── lineChartBuilder.ts   # Line charts avec marqueurs
+│   │   │   ├── pieChartBuilder.ts    # Pie/donut charts
+│   │   │   ├── chartXmlHelpers.ts    # Fragments XML réutilisables
+│   │   │   └── chartStyleBuilder.ts  # Style/couleurs/rels boilerplate
 │   │   ├── iconResolver.ts           # Résolution et rendu d'icônes Lucide
 │   │   └── xmlHelpers.ts            # Utilitaires XML/OOXML (shapes, namespaces)
 │   └── validator/
@@ -635,7 +668,8 @@ pptx-generator/
 │       │   ├── themeRules.ts         # THM-001 à THM-004
 │       │   ├── tierRules.ts          # TIER-001 à TIER-003
 │       │   ├── manifestRules.ts      # MAN-001 à MAN-002
-│       │   └── ruleHelpers.ts       # Utilitaires partagés des règles de validation
+│       │   ├── ruleHelpers.ts       # Utilitaires partagés des règles de validation
+│       │   └── index.ts             # Registre des règles
 │       ├── engine.ts                 # Exécution des règles
 │       ├── manifestGenerator.ts      # Génération du JSON de capacités
 │       ├── demoGenerator.ts          # Génération du PPTX démo

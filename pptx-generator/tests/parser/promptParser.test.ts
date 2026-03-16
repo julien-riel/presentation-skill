@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildASTPrompt } from '../../src/parser/promptParser.js';
+import { buildASTPrompt, buildDataPrompt } from '../../src/parser/promptParser.js';
 import type { TemplateCapabilities } from '../../src/schema/capabilities.js';
 import { makeTier1Capabilities } from '../helpers/capabilitiesHelpers.js';
 
@@ -64,5 +64,46 @@ describe('buildASTPrompt', () => {
     expect(prompt).toContain('stackedBar');
     expect(prompt).toContain('valueFormat');
     expect(prompt).toContain('showDataLabels');
+  });
+});
+
+describe('buildDataPrompt', () => {
+  it('includes data summary for CSV input', () => {
+    const csv = 'Name,Score\nAlice,95\nBob,87\nCharlie,92';
+    const prompt = buildDataPrompt(MOCK_CAPABILITIES, csv, 'csv', 'Test Scores');
+    expect(prompt).toContain('Test Scores');
+    expect(prompt).toContain('3 rows');
+    expect(prompt).toContain('Name,Score');
+    expect(prompt).toContain('Alice,95');
+    expect(prompt).toContain('Data to Present');
+    expect(prompt).toContain('narrative');
+  });
+
+  it('includes data summary for JSON array input', () => {
+    const data = [{ label: 'Revenue', value: '1.2M' }, { label: 'Users', value: '50K' }];
+    const prompt = buildDataPrompt(MOCK_CAPABILITIES, data, 'json', 'KPI Report');
+    expect(prompt).toContain('KPI Report');
+    expect(prompt).toContain('2 items');
+    expect(prompt).toContain('Revenue');
+  });
+
+  it('includes base AST schema and content rules', () => {
+    const csv = 'A,B\n1,2';
+    const prompt = buildDataPrompt(MOCK_CAPABILITIES, csv, 'csv', 'Test');
+    expect(prompt).toContain('## Available Layouts');
+    expect(prompt).toContain('## Content Rules');
+    expect(prompt).toContain('## Output Format');
+  });
+
+  it('handles empty CSV gracefully', () => {
+    const prompt = buildDataPrompt(MOCK_CAPABILITIES, '', 'csv', 'Empty');
+    expect(prompt).toContain('Empty');
+  });
+
+  it('includes instructions for narration', () => {
+    const csv = 'X,Y\n1,2';
+    const prompt = buildDataPrompt(MOCK_CAPABILITIES, csv, 'csv', 'Test');
+    expect(prompt).toContain('trends');
+    expect(prompt).toContain('insights');
   });
 });

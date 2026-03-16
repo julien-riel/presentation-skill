@@ -61,6 +61,7 @@ export async function renderToBuffer(
   }> = [];
 
   const iconCache = createIconCache();
+  const missingIcons: string[] = [];
   let nextImageNum = 1;
   let nextChartNum = 1;
   let hasImages = false;
@@ -82,7 +83,10 @@ export async function renderToBuffer(
 
     for (const req of iconRequests) {
       const icon = await resolveIcon(req.name, req.color, req.sizePx, iconCache);
-      if (!icon) continue;
+      if (!icon) {
+        if (!missingIcons.includes(req.name)) missingIcons.push(req.name);
+        continue;
+      }
 
       const mediaPath = `ppt/media/image${nextImageNum}.png`;
       const relId = `rIdImg${nextImageNum}`;
@@ -269,6 +273,10 @@ export async function renderToBuffer(
     );
   }
   zip.file('ppt/presentation.xml', updatedPresXml);
+
+  if (missingIcons.length > 0) {
+    console.warn(`[pptx-generator] Missing icons: ${missingIcons.join(', ')}`);
+  }
 
   // Generate output
   const buffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });

@@ -287,6 +287,21 @@ export function buildSlideShapes(
       break;
     }
 
+    case 'imageText': {
+      const title = getTitleText(slide);
+      shapes += placeholderShape(id++, 'title', 0, [title]);
+
+      // TEXT_BODY is at placeholder index 2; IMAGE at index 1 is left for user to fill
+      const textEl = findElement(slide.elements, 'text');
+      const bulletsEl = findElement(slide.elements, 'bullets');
+      if (textEl) {
+        shapes += placeholderShape(id++, 'body', 2, [textEl.text]);
+      } else if (bulletsEl) {
+        shapes += bulletPlaceholderShape(id++, 2, bulletsEl.items);
+      }
+      break;
+    }
+
     case 'chart': {
       const title = getTitleText(slide);
       shapes += placeholderShape(id++, 'title', 0, [title]);
