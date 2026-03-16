@@ -67,6 +67,13 @@ Les deux colonnes ne doivent pas se chevaucher horizontalement.
 - `title` (idx 0)
 - `body` (idx 1) — zone canvas, hauteur minimale : **60 % de la hauteur de la diapositive**
 
+### LAYOUT_ARCHITECTURE
+
+- `title` (idx 0)
+- `body` (idx 1) — zone canvas pour le diagramme
+
+> **Note sur les layouts Tier 3** : la plupart des layouts Tier 3 (`kpi`, `table`, `chart`, `quote`, `comparison`, `roadmap`, `process`) utilisent des formes (canvas shapes) generees dynamiquement plutot que des placeholders du gabarit. Seul `LAYOUT_ARCHITECTURE` utilise un placeholder pour sa zone de contenu.
+
 ---
 
 ## Système de tiers
@@ -97,7 +104,7 @@ Lorsqu'un layout n'est pas disponible dans le gabarit, le générateur tente de 
 
 - `kpi` → `bullets` → `generic`
 - `architecture` → `bullets` → `generic`
-- `chart` → `bullets` → `generic`
+- `chart` → `table` → `bullets` → `generic`
 - `table` → `bullets` → `generic`
 - `quote` → `bullets` → `generic`
 - `comparison` → `twoColumns` → `bullets` → `generic`

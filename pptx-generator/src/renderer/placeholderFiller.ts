@@ -8,6 +8,8 @@ import { buildTableShapes } from './tableDrawer.js';
 import { buildRoadmapShapes } from './roadmapDrawer.js';
 import { buildProcessShapes } from './processDrawer.js';
 import { buildComparisonShapes } from './comparisonDrawer.js';
+import { buildQuoteShapes } from './quoteDrawer.js';
+import { buildImageTextShapes } from './imageTextDrawer.js';
 import { buildChart } from './chartDrawer.js';
 import type { ChartRequest } from './chartDrawer.js';
 
@@ -305,20 +307,10 @@ export function buildSlideShapes(
     case 'quote': {
       const title = getTitleText(slide);
       shapes += placeholderShape(id++, 'title', 0, [title]);
-
-      const quoteEl = findElement(slide.elements, 'quote');
-      if (quoteEl) {
-        const accentColor = accentColors[0] ?? DEFAULT_ACCENT_COLOR;
-
-        const quoteText = `\u201C${quoteEl.text}\u201D`;
-        shapes += textBoxShape(id++, emu(1.5), emu(2.0), emu(9.2), emu(2.5),
-          quoteText, { size: 24, color: '333333', align: 'ctr', valign: 'ctr' });
-
-        if (quoteEl.author) {
-          shapes += textBoxShape(id++, emu(1.5), emu(4.6), emu(9.2), emu(0.5),
-            `\u2014 ${quoteEl.author}`, { size: 14, color: accentColor, align: 'ctr', valign: 't' });
-        }
-      }
+      const result = buildQuoteShapes(slide, id, accentColors);
+      shapes += result.shapes;
+      id = result.nextId;
+      iconRequests.push(...result.iconRequests);
       break;
     }
 
@@ -347,38 +339,12 @@ export function buildSlideShapes(
     case 'imageText': {
       const title = getTitleText(slide);
       shapes += placeholderShape(id++, 'title', 0, [title]);
-
-      const imageEl = findElement(slide.elements, 'image');
-      if (imageEl) {
-        imageRequests.push({
-          filePath: imageEl.path,
-          altText: imageEl.altText,
-          x: emu(0.5),
-          y: emu(1.5),
-          cx: emu(5.0),
-          cy: emu(5.0),
-        });
-      }
-
-      // TEXT_BODY is at placeholder index 2
-      const textEl = findElement(slide.elements, 'text');
-      const bulletsEl = findElement(slide.elements, 'bullets');
-      if (textEl) {
-        if (textEl.url) {
-          const shapeId = id++;
-          hyperlinkRequests.push({
-            url: textEl.url,
-            shapeXmlBuilder: (relId) => hyperlinkTextBoxShape(
-              shapeId, emu(5.5), emu(1.8), emu(4.5), emu(0.5),
-              textEl.text, textEl.url!, relId, { size: 14, align: 'l' },
-            ),
-          });
-        } else {
-          shapes += placeholderShape(id++, 'body', 2, [textEl.text]);
-        }
-      } else if (bulletsEl) {
-        shapes += bulletPlaceholderShape(id++, 2, bulletsEl.items);
-      }
+      const result = buildImageTextShapes(slide, id, accentColors);
+      shapes += result.shapes;
+      id = result.nextId;
+      iconRequests.push(...result.iconRequests);
+      imageRequests.push(...result.imageRequests);
+      hyperlinkRequests.push(...result.hyperlinkRequests);
       break;
     }
 

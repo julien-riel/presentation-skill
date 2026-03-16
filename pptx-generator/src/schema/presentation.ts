@@ -165,6 +165,12 @@ export const SlideSchema = z.object({
 
 export type Slide = z.infer<typeof SlideSchema>;
 
+/**
+ * Public input type for consumers — excludes internal pipeline fields.
+ * Use this when building an AST to pass to generateFromAST().
+ */
+export type SlideInput = Omit<Slide, '_resolvedLayout' | '_splitIndex' | '_warnings'>;
+
 // --- Presentation schema ---
 
 export const PresentationMetadataSchema = z.object({
@@ -178,10 +184,15 @@ export const PresentationSchema = z.object({
   title: z.string(),
   metadata: PresentationMetadataSchema.optional(),
   theme: z.string().optional(),
-  locale: z.string().default('en-US').optional(),
-  showSlideNumbers: z.boolean().default(false).optional(),
+  locale: z.string().default('en-US'),
+  showSlideNumbers: z.boolean().default(false),
   footer: z.string().optional(),
   slides: z.array(SlideSchema),
 });
 
 export type Presentation = z.infer<typeof PresentationSchema>;
+
+/**
+ * Public input type for consumers — slides use SlideInput (no internal fields).
+ */
+export type PresentationInput = Omit<Presentation, 'slides'> & { slides: SlideInput[] };

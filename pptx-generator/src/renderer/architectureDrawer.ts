@@ -1,7 +1,8 @@
-import type { Slide, Element } from '../schema/presentation.js';
+import type { Slide } from '../schema/presentation.js';
 import type { DrawerResult, IconRequest } from './placeholderFiller.js';
 import { emu, rectShape, lineShape, textBoxShape, emuFromPx } from './xmlHelpers.js';
 import { CANVAS, GAP, HEIGHT } from './layoutConstants.js';
+import { findElement } from './drawerUtils.js';
 
 const NODE_H = HEIGHT.HEADER;
 const NODE_MIN_W = emu(1.5);
@@ -29,9 +30,7 @@ export function buildArchitectureShapes(
   startId: number,
   accentColors: string[],
 ): DrawerResult {
-  const diagramEl = slide.elements.find(
-    (el): el is Extract<Element, { type: 'diagram' }> => el.type === 'diagram',
-  );
+  const diagramEl = findElement(slide.elements, 'diagram');
   if (!diagramEl || diagramEl.nodes.length === 0) {
     return { shapes: '', nextId: startId, iconRequests: [] };
   }
@@ -63,7 +62,7 @@ export function buildArchitectureShapes(
     const y = startY + li * (NODE_H + LAYER_V_GAP);
 
     // Pick color from template accent colors, cycling through them
-    const fillColor = accentColors[li % accentColors.length]?.replace('#', '') ?? '4472C4';
+    const fillColor = accentColors[li % accentColors.length] ?? '4472C4';
 
     // Calculate node width
     const totalGaps = (layerNodes.length - 1) * NODE_H_GAP;
@@ -80,7 +79,7 @@ export function buildArchitectureShapes(
 
       positions.set(node.id, { id: node.id, x, y, w: nodeW, h: NODE_H });
 
-      const nodeFill = node.style?.fill?.replace('#', '') ?? fillColor;
+      const nodeFill = node.style?.fill?.replace('#', '') ?? fillColor;  // User styles may have '#'
 
       // Rounded rectangle node
       shapes += rectShape(id++, {
@@ -115,7 +114,7 @@ export function buildArchitectureShapes(
   }
 
   // Draw edges as arrow lines
-  const connectorColor = accentColors[0]?.replace('#', '') ?? '666666';
+  const connectorColor = accentColors[0] ?? '666666';
   for (const edge of edges) {
     const from = positions.get(edge.from);
     const to = positions.get(edge.to);

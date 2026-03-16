@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import JSZip from 'jszip';
 import * as path from 'path';
+import { readFile } from 'fs/promises';
 import type { Presentation } from '../../src/schema/presentation.js';
 import type { TemplateInfo } from '../../src/validator/types.js';
 import { renderToBuffer } from '../../src/renderer/pptxRenderer.js';
@@ -11,7 +12,9 @@ const TEMPLATE_PATH = path.resolve(__dirname, '../../assets/default-template.ppt
 const TEST_PNG_PATH = path.resolve(__dirname, '../fixtures/test-1x1.png');
 
 let templateInfo: TemplateInfo;
+let templateBuffer: Buffer;
 beforeAll(async () => {
+  templateBuffer = await readFile(TEMPLATE_PATH);
   templateInfo = await readTemplate(TEMPLATE_PATH);
 });
 
@@ -52,7 +55,7 @@ describe('image element on imageText layout', () => {
       ],
     };
 
-    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH, templateInfo);
+    const buffer = await renderToBuffer(presentation, templateBuffer, templateInfo);
     expect(buffer).toBeInstanceOf(Buffer);
     expect(buffer.length).toBeGreaterThan(0);
 
@@ -113,7 +116,7 @@ describe('image element on generic layout', () => {
       ],
     };
 
-    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH, templateInfo);
+    const buffer = await renderToBuffer(presentation, templateBuffer, templateInfo);
     const zip = await JSZip.loadAsync(buffer);
 
     const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
@@ -145,7 +148,7 @@ describe('image element with missing file', () => {
       ],
     };
 
-    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH, templateInfo);
+    const buffer = await renderToBuffer(presentation, templateBuffer, templateInfo);
     expect(buffer).toBeInstanceOf(Buffer);
 
     const zip = await JSZip.loadAsync(buffer);
@@ -187,7 +190,7 @@ describe('image element with JPEG extension', () => {
         ],
       };
 
-      const buffer = await renderToBuffer(presentation, TEMPLATE_PATH, templateInfo);
+      const buffer = await renderToBuffer(presentation, templateBuffer, templateInfo);
       const zip = await JSZip.loadAsync(buffer);
 
       const mediaFiles = Object.keys(zip.files).filter(

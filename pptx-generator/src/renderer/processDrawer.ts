@@ -1,7 +1,8 @@
-import type { Slide, Element } from '../schema/presentation.js';
+import type { Slide } from '../schema/presentation.js';
 import type { DrawerResult, IconRequest } from './placeholderFiller.js';
 import { emu, rectShape, textBoxShape, lineShape, emuFromPx } from './xmlHelpers.js';
 import { CANVAS, GAP, HEIGHT } from './layoutConstants.js';
+import { findElement } from './drawerUtils.js';
 
 /**
  * Builds process step shapes: numbered boxes connected by arrows.
@@ -11,9 +12,7 @@ export function buildProcessShapes(
   startId: number,
   accentColors: string[],
 ): DrawerResult {
-  const timelineEl = slide.elements.find(
-    (el): el is Extract<Element, { type: 'timeline' }> => el.type === 'timeline',
-  );
+  const timelineEl = findElement(slide.elements, 'timeline');
   if (!timelineEl || timelineEl.events.length === 0) {
     return { shapes: '', nextId: startId, iconRequests: [] };
   }

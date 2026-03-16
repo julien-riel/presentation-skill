@@ -60,6 +60,14 @@ function extractLayoutNameFromAttrs(parsed: Record<string, unknown>): string {
 }
 
 /**
+ * Parses an integer from an XML attribute, returning fallback on NaN.
+ */
+function safeParseInt(value: string | undefined, fallback: number): number {
+  const parsed = parseInt(value ?? String(fallback), 10);
+  return Number.isNaN(parsed) ? fallback : parsed;
+}
+
+/**
  * Extracts placeholder info from a cSld element.
  */
 function extractPlaceholders(cSld: Record<string, unknown>): PlaceholderInfo[] {
@@ -82,7 +90,7 @@ function extractPlaceholders(cSld: Record<string, unknown>): PlaceholderInfo[] {
     const phAttrs = ph['$'] as Record<string, string> | undefined;
     if (!phAttrs) continue;
 
-    const index = parseInt(phAttrs['idx'] ?? '0', 10);
+    const index = safeParseInt(phAttrs['idx'], 0);
     const type = phAttrs['type'] ?? 'body';
 
     const spPr = (shape['p:spPr'] as unknown[])?.[0] as Record<string, unknown> | undefined;
@@ -97,10 +105,10 @@ function extractPlaceholders(cSld: Record<string, unknown>): PlaceholderInfo[] {
       index,
       type,
       position: {
-        x: parseInt(offAttrs?.['x'] ?? '0', 10),
-        y: parseInt(offAttrs?.['y'] ?? '0', 10),
-        cx: parseInt(extAttrs?.['cx'] ?? '0', 10),
-        cy: parseInt(extAttrs?.['cy'] ?? '0', 10),
+        x: safeParseInt(offAttrs?.['x'], 0),
+        y: safeParseInt(offAttrs?.['y'], 0),
+        cx: safeParseInt(extAttrs?.['cx'], 0),
+        cy: safeParseInt(extAttrs?.['cy'], 0),
       },
     });
   }
@@ -176,7 +184,7 @@ async function extractSlideDimensions(zip: JSZip): Promise<{ widthEmu: number; h
 
   const attrs = sldSz['$'] as Record<string, string> | undefined;
   return {
-    widthEmu: parseInt(attrs?.['cx'] ?? '12192000', 10),
-    heightEmu: parseInt(attrs?.['cy'] ?? '6858000', 10),
+    widthEmu: safeParseInt(attrs?.['cx'], 12192000),
+    heightEmu: safeParseInt(attrs?.['cy'], 6858000),
   };
 }

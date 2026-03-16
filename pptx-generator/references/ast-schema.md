@@ -21,10 +21,13 @@ L'AST est un objet JSON conforme au schema Zod defini dans
 
 | Champ      | Type                          | Requis | Description                                      |
 |------------|-------------------------------|--------|--------------------------------------------------|
-| `title`    | `string`                      | oui    | Titre de la presentation                         |
-| `metadata` | `PresentationMetadata`        | non    | Metadonnees (auteur, date, version, audience)    |
-| `theme`    | `string`                      | non    | Nom du theme a appliquer                         |
-| `slides`   | `Slide[]`                     | oui    | Liste ordonnee des diapositives                  |
+| `title`            | `string`                      | oui    | Titre de la presentation                         |
+| `metadata`         | `PresentationMetadata`        | non    | Metadonnees (auteur, date, version, audience)    |
+| `theme`            | `string`                      | non    | Nom du theme a appliquer                         |
+| `locale`           | `string`                      | non    | Locale de la presentation (defaut : `en-US`)     |
+| `showSlideNumbers` | `boolean`                     | non    | Afficher les numeros de diapositive (defaut : `false`) |
+| `footer`           | `string`                      | non    | Texte de pied de page affiche sur chaque diapositive |
+| `slides`           | `Slide[]`                     | oui    | Liste ordonnee des diapositives                  |
 
 ### `PresentationMetadata`
 
@@ -70,9 +73,9 @@ Le systeme supporte 15 types de layout :
 | `table`        | Tableau de donnees                                 | title, table                       |
 | `kpi`          | Indicateurs cles de performance                    | title, kpi                         |
 | `quote`        | Citation                                           | title, quote                       |
-| `imageText`    | Image avec texte                                   | title, text                        |
+| `imageText`    | Image avec texte                                   | title, image, text/bullets         |
 | `roadmap`      | Feuille de route                                   | title, timeline                    |
-| `process`      | Processus etape par etape                          | title, diagram                     |
+| `process`      | Processus etape par etape                          | title, timeline                    |
 | `comparison`   | Comparaison cote a cote                            | title, bullets (left/right)        |
 
 > **Note :** Les layouts avances reutilisent les types d'elements d'autres layouts :
@@ -81,7 +84,7 @@ Le systeme supporte 15 types de layout :
 > |----------------|------------------------|---------------------------------|
 > | `imageText`    | `text`                 | Meme element que le layout `generic` |
 > | `roadmap`      | `timeline`             | Meme element que le layout `timeline` |
-> | `process`      | `diagram`              | Meme element que le layout `architecture` |
+> | `process`      | `timeline`             | Meme element que le layout `timeline` |
 > | `comparison`   | `bullets`              | Meme element que le layout `twoColumns` (avec `label`) |
 
 ---
@@ -130,11 +133,13 @@ Bloc de texte libre.
 |--------|----------|--------|------------------|
 | `type` | `"text"` | oui    | Discriminant     |
 | `text` | `string` | oui    | Contenu textuel  |
+| `url`  | `string` | non    | URL du lien hypertexte (si present, le texte devient cliquable) |
 
 ```json
 {
   "type": "text",
-  "text": "Ce rapport presente les resultats du troisieme trimestre."
+  "text": "Ce rapport presente les resultats du troisieme trimestre.",
+  "url": "https://example.com/rapport-q3"
 }
 ```
 

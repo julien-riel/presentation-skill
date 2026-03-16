@@ -1,7 +1,8 @@
-import type { Slide, Element } from '../schema/presentation.js';
+import type { Slide } from '../schema/presentation.js';
 import type { DrawerResult, IconRequest } from './placeholderFiller.js';
 import { emu, rectShape, textBoxShape, emuFromPx } from './xmlHelpers.js';
 import { CANVAS, GAP, HEIGHT } from './layoutConstants.js';
+import { findElement } from './drawerUtils.js';
 
 const TREND_ICONS: Record<string, string> = {
   up: 'trending-up',
@@ -19,9 +20,7 @@ export function buildKpiShapes(
   startId: number,
   accentColors: string[],
 ): DrawerResult {
-  const kpiEl = slide.elements.find(
-    (el): el is Extract<Element, { type: 'kpi' }> => el.type === 'kpi',
-  );
+  const kpiEl = findElement(slide.elements, 'kpi');
   if (!kpiEl || kpiEl.indicators.length === 0) {
     return { shapes: '', nextId: startId, iconRequests: [] };
   }

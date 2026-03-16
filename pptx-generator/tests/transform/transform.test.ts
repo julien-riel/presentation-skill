@@ -145,7 +145,7 @@ describe('contentValidator', () => {
     expect(bullets && bullets.type === 'bullets' && bullets.items).toEqual(['One', 'Two', 'Three']);
   });
 
-  it('truncates KPI indicators beyond 6', () => {
+  it('degrades KPI to bullets on Tier 1 (8 indicators → split bullets)', () => {
     const presentation: Presentation = {
       title: 'KPI Limit',
       slides: [{
@@ -163,6 +163,34 @@ describe('contentValidator', () => {
     };
 
     const manifest = makeTier1Capabilities();
+    const result = transformPresentation(presentation, manifest);
+    // KPI degraded to bullets — 8 items > MAX_BULLETS(5) → split into 2 slides
+    expect(result.slides.length).toBeGreaterThanOrEqual(2);
+    const bulletsEl = result.slides[0].elements.find(el => el.type === 'bullets');
+    expect(bulletsEl).toBeDefined();
+    if (bulletsEl?.type === 'bullets') {
+      expect(bulletsEl.items.length).toBeLessThanOrEqual(5);
+    }
+  });
+
+  it('truncates KPI indicators beyond 6 when kpi layout is supported', () => {
+    const presentation: Presentation = {
+      title: 'KPI Limit',
+      slides: [{
+        layout: 'kpi',
+        elements: [
+          { type: 'title', text: 'Too Many' },
+          {
+            type: 'kpi',
+            indicators: Array.from({ length: 8 }, (_, i) => ({
+              label: `M${i}`, value: `${i}`,
+            })),
+          },
+        ],
+      }],
+    };
+
+    const manifest = makeTier1Capabilities(['kpi']);
     const result = transformPresentation(presentation, manifest);
     const kpiEl = result.slides[0].elements.find(el => el.type === 'kpi');
     expect(kpiEl).toBeDefined();

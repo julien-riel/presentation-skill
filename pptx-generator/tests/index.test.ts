@@ -146,8 +146,10 @@ describe('chart round-trip', () => {
     // (the default template is Tier 2 and would degrade chart → bullets)
     const { renderToBuffer } = await import('../src/renderer/pptxRenderer.js');
     const { readTemplate } = await import('../src/validator/templateReader.js');
+    const { readFile } = await import('fs/promises');
 
     const templatePath = getDefaultTemplatePath();
+    const templateBuffer = await readFile(templatePath);
     const templateInfo = await readTemplate(templatePath);
 
     const ast = {
@@ -171,7 +173,7 @@ describe('chart round-trip', () => {
       ],
     };
 
-    const buffer = await renderToBuffer(ast, templatePath, templateInfo);
+    const buffer = await renderToBuffer(ast, templateBuffer, templateInfo);
     const zip = await JSZip.loadAsync(buffer);
 
     // Verify chart XML exists and contains expected OOXML structure
@@ -203,8 +205,10 @@ describe('chart round-trip', () => {
   it('generates different chart types with correct XML elements', async () => {
     const { renderToBuffer } = await import('../src/renderer/pptxRenderer.js');
     const { readTemplate } = await import('../src/validator/templateReader.js');
+    const { readFile } = await import('fs/promises');
 
     const templatePath = getDefaultTemplatePath();
+    const templateBuffer = await readFile(templatePath);
     const templateInfo = await readTemplate(templatePath);
 
     const makeChartPresentation = (chartType: string) => ({
@@ -223,12 +227,12 @@ describe('chart round-trip', () => {
       }],
     });
 
-    const lineBuffer = await renderToBuffer(makeChartPresentation('line'), templatePath, templateInfo);
+    const lineBuffer = await renderToBuffer(makeChartPresentation('line'), templateBuffer, templateInfo);
     const lineZip = await JSZip.loadAsync(lineBuffer);
     const lineXml = await lineZip.file('ppt/charts/chart1.xml')!.async('text');
     expect(lineXml).toContain('<c:lineChart>');
 
-    const pieBuffer = await renderToBuffer(makeChartPresentation('pie'), templatePath, templateInfo);
+    const pieBuffer = await renderToBuffer(makeChartPresentation('pie'), templateBuffer, templateInfo);
     const pieZip = await JSZip.loadAsync(pieBuffer);
     const pieXml = await pieZip.file('ppt/charts/chart1.xml')!.async('text');
     expect(pieXml).toContain('<c:pieChart>');

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import JSZip from 'jszip';
 import * as path from 'path';
+import { readFile } from 'fs/promises';
 import type { Presentation, Slide } from '../../src/schema/presentation.js';
 import type { TemplateInfo } from '../../src/validator/types.js';
 import { renderToBuffer } from '../../src/renderer/pptxRenderer.js';
@@ -11,7 +12,9 @@ import { getDefaultManifest } from '../../src/index.js';
 const TEMPLATE_PATH = path.resolve(__dirname, '../../assets/default-template.pptx');
 
 let templateInfo: TemplateInfo;
+let templateBuffer: Buffer;
 beforeAll(async () => {
+  templateBuffer = await readFile(TEMPLATE_PATH);
   templateInfo = await readTemplate(TEMPLATE_PATH);
 });
 
@@ -147,7 +150,7 @@ describe('Performance', () => {
     const enriched = transformPresentation(ast, manifest);
 
     const start = performance.now();
-    const buffer = await renderToBuffer(enriched, TEMPLATE_PATH, templateInfo);
+    const buffer = await renderToBuffer(enriched, templateBuffer, templateInfo);
     const elapsed = performance.now() - start;
 
     // Buffer is non-empty

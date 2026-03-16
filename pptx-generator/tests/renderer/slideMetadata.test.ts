@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import JSZip from 'jszip';
 import * as path from 'path';
+import { readFile } from 'fs/promises';
 import type { Presentation } from '../../src/schema/presentation.js';
 import type { TemplateInfo } from '../../src/validator/types.js';
 import { renderToBuffer } from '../../src/renderer/pptxRenderer.js';
@@ -9,7 +10,9 @@ import { readTemplate } from '../../src/validator/templateReader.js';
 const TEMPLATE_PATH = path.resolve(__dirname, '../../assets/default-template.pptx');
 
 let templateInfo: TemplateInfo;
+let templateBuffer: Buffer;
 beforeAll(async () => {
+  templateBuffer = await readFile(TEMPLATE_PATH);
   templateInfo = await readTemplate(TEMPLATE_PATH);
 });
 
@@ -40,7 +43,7 @@ describe('slide numbers', () => {
       ],
     };
 
-    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH, templateInfo);
+    const buffer = await renderToBuffer(presentation, templateBuffer, templateInfo);
     const zip = await JSZip.loadAsync(buffer);
 
     const slide1Xml = await zip.file('ppt/slides/slide1.xml')?.async('text');
@@ -69,7 +72,7 @@ describe('slide numbers', () => {
       ],
     };
 
-    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH, templateInfo);
+    const buffer = await renderToBuffer(presentation, templateBuffer, templateInfo);
     const zip = await JSZip.loadAsync(buffer);
     const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
     expect(slideXml).toBeDefined();
@@ -98,7 +101,7 @@ describe('footer', () => {
       ],
     };
 
-    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH, templateInfo);
+    const buffer = await renderToBuffer(presentation, templateBuffer, templateInfo);
     const zip = await JSZip.loadAsync(buffer);
     const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
     expect(slideXml).toBeDefined();
@@ -119,7 +122,7 @@ describe('footer', () => {
       ],
     };
 
-    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH, templateInfo);
+    const buffer = await renderToBuffer(presentation, templateBuffer, templateInfo);
     const zip = await JSZip.loadAsync(buffer);
     const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
     expect(slideXml).toBeDefined();
@@ -145,7 +148,7 @@ describe('hyperlinks in text elements', () => {
       ],
     };
 
-    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH, templateInfo);
+    const buffer = await renderToBuffer(presentation, templateBuffer, templateInfo);
     const zip = await JSZip.loadAsync(buffer);
     const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
     expect(slideXml).toBeDefined();
@@ -177,7 +180,7 @@ describe('hyperlinks in text elements', () => {
       ],
     };
 
-    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH, templateInfo);
+    const buffer = await renderToBuffer(presentation, templateBuffer, templateInfo);
     const zip = await JSZip.loadAsync(buffer);
     const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
     expect(slideXml).toBeDefined();
@@ -200,7 +203,7 @@ describe('hyperlinks in text elements', () => {
       ],
     };
 
-    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH, templateInfo);
+    const buffer = await renderToBuffer(presentation, templateBuffer, templateInfo);
     const zip = await JSZip.loadAsync(buffer);
     const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
     expect(slideXml).toBeDefined();
@@ -229,7 +232,7 @@ describe('hyperlinks in text elements', () => {
       ],
     };
 
-    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH, templateInfo);
+    const buffer = await renderToBuffer(presentation, templateBuffer, templateInfo);
     const zip = await JSZip.loadAsync(buffer);
     const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
     expect(slideXml).toBeDefined();

@@ -12,19 +12,6 @@ import {
   MAX_TIMELINE_EVENTS,
 } from '../schema/constraints.js';
 
-export {
-  MAX_BULLETS,
-  MAX_WORDS_PER_BULLET,
-  MAX_TITLE_CHARS,
-  MAX_KPI_INDICATORS,
-  MAX_TABLE_ROWS,
-  MAX_TABLE_COLS,
-  MAX_CHART_CATEGORIES,
-  MAX_CHART_SERIES,
-  MAX_DIAGRAM_NODES,
-  MAX_TIMELINE_EVENTS,
-};
-
 /**
  * Counts words in a string (split by whitespace).
  */

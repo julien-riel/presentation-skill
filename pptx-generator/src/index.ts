@@ -1,5 +1,6 @@
 import * as path from 'path';
 import { readFileSync, writeFileSync, statSync, existsSync } from 'fs';
+import { readFile } from 'fs/promises';
 import { readTemplate } from './validator/templateReader.js';
 import { runValidation } from './validator/engine.js';
 import { generateManifest } from './validator/manifestGenerator.js';
@@ -133,12 +134,13 @@ export async function generateFromAST(
   }
 
   const tplPath = templatePath ?? DEFAULT_TEMPLATE;
+  const tplBuffer = await readFile(tplPath);
   const templateInfo = await readTemplate(tplPath);
   const manifest = templatePath
     ? getOrGenerateManifest(templateInfo, tplPath)
     : getDefaultManifest();
   const enriched = transformPresentation(result.data, manifest);
-  return renderToBuffer(enriched, tplPath, templateInfo);
+  return renderToBuffer(enriched, tplBuffer, templateInfo);
 }
 
 /**
@@ -164,12 +166,13 @@ export async function generateFromData(
   }
 
   const tplPath = templatePath ?? DEFAULT_TEMPLATE;
+  const tplBuffer = await readFile(tplPath);
   const templateInfo = await readTemplate(tplPath);
   const manifest = templatePath
     ? getOrGenerateManifest(templateInfo, tplPath)
     : getDefaultManifest();
   const enriched = transformPresentation(validationResult.data, manifest);
-  return renderToBuffer(enriched, tplPath, templateInfo);
+  return renderToBuffer(enriched, tplBuffer, templateInfo);
 }
 
 /**
@@ -195,7 +198,7 @@ export function buildDataPrompt(
   return buildDataPromptInternal(capabilities, data, format, title);
 }
 
-// Re-export types for consumers
-export type { Presentation, Slide, Element, LayoutType } from './schema/presentation.js';
+// Re-export types for consumers (public-facing, without internal pipeline fields)
+export type { PresentationInput as Presentation, SlideInput as Slide, Element, LayoutType } from './schema/presentation.js';
 export type { TemplateCapabilities } from './schema/capabilities.js';
 export type { ValidationResult } from './validator/types.js';

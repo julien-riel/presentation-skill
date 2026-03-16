@@ -1,7 +1,8 @@
-import type { Slide, Element } from '../schema/presentation.js';
+import type { Slide } from '../schema/presentation.js';
 import type { DrawerResult } from './placeholderFiller.js';
 import { emu, rectShape, textBoxShape } from './xmlHelpers.js';
 import { CANVAS, HEIGHT } from './layoutConstants.js';
+import { findElement } from './drawerUtils.js';
 
 /**
  * Builds table shapes using rect + textBox primitives.
@@ -13,9 +14,7 @@ export function buildTableShapes(
   startId: number,
   accentColors: string[],
 ): DrawerResult {
-  const tableEl = slide.elements.find(
-    (el): el is Extract<Element, { type: 'table' }> => el.type === 'table',
-  );
+  const tableEl = findElement(slide.elements, 'table');
   if (!tableEl) {
     return { shapes: '', nextId: startId, iconRequests: [] };
   }

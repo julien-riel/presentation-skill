@@ -12,6 +12,17 @@ import { buildChartRelsXml } from './charts/chartStyleBuilder.js';
 import { resolveIcon, createIconCache } from './iconResolver.js';
 import { wrapSlideXml, notesSlideXml, pictureShape, textBoxShape, emu } from './xmlHelpers.js';
 
+/** Slide entry collected during the per-slide loop. */
+interface SlideEntry {
+  slideNum: number;
+  slideXml: string;
+  layoutIndex: number;
+  notes?: string;
+  images: Array<{ relId: string; mediaPath: string; pngBuffer: Buffer }>;
+  charts: Array<{ chartNum: number; chartRelId: string; chartRequest: ChartRequest }>;
+  hyperlinks: Array<{ relId: string; url: string }>;
+}
+
 /**
  * Adds a relationship entry to a slide's .rels file.
  */
@@ -44,6 +55,7 @@ async function embedSlideNotes(
   zip: JSZip,
   slideNum: number,
   notes: string,
+  relId: string,
 ): Promise<string> {
   const notesPath = `ppt/notesSlides/notesSlide${slideNum}.xml`;
   const notesXml = notesSlideXml(notes);
@@ -60,7 +72,7 @@ async function embedSlideNotes(
   await addSlideRelationship(
     zip,
     slideNum,
-    'rId2',
+    relId,
     'http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide',
     `../notesSlides/notesSlide${slideNum}.xml`,
   );
@@ -169,6 +181,96 @@ function buildLayoutFileMap(layouts: LayoutInfo[]): Map<string, { filePath: stri
 }
 
 /**
+ * Assembles the [Content_Types].xml by appending overrides for new slides
+ * and image extension defaults. Pure function — no ZIP manipulation.
+ */
+function buildContentTypesXml(
+  baseXml: string,
+  slideEntries: SlideEntry[],
+  imageExtensionsUsed: Set<string>,
+  noteOverrides: string[],
+  chartOverrides: string[],
+): string {
+  let xml = baseXml.replace('</Types>', '');
+
+  for (const entry of slideEntries) {
+    const slidePath = `ppt/slides/slide${entry.slideNum}.xml`;
+    xml += `\n  <Override PartName="/${slidePath}" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`;
+  }
+
+  xml += noteOverrides.join('');
+  xml += chartOverrides.join('');
+
+  for (const ext of imageExtensionsUsed) {
+    const dotExt = `.${ext}`;
+    const contentType = IMAGE_CONTENT_TYPES[dotExt] ?? 'image/png';
+    if (!xml.includes(`Extension="${ext}"`)) {
+      xml += `\n  <Default Extension="${ext}" ContentType="${contentType}"/>`;
+    }
+  }
+
+  xml += '\n</Types>';
+  return xml;
+}
+
+/**
+ * Assembles ppt/_rels/presentation.xml.rels by appending slide relationships.
+ * Returns the updated XML and a mapping of slideNum to its rId.
+ * Pure function — no ZIP manipulation.
+ */
+function buildPresRelsXml(
+  baseXml: string,
+  slideEntries: SlideEntry[],
+): { xml: string; slideRIds: Map<number, string> } {
+  const rIdMatches = [...baseXml.matchAll(/Id="rId(\d+)"/g)];
+  let nextRId = Math.max(...rIdMatches.map(m => parseInt(m[1], 10)), 0) + 1;
+
+  let xml = baseXml.replace('</Relationships>', '');
+  const slideRIds = new Map<number, string>();
+
+  for (const entry of slideEntries) {
+    const slideRId = `rId${nextRId++}`;
+    slideRIds.set(entry.slideNum, slideRId);
+    xml += `\n  <Relationship Id="${slideRId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${entry.slideNum}.xml"/>`;
+  }
+
+  xml += '\n</Relationships>';
+  return { xml, slideRIds };
+}
+
+/**
+ * Patches presentation.xml with a sldIdLst containing the new slides.
+ * Pure function — no ZIP manipulation.
+ */
+function updatePresentationXml(
+  presXml: string,
+  slideEntries: SlideEntry[],
+  slideRIds: Map<number, string>,
+): string {
+  const baseSlideId = 256;
+  let sldIdLst = '';
+  for (const entry of slideEntries) {
+    const slideRId = slideRIds.get(entry.slideNum)!;
+    sldIdLst += `\n    <p:sldId id="${baseSlideId + entry.slideNum}" r:id="${slideRId}"/>`;
+  }
+
+  if (presXml.includes('<p:sldIdLst')) {
+    return presXml.replace(
+      /<p:sldIdLst[^>]*\/>/,
+      `<p:sldIdLst>${sldIdLst}\n  </p:sldIdLst>`
+    ).replace(
+      /<p:sldIdLst>[\s\S]*?<\/p:sldIdLst>/,
+      `<p:sldIdLst>${sldIdLst}\n  </p:sldIdLst>`
+    );
+  }
+
+  return presXml.replace(
+    '</p:sldMasterIdLst>',
+    `</p:sldMasterIdLst>\n  <p:sldIdLst>${sldIdLst}\n  </p:sldIdLst>`
+  );
+}
+
+/**
  * Renders a presentation AST into a .pptx Buffer by opening the template,
  * adding slides that reference its slideLayouts, and filling placeholders.
  *
@@ -177,11 +279,10 @@ function buildLayoutFileMap(layouts: LayoutInfo[]): Map<string, { filePath: stri
  */
 export async function renderToBuffer(
   presentation: Presentation,
-  templatePath: string,
+  templateBuffer: Buffer,
   templateInfo: TemplateInfo,
 ): Promise<Buffer> {
-  // Open the template
-  const templateBuffer = await fs.readFile(templatePath);
+  // Open the template from the provided buffer
   const zip = await JSZip.loadAsync(templateBuffer);
 
   // Build layout map from already-read template info
@@ -193,15 +294,7 @@ export async function renderToBuffer(
   const presXml = await presXmlEntry.async('text');
 
   // Track new slides
-  const slideEntries: Array<{
-    slideNum: number;
-    slideXml: string;
-    layoutIndex: number;
-    notes?: string;
-    images: Array<{ relId: string; mediaPath: string; pngBuffer: Buffer }>;
-    charts: Array<{ chartNum: number; chartRelId: string; chartRequest: ChartRequest }>;
-    hyperlinks: Array<{ relId: string; url: string }>;
-  }> = [];
+  const slideEntries: SlideEntry[] = [];
 
   const iconCache = createIconCache();
   const missingIcons: string[] = [];
@@ -313,22 +406,13 @@ export async function renderToBuffer(
   if (!presRelsEntry) throw new Error('Template is missing required file: ppt/_rels/presentation.xml.rels');
   const presRelsXml = await presRelsEntry.async('text');
 
-  // Find the highest existing rId in presentation.rels
-  const rIdMatches = [...presRelsXml.matchAll(/Id="rId(\d+)"/g)];
-  let nextRId = Math.max(...rIdMatches.map(m => parseInt(m[1], 10)), 0) + 1;
-
-  // Build slide files and relationships
-  let newContentTypes = contentTypesXml.replace('</Types>', '');
-  let newPresRels = presRelsXml.replace('</Relationships>', '');
-  let sldIdLst = '';
-  const baseSlideId = 256;
+  // Collect note and chart content-type overrides during ZIP embedding
+  const noteOverrides: string[] = [];
+  const chartOverrides: string[] = [];
 
   for (const entry of slideEntries) {
-    const slidePath = `ppt/slides/slide${entry.slideNum}.xml`;
-    const slideRId = `rId${nextRId++}`;
-
     // Write slide XML
-    zip.file(slidePath, entry.slideXml);
+    zip.file(`ppt/slides/slide${entry.slideNum}.xml`, entry.slideXml);
 
     // Write slide relationships (points to the correct slideLayout)
     const slideRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -337,18 +421,9 @@ export async function renderToBuffer(
 </Relationships>`;
     zip.file(`ppt/slides/_rels/slide${entry.slideNum}.xml.rels`, slideRels);
 
-    // Add to Content_Types
-    newContentTypes += `\n  <Override PartName="/${slidePath}" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`;
-
-    // Add to presentation.rels
-    newPresRels += `\n  <Relationship Id="${slideRId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${entry.slideNum}.xml"/>`;
-
-    // Build sldIdLst entry
-    sldIdLst += `\n    <p:sldId id="${baseSlideId + entry.slideNum}" r:id="${slideRId}"/>`;
-
     // Embed speaker notes
     if (entry.notes) {
-      newContentTypes += await embedSlideNotes(zip, entry.slideNum, entry.notes);
+      noteOverrides.push(await embedSlideNotes(zip, entry.slideNum, entry.notes, 'rIdNotes'));
     }
 
     // Embed images into ZIP and update slide rels
@@ -357,7 +432,7 @@ export async function renderToBuffer(
     // Embed charts into ZIP and update slide rels
     const chartContentTypes: string[] = [];
     await embedSlideCharts(zip, entry.slideNum, entry.charts, chartContentTypes);
-    newContentTypes += chartContentTypes.join('');
+    chartOverrides.push(...chartContentTypes);
 
     // Embed hyperlink relationships
     for (const hl of entry.hyperlinks) {
@@ -372,41 +447,14 @@ export async function renderToBuffer(
     }
   }
 
-  // Add content type defaults for all image extensions used
-  for (const ext of imageExtensionsUsed) {
-    const dotExt = `.${ext}`;
-    const contentType = IMAGE_CONTENT_TYPES[dotExt] ?? 'image/png';
-    if (!newContentTypes.includes(`Extension="${ext}"`)) {
-      newContentTypes += `\n  <Default Extension="${ext}" ContentType="${contentType}"/>`;
-    }
-  }
-  newContentTypes += '\n</Types>';
-  newPresRels += '\n</Relationships>';
+  // Assemble XML metadata using pure helper functions
+  const finalContentTypes = buildContentTypesXml(contentTypesXml, slideEntries, imageExtensionsUsed, noteOverrides, chartOverrides);
+  const { xml: finalPresRels, slideRIds } = buildPresRelsXml(presRelsXml, slideEntries);
+  const updatedPresXml = updatePresentationXml(presXml, slideEntries, slideRIds);
 
-  // Update Content_Types
-  zip.file('[Content_Types].xml', newContentTypes);
-
-  // Update presentation.xml.rels
-  zip.file('ppt/_rels/presentation.xml.rels', newPresRels);
-
-  // Update presentation.xml to include slide list
-  let updatedPresXml: string;
-  if (presXml.includes('<p:sldIdLst')) {
-    // Replace empty or existing sldIdLst
-    updatedPresXml = presXml.replace(
-      /<p:sldIdLst[^>]*\/>/,
-      `<p:sldIdLst>${sldIdLst}\n  </p:sldIdLst>`
-    ).replace(
-      /<p:sldIdLst>[\s\S]*?<\/p:sldIdLst>/,
-      `<p:sldIdLst>${sldIdLst}\n  </p:sldIdLst>`
-    );
-  } else {
-    // Insert sldIdLst after sldMasterIdLst
-    updatedPresXml = presXml.replace(
-      '</p:sldMasterIdLst>',
-      `</p:sldMasterIdLst>\n  <p:sldIdLst>${sldIdLst}\n  </p:sldIdLst>`
-    );
-  }
+  // Write assembled XML back into the ZIP
+  zip.file('[Content_Types].xml', finalContentTypes);
+  zip.file('ppt/_rels/presentation.xml.rels', finalPresRels);
   zip.file('ppt/presentation.xml', updatedPresXml);
 
   if (missingIcons.length > 0) {
