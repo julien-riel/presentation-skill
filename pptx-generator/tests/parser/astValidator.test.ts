@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateAST } from '../../src/parser/astValidator.ts';
+import { validateAST } from '../../src/parser/astValidator.js';
 
 describe('validateAST', () => {
   it('should accept a valid minimal AST', () => {

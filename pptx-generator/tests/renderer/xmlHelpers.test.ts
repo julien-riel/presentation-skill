@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { emuFromPx, pictureShape } from '../../src/renderer/xmlHelpers.js';
+import { emuFromPx, pictureShape, wrapSlideXml } from '../../src/renderer/xmlHelpers.js';
 
 describe('emuFromPx', () => {
   it('converts pixels to EMU at 96 DPI', () => {
@@ -22,5 +22,12 @@ describe('pictureShape', () => {
     expect(xml).toContain('cy="400"');
     expect(xml).toContain('noChangeAspect="1"');
     expect(xml).toContain('</p:pic>');
+  });
+});
+
+describe('wrapSlideXml', () => {
+  it('includes xmlns:c namespace', () => {
+    const xml = wrapSlideXml('<p:sp/>');
+    expect(xml).toContain('xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart"');
   });
 });

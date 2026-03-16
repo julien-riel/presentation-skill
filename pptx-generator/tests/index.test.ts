@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterAll } from 'vitest';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { fileURLToPath } from 'url';
@@ -14,6 +14,11 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const TEMPLATE_PATH = path.resolve(__dirname, '../assets/default-template.pptx');
+const SIDECAR_PATH = TEMPLATE_PATH.replace(/\.pptx$/i, '.capabilities.json');
+
+afterAll(async () => {
+  try { await fs.unlink(SIDECAR_PATH); } catch { /* ignore */ }
+});
 
 describe('validateTemplate', () => {
   it('returns a validation report for the default template', async () => {

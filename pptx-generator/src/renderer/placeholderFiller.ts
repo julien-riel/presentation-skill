@@ -3,6 +3,12 @@ import type { TemplateInfo } from '../validator/types.js';
 import { placeholderShape, bulletPlaceholderShape, textBoxShape, emuFromPx, emu } from './xmlHelpers.js';
 import { buildTimelineShapes } from './timelineDrawer.js';
 import { buildArchitectureShapes } from './architectureDrawer.js';
+import { buildKpiShapes } from './kpiDrawer.js';
+import { buildTableShapes } from './tableDrawer.js';
+import { buildRoadmapShapes } from './roadmapDrawer.js';
+import { buildProcessShapes } from './processDrawer.js';
+import { buildComparisonShapes } from './comparisonDrawer.js';
+import { buildChart, type ChartRequest } from './chartDrawer.js';
 
 /** Default accent color when template has no accent colors defined. */
 const DEFAULT_ACCENT_COLOR = '2D7DD2';
@@ -25,6 +31,7 @@ export interface SlideShapeResult {
   shapes: string;
   nextId: number;
   iconRequests: IconRequest[];
+  chartRequests: ChartRequest[];
 }
 
 /**
@@ -102,6 +109,7 @@ export function buildSlideShapes(
   let id = startId;
   let shapes = '';
   const iconRequests: IconRequest[] = [];
+  const chartRequests: ChartRequest[] = [];
   let quoteRendered = false;
 
   switch (layout) {
@@ -213,6 +221,86 @@ export function buildSlideShapes(
       break;
     }
 
+    case 'kpi': {
+      const title = getTitleText(slide);
+      shapes += placeholderShape(id++, 'title', 0, [title]);
+      const accentColors = templateInfo.theme.accentColors.map(c => c.replace('#', ''));
+      const result = buildKpiShapes(slide, id, accentColors);
+      shapes += result.shapes;
+      id = result.nextId;
+      iconRequests.push(...result.iconRequests);
+      break;
+    }
+
+    case 'table': {
+      const title = getTitleText(slide);
+      shapes += placeholderShape(id++, 'title', 0, [title]);
+      const accentColors = templateInfo.theme.accentColors.map(c => c.replace('#', ''));
+      const result = buildTableShapes(slide, id, accentColors);
+      shapes += result.shapes;
+      id = result.nextId;
+      break;
+    }
+
+    case 'quote': {
+      const title = getTitleText(slide);
+      shapes += placeholderShape(id++, 'title', 0, [title]);
+
+      const quoteEl = findElement(slide.elements, 'quote');
+      if (quoteEl) {
+        quoteRendered = true;
+        const accentColor = templateInfo.theme.accentColors[0]?.replace('#', '') ?? DEFAULT_ACCENT_COLOR;
+
+        const quoteText = `\u201C${quoteEl.text}\u201D`;
+        shapes += textBoxShape(id++, emu(1.5), emu(2.0), emu(9.2), emu(2.5),
+          quoteText, { size: 24, color: '333333', align: 'ctr', valign: 'ctr' });
+
+        if (quoteEl.author) {
+          shapes += textBoxShape(id++, emu(1.5), emu(4.6), emu(9.2), emu(0.5),
+            `\u2014 ${quoteEl.author}`, { size: 14, color: accentColor, align: 'ctr', valign: 't' });
+        }
+      }
+      break;
+    }
+
+    case 'roadmap':
+    case 'process': {
+      const title = getTitleText(slide);
+      shapes += placeholderShape(id++, 'title', 0, [title]);
+      const accentColors = templateInfo.theme.accentColors.map(c => c.replace('#', ''));
+      const result = layout === 'roadmap'
+        ? buildRoadmapShapes(slide, id, accentColors)
+        : buildProcessShapes(slide, id, accentColors);
+      shapes += result.shapes;
+      id = result.nextId;
+      iconRequests.push(...result.iconRequests);
+      break;
+    }
+
+    case 'comparison': {
+      const title = getTitleText(slide);
+      shapes += placeholderShape(id++, 'title', 0, [title]);
+      const accentColors = templateInfo.theme.accentColors.map(c => c.replace('#', ''));
+      const result = buildComparisonShapes(slide, id, accentColors);
+      shapes += result.shapes;
+      id = result.nextId;
+      break;
+    }
+
+    case 'chart': {
+      const title = getTitleText(slide);
+      shapes += placeholderShape(id++, 'title', 0, [title]);
+      const chartEl = findElement(slide.elements, 'chart');
+      if (chartEl) {
+        const accentColors = templateInfo.theme.accentColors.map(c => c.replace('#', ''));
+        const result = buildChart(chartEl, id, accentColors);
+        shapes += result.anchorShape;
+        id = result.nextId;
+        chartRequests.push(result.chartRequest);
+      }
+      break;
+    }
+
     default: {
       // Fallback: render as bullets
       const title = getTitleText(slide);
@@ -244,5 +332,5 @@ export function buildSlideShapes(
     }
   }
 
-  return { shapes, nextId: id, iconRequests };
+  return { shapes, nextId: id, iconRequests, chartRequests };
 }

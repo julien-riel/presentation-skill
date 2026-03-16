@@ -3,7 +3,7 @@ import {
   TIER1_LAYOUTS,
   TIER2_LAYOUTS,
   ALL_LAYOUT_TYPES,
-} from '../types.js';
+} from '../constants.js';
 import { getSupportedLayoutTypes } from '../manifestGenerator.js';
 
 export const tierRules: ValidationRule[] = [

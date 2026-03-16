@@ -10,13 +10,15 @@ import {
   TIER1_LAYOUTS,
   TIER2_LAYOUTS,
   FALLBACK_CASCADES,
-} from './types.js';
+} from './constants.js';
 
 let _version: string | undefined;
 function getVersion(): string {
   if (!_version) {
     const dir = path.dirname(fileURLToPath(import.meta.url));
-    _version = JSON.parse(readFileSync(path.resolve(dir, '../../package.json'), 'utf-8')).version;
+    const ver: string = JSON.parse(readFileSync(path.resolve(dir, '../../package.json'), 'utf-8')).version ?? '0.0.0';
+    _version = ver;
+    return ver;
   }
   return _version;
 }
@@ -24,10 +26,10 @@ function getVersion(): string {
 /**
  * Returns layout type names supported by the template.
  */
-export function getSupportedLayoutTypes(template: TemplateInfo): string[] {
+export function getSupportedLayoutTypes(template: TemplateInfo): LayoutType[] {
   return template.layouts
     .map(l => LAYOUT_PPT_NAME_TO_TYPE[l.name])
-    .filter((t): t is string => !!t);
+    .filter((t): t is LayoutType => !!t);
 }
 
 /**

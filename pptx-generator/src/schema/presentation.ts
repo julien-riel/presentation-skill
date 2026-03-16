@@ -75,9 +75,24 @@ export const TimelineElementSchema = z.object({
   events: z.array(TimelineEventSchema),
 });
 
+export const ChartOptionsSchema = z.object({
+  title: z.string().optional(),
+  xAxisLabel: z.string().optional(),
+  yAxisLabel: z.string().optional(),
+  yAxisMin: z.number().optional(),
+  yAxisMax: z.number().optional(),
+  valueFormat: z.enum(['number', 'percent', 'currency']).optional(),
+  currencySymbol: z.string().max(5).regex(/^[^<>&"']*$/).optional(),
+  showDataLabels: z.boolean().optional(),
+  showLegend: z.boolean().optional(),
+  legendPosition: z.enum(['top', 'bottom', 'right', 'left']).optional(),
+  colors: z.array(z.string().regex(/^[0-9A-Fa-f]{6}$/)).optional(),
+  gridLines: z.boolean().optional(),
+});
+
 export const ChartElementSchema = z.object({
   type: z.literal('chart'),
-  chartType: z.enum(['bar', 'line', 'pie', 'donut']),
+  chartType: z.enum(['bar', 'line', 'pie', 'donut', 'stackedBar']),
   data: z.object({
     labels: z.array(z.string()),
     series: z.array(z.object({
@@ -85,6 +100,7 @@ export const ChartElementSchema = z.object({
       values: z.array(z.number()),
     })),
   }),
+  options: ChartOptionsSchema.optional(),
 });
 
 export const TableElementSchema = z.object({

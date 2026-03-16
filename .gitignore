@@ -1,2 +1,4 @@
 node_modules/
 dist/
+*.capabilities.json
+!pptx-generator/assets/default-capabilities.json

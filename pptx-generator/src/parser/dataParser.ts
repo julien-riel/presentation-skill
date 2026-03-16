@@ -182,12 +182,12 @@ export function parseJSONData(data: unknown, title: string): Presentation {
         { type: 'title', text: title },
         {
           type: 'diagram',
-          nodes: (data.nodes as Array<Record<string, string>>).map(n => ({
-            id: n.id ?? '', label: n.label ?? '',
-            ...(n.layer ? { layer: n.layer } : {}),
+          nodes: (data.nodes as Array<Record<string, unknown>>).map(n => ({
+            id: String(n.id ?? ''), label: String(n.label ?? ''),
+            ...(n.layer ? { layer: String(n.layer) } : {}),
           })),
-          edges: (data.edges as Array<Record<string, string>>).map(e => ({
-            from: e.from ?? '', to: e.to ?? '',
+          edges: (data.edges as Array<Record<string, unknown>>).map(e => ({
+            from: String(e.from ?? ''), to: String(e.to ?? ''),
           })),
         },
       ],
@@ -200,9 +200,9 @@ export function parseJSONData(data: unknown, title: string): Presentation {
           { type: 'title', text: title },
           {
             type: 'timeline',
-            events: data.map((item: Record<string, string>) => ({
-              date: item.date, label: item.label,
-              ...(item.status && isValidStatus(item.status) ? { status: item.status as TimelineStatus } : {}),
+            events: data.map((item: Record<string, unknown>) => ({
+              date: String(item.date ?? ''), label: String(item.label ?? ''),
+              ...(typeof item.status === 'string' && isValidStatus(item.status) ? { status: item.status as TimelineStatus } : {}),
             })),
           },
         ],
@@ -214,10 +214,10 @@ export function parseJSONData(data: unknown, title: string): Presentation {
           { type: 'title', text: 'Key Metrics' },
           {
             type: 'kpi',
-            indicators: data.map((item: Record<string, string>) => ({
-              label: item.label, value: item.value,
-              ...(item.unit ? { unit: item.unit } : {}),
-              ...(item.trend ? { trend: item.trend as 'up' | 'down' | 'stable' } : {}),
+            indicators: data.map((item: Record<string, unknown>) => ({
+              label: String(item.label ?? ''), value: String(item.value ?? ''),
+              ...(item.unit ? { unit: String(item.unit) } : {}),
+              ...(typeof item.trend === 'string' ? { trend: item.trend as 'up' | 'down' | 'stable' } : {}),
             })),
           },
         ],

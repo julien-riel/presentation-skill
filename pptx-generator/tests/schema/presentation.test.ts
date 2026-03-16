@@ -152,6 +152,75 @@ describe('ElementSchema', () => {
   it('rejects a title element without text', () => {
     expect(() => ElementSchema.parse({ type: 'title' })).toThrow();
   });
+
+  it('accepts a chart element with stackedBar type', () => {
+    const el = {
+      type: 'chart',
+      chartType: 'stackedBar',
+      data: {
+        labels: ['Q1', 'Q2'],
+        series: [{ name: 'Revenue', values: [100, 200] }],
+      },
+    };
+    expect(ElementSchema.parse(el)).toEqual(el);
+  });
+
+  it('accepts a chart element with options', () => {
+    const el = {
+      type: 'chart',
+      chartType: 'bar',
+      data: {
+        labels: ['Q1', 'Q2'],
+        series: [{ name: 'Revenue', values: [100, 200] }],
+      },
+      options: {
+        title: 'Revenue by Quarter',
+        xAxisLabel: 'Quarter',
+        yAxisLabel: 'Amount',
+        yAxisMin: 0,
+        yAxisMax: 300,
+        valueFormat: 'currency',
+        currencySymbol: '$',
+        showDataLabels: true,
+        showLegend: true,
+        legendPosition: 'bottom',
+        colors: ['1E3A5F', '2C7DA0'],
+        gridLines: true,
+      },
+    };
+    expect(ElementSchema.parse(el)).toEqual(el);
+  });
+
+  it('accepts a chart element without options (backward compat)', () => {
+    const el = {
+      type: 'chart',
+      chartType: 'pie',
+      data: {
+        labels: ['A', 'B'],
+        series: [{ name: 'Share', values: [60, 40] }],
+      },
+    };
+    expect(ElementSchema.parse(el)).toEqual(el);
+  });
+
+  it('rejects chart with invalid hex color in options', () => {
+    const el = {
+      type: 'chart',
+      chartType: 'bar',
+      data: { labels: ['A'], series: [{ name: 'X', values: [1] }] },
+      options: { colors: ['#FF0000'] },
+    };
+    expect(() => ElementSchema.parse(el)).toThrow();
+  });
+
+  it('rejects chart with unknown chartType', () => {
+    const el = {
+      type: 'chart',
+      chartType: 'radar',
+      data: { labels: ['A'], series: [{ name: 'X', values: [1] }] },
+    };
+    expect(() => ElementSchema.parse(el)).toThrow();
+  });
 });
 
 describe('SlideSchema', () => {

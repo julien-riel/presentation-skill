@@ -3,6 +3,11 @@ import type { Slide, Element } from '../schema/presentation.js';
 export const MAX_BULLETS = 5;
 export const MAX_WORDS_PER_BULLET = 12;
 export const MAX_TITLE_CHARS = 60;
+export const MAX_KPI_INDICATORS = 6;
+export const MAX_TABLE_ROWS = 8;
+export const MAX_TABLE_COLS = 6;
+export const MAX_CHART_CATEGORIES = 8;
+export const MAX_CHART_SERIES = 4;
 
 /**
  * Counts words in a string (split by whitespace).
@@ -60,6 +65,84 @@ export function validateSlideContent(slide: Slide): Slide[] {
       return item;
     });
     return { ...el, items: newItems };
+  });
+
+  // --- KPI indicator limit ---
+  elements = elements.map((el) => {
+    if (el.type !== 'kpi') return el;
+    if (el.indicators.length > MAX_KPI_INDICATORS) {
+      warnings.push(`KPI indicators truncated from ${el.indicators.length} to ${MAX_KPI_INDICATORS}`);
+      return { ...el, indicators: el.indicators.slice(0, MAX_KPI_INDICATORS) };
+    }
+    return el;
+  });
+
+  // --- Table row/column limit ---
+  elements = elements.map((el) => {
+    if (el.type !== 'table') return el;
+    let headers = el.headers;
+    let rows = el.rows;
+
+    if (headers.length > MAX_TABLE_COLS) {
+      warnings.push(`Table columns truncated from ${headers.length} to ${MAX_TABLE_COLS}`);
+      headers = headers.slice(0, MAX_TABLE_COLS);
+      rows = rows.map(row => row.slice(0, MAX_TABLE_COLS));
+    }
+    if (rows.length > MAX_TABLE_ROWS) {
+      warnings.push(`Table rows truncated from ${rows.length} to ${MAX_TABLE_ROWS}`);
+      rows = rows.slice(0, MAX_TABLE_ROWS);
+    }
+
+    if (headers !== el.headers || rows !== el.rows) {
+      return { ...el, headers, rows };
+    }
+    return el;
+  });
+
+  // --- Chart: max 1 per slide ---
+  const chartElements = elements.filter(el => el.type === 'chart');
+  if (chartElements.length > 1) {
+    warnings.push(`Multiple chart elements reduced to 1`);
+    let kept = false;
+    elements = elements.filter(el => {
+      if (el.type !== 'chart') return true;
+      if (!kept) { kept = true; return true; }
+      return false;
+    });
+  }
+
+  // --- Chart category/series limit ---
+  elements = elements.map((el) => {
+    if (el.type !== 'chart') return el;
+    let { labels, series } = el.data;
+
+    if (series.length > MAX_CHART_SERIES) {
+      warnings.push(`Chart series truncated from ${series.length} to ${MAX_CHART_SERIES}`);
+      series = series.slice(0, MAX_CHART_SERIES);
+    }
+
+    if ((el.chartType === 'pie' || el.chartType === 'donut') && series.length > 1) {
+      warnings.push(`${el.chartType} chart reduced to single series`);
+      series = [series[0]];
+    }
+
+    if (labels.length > MAX_CHART_CATEGORIES) {
+      warnings.push(`Chart categories truncated from ${labels.length} to ${MAX_CHART_CATEGORIES}`);
+      labels = labels.slice(0, MAX_CHART_CATEGORIES);
+      series = series.map(s => ({ ...s, values: s.values.slice(0, MAX_CHART_CATEGORIES) }));
+    }
+
+    series = series.map(s => {
+      if (s.values.length < labels.length) {
+        return { ...s, values: [...s.values, ...Array(labels.length - s.values.length).fill(0)] };
+      }
+      if (s.values.length > labels.length) {
+        return { ...s, values: s.values.slice(0, labels.length) };
+      }
+      return s;
+    });
+
+    return { ...el, data: { labels, series } };
   });
 
   // --- Bullet count split ---
