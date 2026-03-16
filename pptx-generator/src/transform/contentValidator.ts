@@ -3,6 +3,9 @@ import type { Slide, Element } from '../schema/presentation.js';
 export const MAX_BULLETS = 5;
 export const MAX_WORDS_PER_BULLET = 12;
 export const MAX_TITLE_CHARS = 60;
+export const MAX_KPI_INDICATORS = 6;
+export const MAX_TABLE_ROWS = 8;
+export const MAX_TABLE_COLS = 6;
 
 /**
  * Counts words in a string (split by whitespace).
@@ -60,6 +63,38 @@ export function validateSlideContent(slide: Slide): Slide[] {
       return item;
     });
     return { ...el, items: newItems };
+  });
+
+  // --- KPI indicator limit ---
+  elements = elements.map((el) => {
+    if (el.type !== 'kpi') return el;
+    if (el.indicators.length > MAX_KPI_INDICATORS) {
+      warnings.push(`KPI indicators truncated from ${el.indicators.length} to ${MAX_KPI_INDICATORS}`);
+      return { ...el, indicators: el.indicators.slice(0, MAX_KPI_INDICATORS) };
+    }
+    return el;
+  });
+
+  // --- Table row/column limit ---
+  elements = elements.map((el) => {
+    if (el.type !== 'table') return el;
+    let headers = el.headers;
+    let rows = el.rows;
+
+    if (headers.length > MAX_TABLE_COLS) {
+      warnings.push(`Table columns truncated from ${headers.length} to ${MAX_TABLE_COLS}`);
+      headers = headers.slice(0, MAX_TABLE_COLS);
+      rows = rows.map(row => row.slice(0, MAX_TABLE_COLS));
+    }
+    if (rows.length > MAX_TABLE_ROWS) {
+      warnings.push(`Table rows truncated from ${rows.length} to ${MAX_TABLE_ROWS}`);
+      rows = rows.slice(0, MAX_TABLE_ROWS);
+    }
+
+    if (headers !== el.headers || rows !== el.rows) {
+      return { ...el, headers, rows };
+    }
+    return el;
   });
 
   // --- Bullet count split ---

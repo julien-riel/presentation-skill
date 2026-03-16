@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { Slide } from '../../src/schema/presentation.js';
+import type { Slide, Presentation } from '../../src/schema/presentation.js';
 import { resolveLayouts } from '../../src/transform/layoutResolver.js';
 import { validateContent } from '../../src/transform/contentValidator.js';
 import { transformPresentation } from '../../src/transform/index.js';
@@ -130,6 +130,86 @@ describe('contentValidator', () => {
     expect(result).toHaveLength(1);
     const bullets = result[0].elements.find((el) => el.type === 'bullets');
     expect(bullets && bullets.type === 'bullets' && bullets.items).toEqual(['One', 'Two', 'Three']);
+  });
+
+  it('truncates KPI indicators beyond 6', () => {
+    const presentation: Presentation = {
+      title: 'KPI Limit',
+      slides: [{
+        layout: 'kpi',
+        elements: [
+          { type: 'title', text: 'Too Many' },
+          {
+            type: 'kpi',
+            indicators: Array.from({ length: 8 }, (_, i) => ({
+              label: `M${i}`, value: `${i}`,
+            })),
+          },
+        ],
+      }],
+    };
+
+    const manifest = makeTier1Capabilities();
+    const result = transformPresentation(presentation, manifest);
+    const kpiEl = result.slides[0].elements.find(el => el.type === 'kpi');
+    expect(kpiEl).toBeDefined();
+    if (kpiEl?.type === 'kpi') {
+      expect(kpiEl.indicators.length).toBeLessThanOrEqual(6);
+    }
+    expect(result.slides[0]._warnings?.some(w => w.includes('KPI'))).toBe(true);
+  });
+
+  it('truncates table rows beyond 8', () => {
+    const presentation: Presentation = {
+      title: 'Table Limit',
+      slides: [{
+        layout: 'table',
+        elements: [
+          { type: 'title', text: 'Big Table' },
+          {
+            type: 'table',
+            headers: ['A', 'B'],
+            rows: Array.from({ length: 12 }, (_, i) => [`r${i}`, `v${i}`]),
+          },
+        ],
+      }],
+    };
+
+    const manifest = makeTier1Capabilities();
+    const result = transformPresentation(presentation, manifest);
+    const tableEl = result.slides[0].elements.find(el => el.type === 'table');
+    expect(tableEl).toBeDefined();
+    if (tableEl?.type === 'table') {
+      expect(tableEl.rows.length).toBeLessThanOrEqual(8);
+    }
+    expect(result.slides[0]._warnings?.some(w => w.includes('Table'))).toBe(true);
+  });
+
+  it('truncates table columns beyond 6', () => {
+    const presentation: Presentation = {
+      title: 'Wide Table',
+      slides: [{
+        layout: 'table',
+        elements: [
+          { type: 'title', text: 'Too Wide' },
+          {
+            type: 'table',
+            headers: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
+            rows: [['1', '2', '3', '4', '5', '6', '7', '8']],
+          },
+        ],
+      }],
+    };
+
+    const manifest = makeTier1Capabilities();
+    const result = transformPresentation(presentation, manifest);
+    const tableEl = result.slides[0].elements.find(el => el.type === 'table');
+    expect(tableEl).toBeDefined();
+    if (tableEl?.type === 'table') {
+      expect(tableEl.headers.length).toBeLessThanOrEqual(6);
+      expect(tableEl.rows[0].length).toBeLessThanOrEqual(6);
+    }
+    expect(result.slides[0]._warnings?.some(w => w.includes('Table'))).toBe(true);
   });
 });
 
