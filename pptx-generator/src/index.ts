@@ -10,6 +10,7 @@ import { buildASTPrompt } from './parser/promptParser.js';
 import { parseCSV, parseJSONData } from './parser/dataParser.js';
 import { transformPresentation } from './transform/index.js';
 import { renderToBuffer } from './renderer/pptxRenderer.js';
+import { TemplateCapabilitiesSchema } from './schema/capabilities.js';
 import type { TemplateCapabilities } from './schema/capabilities.js';
 import type { Presentation } from './schema/presentation.js';
 import type { ValidationResult } from './validator/types.js';
@@ -34,7 +35,7 @@ export function getDefaultTemplatePath(): string {
 export function getDefaultManifest(): TemplateCapabilities {
   if (cachedDefaultManifest) return cachedDefaultManifest;
   const raw = readFileSync(DEFAULT_MANIFEST_PATH, 'utf-8');
-  cachedDefaultManifest = JSON.parse(raw) as TemplateCapabilities;
+  cachedDefaultManifest = TemplateCapabilitiesSchema.parse(JSON.parse(raw));
   return cachedDefaultManifest;
 }
 

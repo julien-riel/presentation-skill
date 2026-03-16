@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { buildASTPrompt } from '../../src/parser/promptParser.ts';
-import type { TemplateCapabilities } from '../../src/schema/capabilities.ts';
+import { buildASTPrompt } from '../../src/parser/promptParser.js';
+import type { TemplateCapabilities } from '../../src/schema/capabilities.js';
 
 const MOCK_CAPABILITIES: TemplateCapabilities = {
   template: 'test.pptx',

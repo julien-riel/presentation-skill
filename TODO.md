@@ -10,17 +10,15 @@ SKILL.md existe (184 lignes) avec description, déclencheurs, modes d'opération
 
 ---
 
-## 2. Gabarit par défaut professionnel
+## ~~2. Gabarit par défaut professionnel~~ FAIT
 
-Le template actuel (`assets/default-template.pptx`) est fonctionnellement correct (Tier 2, passe la validation) mais visuellement vide — les slideLayouts n'ont aucun style visuel (pas de fond, pas de couleurs de texte, pas de mise en forme).
-
-**À faire :**
-- Enrichir `scripts/buildDefaultTemplate.ts` pour ajouter du style dans les layouts XML :
-  - Fond coloré pour LAYOUT_TITLE (ex: navy) et LAYOUT_SECTION (ex: accent)
-  - Styles de texte par défaut dans les placeholders (taille, couleur, gras, alignement)
-  - Fond légèrement teinté pour les layouts de contenu
-  - Styles de puces dans le body placeholder de LAYOUT_BULLETS
-- **Alternative :** Créer le template dans PowerPoint/Google Slides à la main, l'exporter en .pptx, et le valider avec le CLI. C'est plus rapide et le résultat sera meilleur qu'en XML brut.
+Le gabarit (`assets/default-template.pptx`) est Tier 2 avec style visuel professionnel :
+- Fond navy pour LAYOUT_TITLE, fond bleu accent pour LAYOUT_SECTION
+- Fond gris clair (F7F9FC) pour les layouts de contenu
+- Styles de texte dans tous les placeholders (taille, couleur, gras, alignement, ancrage)
+- Puces stylées avec couleur d'accent dans LAYOUT_BULLETS et LAYOUT_TWO_COLUMNS
+- Ligne d'accent décorative sous le titre pour les layouts de contenu
+- Police Calibri Light (titres) / Calibri (corps) via le thème
 
 ---
 
@@ -71,7 +69,7 @@ Ces éléments ne sont pas bloquants pour une v1 mais sont dans la spec :
 | Fonctionnalité | Priorité | Notes |
 |---|---|---|
 | ~~Support des icônes Lucide~~ | ~~Haute~~ | ~~FAIT — icônes sur bullets, timeline, KPI, quote, diagram~~ |
-| Gabarit par défaut professionnel | Haute | Le template actuel est fonctionnel mais visuellement vide |
+| ~~Gabarit par défaut professionnel~~ | ~~Haute~~ | ~~FAIT — fond coloré, styles de texte, puces, ligne d'accent~~ |
 | Renderers KPI/Chart/Table natifs | Moyenne | Actuellement dégradés en bullets — acceptable pour v1 |
 | Cache du manifeste (comparaison dates) | Basse | Spec section 8.3 — re-générer si .pptx plus récent |
 | Mode génération depuis données avec LLM | Moyenne | `dataParser.ts` fait l'analyse, mais la narration LLM manque |
@@ -81,6 +79,6 @@ Ces éléments ne sont pas bloquants pour une v1 mais sont dans la spec :
 
 ## Ordre de priorité suggéré
 
-1. **Gabarit professionnel** — créer dans PowerPoint, valider avec le CLI
-2. **Renderers KPI/Chart/Table** — pour une couverture complète des types de slides
-3. **Cache manifeste** — re-générer si .pptx plus récent
+1. **Renderers KPI/Chart/Table** — pour une couverture complète des types de slides
+2. **Cache manifeste** — re-générer si .pptx plus récent
+3. **Mode données avec narration LLM** — enrichir les slides générées depuis CSV/JSON

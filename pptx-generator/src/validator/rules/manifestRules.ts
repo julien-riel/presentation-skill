@@ -1,5 +1,6 @@
 import type { ValidationRule } from '../types.js';
-import { FALLBACK_CASCADES } from '../types.js';
+import type { LayoutType } from '../../schema/presentation.js';
+import { FALLBACK_CASCADES } from '../constants.js';
 import { generateManifest } from '../manifestGenerator.js';
 
 export const manifestRules: ValidationRule[] = [
@@ -40,7 +41,7 @@ export const manifestRules: ValidationRule[] = [
         const broken: string[] = [];
 
         for (const [layout, cascade] of Object.entries(FALLBACK_CASCADES)) {
-          if (supported.has(layout)) continue;
+          if (supported.has(layout as LayoutType)) continue;
           // Check that at least one layout in the cascade is supported
           const reachesSupported = cascade.some(t => supported.has(t));
           if (!reachesSupported) {

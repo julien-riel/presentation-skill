@@ -1,5 +1,5 @@
 import type { ValidationRule, Severity } from '../types.js';
-import { KNOWN_LAYOUT_PPT_NAMES } from '../types.js';
+import { KNOWN_LAYOUT_PPT_NAMES } from '../constants.js';
 import { findLayout } from './ruleHelpers.js';
 
 /**

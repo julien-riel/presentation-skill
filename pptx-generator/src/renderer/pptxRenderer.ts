@@ -3,7 +3,7 @@ import JSZip from 'jszip';
 import type { Presentation } from '../schema/presentation.js';
 import type { TemplateCapabilities } from '../schema/capabilities.js';
 import type { LayoutInfo, TemplateInfo } from '../validator/types.js';
-import { LAYOUT_TYPE_TO_PPT_NAME } from '../validator/types.js';
+import { LAYOUT_TYPE_TO_PPT_NAME } from '../validator/constants.js';
 import { buildSlideShapes } from './placeholderFiller.js';
 import type { IconRequest } from './placeholderFiller.js';
 import { resolveIcon, createIconCache } from './iconResolver.js';

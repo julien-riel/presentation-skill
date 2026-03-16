@@ -8,7 +8,6 @@ import {
   generateFromData,
   getDefaultTemplatePath,
 } from './index.js';
-import { validateAST } from './parser/astValidator.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -89,13 +88,7 @@ program
 
       if (options.ast) {
         const raw = await fs.readFile(options.ast, 'utf-8');
-        const result = validateAST(raw);
-        if (!result.success) {
-          console.error('AST validation errors:');
-          result.errors.forEach(e => console.error(`  - ${e}`));
-          process.exit(1);
-        }
-        buffer = await generateFromAST(result.data, templatePath);
+        buffer = await generateFromAST(raw, templatePath);
       } else {
         const raw = await fs.readFile(options.data!, 'utf-8');
         const ext = path.extname(options.data!).toLowerCase();

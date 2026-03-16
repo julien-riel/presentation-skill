@@ -1,6 +1,6 @@
 import type { Slide, LayoutType } from '../schema/presentation.js';
 import type { TemplateCapabilities } from '../schema/capabilities.js';
-import { FALLBACK_CASCADES } from '../validator/types.js';
+import { FALLBACK_CASCADES } from '../validator/constants.js';
 
 /**
  * Resolves the layout for a single slide against the template capabilities.

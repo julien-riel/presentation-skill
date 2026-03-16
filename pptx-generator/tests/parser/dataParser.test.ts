@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseCSV, parseJSONData, detectDataType } from '../../src/parser/dataParser.ts';
+import { parseCSV, parseJSONData, detectDataType } from '../../src/parser/dataParser.js';
 
 describe('detectDataType', () => {
   it('should detect numeric columns as kpi', () => {

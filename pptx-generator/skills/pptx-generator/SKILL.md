@@ -26,37 +26,33 @@ Quand l'utilisateur decrit une presentation en langage naturel :
    const manifest = getDefaultManifest();
    ```
 
-2. **Construire le prompt systeme** : utiliser `buildASTPrompt(manifest, briefUtilisateur)` depuis `src/parser/promptParser.ts` pour obtenir les instructions de generation d'AST.
+2. **Construire le prompt systeme** : utiliser `buildPrompt(manifest, briefUtilisateur)` depuis `src/index.js` pour obtenir les instructions de generation d'AST.
 
 3. **Generer l'AST JSON** : toi-meme (Claude), tu generes le JSON AST en suivant le schema decrit dans le prompt. Le JSON doit respecter le schema `Presentation` defini dans `src/schema/presentation.ts`.
 
-4. **Valider et generer** : passer l'AST a la chaine de transformation et rendu :
+4. **Valider et generer** : passer l'AST a l'API publique :
    ```typescript
-   import { validateAST } from './src/parser/astValidator.js';
-   import { transformPresentation } from './src/transform/index.js';
-   import { renderToBuffer } from './src/renderer/pptxRenderer.js';
+   import { generateFromAST } from './src/index.js';
 
-   const result = validateAST(astJson);
-   const enriched = transformPresentation(result.data, manifest);
-   const buffer = await renderToBuffer(enriched, 'assets/default-template.pptx');
+   const buffer = await generateFromAST(astJson);
    ```
 
-5. **Sauvegarder** : ecrire le Buffer resultant dans un fichier `.pptx`.
+   `generateFromAST` valide l'AST, resout les layouts via cascade de fallback, ajuste le contenu (decoupage automatique si >5 puces, troncature si titre trop long), et genere le .pptx.
 
-6. **Rapporter les avertissements** : verifier `enriched.slides.flatMap(s => s._warnings ?? [])` et informer l'utilisateur des eventuels avertissements (layouts degrades, contenu tronque, etc.).
+5. **Sauvegarder** : ecrire le Buffer resultant dans un fichier `.pptx`.
 
 ## Mode 2 : Entree AST JSON
 
 Quand l'utilisateur fournit ou reference un fichier AST JSON :
 
 1. Lire le fichier JSON.
-2. Valider avec `validateAST(raw)` depuis `src/parser/astValidator.ts`.
-3. Transformer et generer :
+2. Valider et generer :
    ```typescript
-   const enriched = transformPresentation(result.data, manifest);
-   const buffer = await renderToBuffer(enriched, templatePath);
+   import { generateFromAST } from './src/index.js';
+
+   const buffer = await generateFromAST(raw, templatePath);
    ```
-4. Sauvegarder le fichier `.pptx` resultant.
+3. Sauvegarder le fichier `.pptx` resultant.
 
 **Via CLI** :
 ```bash
