@@ -70,7 +70,7 @@ export async function renderToBuffer(
     const layoutIndex = layoutEntry?.index ?? 1;
 
     // Build the shapes XML for this slide
-    const { shapes, nextId, iconRequests } = buildSlideShapes(slide, nextShapeId, templateInfo);
+    const { shapes, nextId, iconRequests, chartRequests } = buildSlideShapes(slide, nextShapeId, templateInfo);
     nextShapeId = nextId;
 
     let allShapes = shapes;

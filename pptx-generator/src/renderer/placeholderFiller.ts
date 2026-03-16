@@ -8,6 +8,7 @@ import { buildTableShapes } from './tableDrawer.js';
 import { buildRoadmapShapes } from './roadmapDrawer.js';
 import { buildProcessShapes } from './processDrawer.js';
 import { buildComparisonShapes } from './comparisonDrawer.js';
+import { buildChart, type ChartRequest } from './chartDrawer.js';
 
 /** Default accent color when template has no accent colors defined. */
 const DEFAULT_ACCENT_COLOR = '2D7DD2';
@@ -30,6 +31,7 @@ export interface SlideShapeResult {
   shapes: string;
   nextId: number;
   iconRequests: IconRequest[];
+  chartRequests: ChartRequest[];
 }
 
 /**
@@ -107,6 +109,7 @@ export function buildSlideShapes(
   let id = startId;
   let shapes = '';
   const iconRequests: IconRequest[] = [];
+  const chartRequests: ChartRequest[] = [];
   let quoteRendered = false;
 
   switch (layout) {
@@ -284,6 +287,20 @@ export function buildSlideShapes(
       break;
     }
 
+    case 'chart': {
+      const title = getTitleText(slide);
+      shapes += placeholderShape(id++, 'title', 0, [title]);
+      const chartEl = findElement(slide.elements, 'chart');
+      if (chartEl) {
+        const accentColors = templateInfo.theme.accentColors.map(c => c.replace('#', ''));
+        const result = buildChart(chartEl, id, accentColors);
+        shapes += result.anchorShape;
+        id = result.nextId;
+        chartRequests.push(result.chartRequest);
+      }
+      break;
+    }
+
     default: {
       // Fallback: render as bullets
       const title = getTitleText(slide);
@@ -315,5 +332,5 @@ export function buildSlideShapes(
     }
   }
 
-  return { shapes, nextId: id, iconRequests };
+  return { shapes, nextId: id, iconRequests, chartRequests };
 }
