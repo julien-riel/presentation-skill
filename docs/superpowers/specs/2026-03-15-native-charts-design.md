@@ -78,6 +78,8 @@ export const MAX_CHART_SERIES = 4;
 
 ### Rules
 
+**Constraint: max 1 chart element per slide.** The layout system supports a single chart per slide. If multiple chart elements appear, only the first is kept. This simplifies the placeholder token mechanism (single `__CHART_RELID__` per slide).
+
 Added as a new block in `validateSlideContent()` in `contentValidator.ts`, following the same pattern as the KPI and table validation blocks (lines 69-98):
 
 ```typescript
@@ -122,9 +124,20 @@ elements = elements.map((el) => {
 
 ### Degradation Cascade
 
+Update `FALLBACK_CASCADES` in `src/validator/constants.ts`:
+
 ```typescript
-// Before: chart: ['bullets', 'generic']
-// After:  chart: ['table', 'bullets', 'generic']
+export const FALLBACK_CASCADES: Record<string, LayoutType[]> = {
+  kpi: ['bullets', 'generic'],
+  chart: ['table', 'bullets', 'generic'],  // changed: was ['bullets', 'generic']
+  table: ['bullets', 'generic'],
+  quote: ['bullets', 'generic'],
+  architecture: ['bullets', 'generic'],
+  imageText: ['twoColumns', 'bullets', 'generic'],
+  roadmap: ['timeline', 'bullets', 'generic'],
+  process: ['timeline', 'bullets', 'generic'],
+  comparison: ['twoColumns', 'bullets', 'generic'],
+};
 ```
 
 ### Chart-to-Table Element Transformation
@@ -367,6 +380,18 @@ This allows `buildChart()` to run synchronously in `placeholderFiller` without k
 
 ### pptxRenderer.ts Integration
 
+**Destructuring update:** In the slide loop, `buildSlideShapes` is called at line 73. Update the destructuring to include `chartRequests`:
+
+```typescript
+const { shapes, nextId, iconRequests, chartRequests } = buildSlideShapes(slide, nextShapeId, templateInfo);
+```
+
+**Counter initialization:** Add alongside `nextImageNum` (line 61):
+
+```typescript
+let nextChartNum = 1;
+```
+
 The `slideEntries` type is extended:
 
 ```typescript
@@ -429,7 +454,16 @@ Chart relationship type in `slide{M}.xml.rels`:
   Target="../charts/chart1.xml"/>
 ```
 
-The relId format `rIdChart{N}` avoids collisions with `rId1` (slideLayout), `rId2` (notes), and `rIdImg{N}` (images). Content-type overrides (3 per chart) are appended to `[Content_Types].xml`.
+The relId format `rIdChart{N}` avoids collisions with `rId1` (slideLayout), `rId2` (notes), and `rIdImg{N}` (images).
+
+**Content-type overrides** (3 per chart) are appended to `[Content_Types].xml` using the same `newContentTypes += ...` pattern as images and notes:
+
+```typescript
+// For each chart, append 3 overrides:
+newContentTypes += `\n  <Override PartName="/ppt/charts/chart${chart.chartNum}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>`;
+newContentTypes += `\n  <Override PartName="/ppt/charts/style${chart.chartNum}.xml" ContentType="application/vnd.ms-office.chartstyle+xml"/>`;
+newContentTypes += `\n  <Override PartName="/ppt/charts/colors${chart.chartNum}.xml" ContentType="application/vnd.ms-office.chartcolorstyle+xml"/>`;
+```
 
 ## DataParser Auto-Detection
 
