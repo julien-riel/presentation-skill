@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync, statSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { readTemplate } from './validator/templateReader.js';
 import { runValidation } from './validator/engine.js';
@@ -13,7 +13,7 @@ import { renderToBuffer } from './renderer/pptxRenderer.js';
 import { TemplateCapabilitiesSchema } from './schema/capabilities.js';
 import type { TemplateCapabilities } from './schema/capabilities.js';
 import type { Presentation } from './schema/presentation.js';
-import type { ValidationResult } from './validator/types.js';
+import type { TemplateInfo, ValidationResult } from './validator/types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_TEMPLATE = path.resolve(__dirname, '../assets/default-template.pptx');
@@ -40,6 +40,48 @@ export function getDefaultManifest(): TemplateCapabilities {
 }
 
 /**
+ * Returns the sidecar manifest path for a template.
+ */
+function sidecarPath(templatePath: string): string {
+  return templatePath.replace(/\.pptx$/i, '.capabilities.json');
+}
+
+/**
+ * Returns a cached manifest if the sidecar is newer than the template,
+ * otherwise generates a fresh manifest and writes the sidecar.
+ */
+function getOrGenerateManifest(
+  templateInfo: TemplateInfo,
+  templatePath: string,
+): TemplateCapabilities {
+  const sidecar = sidecarPath(templatePath);
+
+  try {
+    if (existsSync(sidecar)) {
+      const pptxMtime = statSync(templatePath).mtimeMs;
+      const sidecarMtime = statSync(sidecar).mtimeMs;
+
+      if (sidecarMtime >= pptxMtime) {
+        const raw = readFileSync(sidecar, 'utf-8');
+        return TemplateCapabilitiesSchema.parse(JSON.parse(raw));
+      }
+    }
+  } catch {
+    // On any cache read error, fall through to regeneration
+  }
+
+  const manifest = generateManifest(templateInfo, path.basename(templatePath));
+
+  try {
+    writeFileSync(sidecar, JSON.stringify(manifest, null, 2));
+  } catch {
+    // Non-fatal: sidecar write failure doesn't block generation
+  }
+
+  return manifest;
+}
+
+/**
  * Validates a .pptx template file.
  * Returns validation results, manifest, and optionally a demo buffer.
  */
@@ -55,7 +97,7 @@ export async function validateTemplate(
 }> {
   const template = await readTemplate(templatePath);
   const results = runValidation(template);
-  const manifest = generateManifest(template, path.basename(templatePath));
+  const manifest = getOrGenerateManifest(template, templatePath);
 
   let demoBuffer: Buffer | undefined;
   if (options?.demo) {
@@ -87,7 +129,7 @@ export async function generateFromAST(
   const tplPath = templatePath ?? DEFAULT_TEMPLATE;
   const templateInfo = await readTemplate(tplPath);
   const manifest = templatePath
-    ? generateManifest(templateInfo, path.basename(tplPath))
+    ? getOrGenerateManifest(templateInfo, tplPath)
     : getDefaultManifest();
   const enriched = transformPresentation(result.data, manifest);
   return renderToBuffer(enriched, tplPath, templateInfo);
@@ -118,7 +160,7 @@ export async function generateFromData(
   const tplPath = templatePath ?? DEFAULT_TEMPLATE;
   const templateInfo = await readTemplate(tplPath);
   const manifest = templatePath
-    ? generateManifest(templateInfo, path.basename(tplPath))
+    ? getOrGenerateManifest(templateInfo, tplPath)
     : getDefaultManifest();
   const enriched = transformPresentation(validationResult.data, manifest);
   return renderToBuffer(enriched, tplPath, templateInfo);
