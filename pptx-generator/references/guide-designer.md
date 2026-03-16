@@ -139,7 +139,7 @@ Respecter le niveau WCAG AA : ratio de contraste **>= 4.5:1** entre le texte et 
 
 ### Couleurs
 
-- Définir **6 couleurs d'accent** dans le thème (`accent1` à `accent6`)
+- Définir **au moins 3 couleurs d'accent distinctes** dans le thème (`accent1` à `accent6`). Le validateur (THM-001) exige un minimum de 3 couleurs distinctes ; OOXML en supporte jusqu'à 6
 - S'assurer que chaque couleur d'accent offre un contraste suffisant avec le fond
 
 ---
@@ -179,4 +179,4 @@ La commande `validate` vérifie :
 | `LAY-001` | Layout name not recognized | Le nom du layout ne correspond pas à la convention `LAYOUT_*` | Renommer le layout dans le masque de diapositives pour qu'il corresponde exactement à l'un des noms listés ci-dessus |
 | `PH-001` | Missing placeholder | Un placeholder requis est absent du layout | Ajouter le placeholder manquant avec le bon type et le bon index (voir section « Placeholders requis par layout ») |
 | `DIM-001` | Wrong aspect ratio | La taille de la diapositive n'est pas en 16:9 | Dans PowerPoint : Conception → Taille des diapositives → Grand écran (16:9). Vérifier que les dimensions sont exactement 12 192 000 × 6 858 000 EMU |
-| `THM-001` | Missing theme | Le gabarit ne contient pas de thème ou le thème est incomplet | Ajouter un thème avec au minimum : une police titre (`majorFont`), une police corps (`minorFont`) et 6 couleurs d'accent |
+| `THM-001` | Missing theme | Le gabarit ne contient pas de thème ou le thème est incomplet | Ajouter un thème avec au minimum : une police titre (`majorFont`), une police corps (`minorFont`) et au moins 3 couleurs d'accent distinctes |

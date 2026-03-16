@@ -29,6 +29,15 @@ export interface IconRequest {
 }
 
 /**
+ * Standard return type for all canvas drawers (timeline, architecture, kpi, etc.).
+ */
+export interface DrawerResult {
+  shapes: string;
+  nextId: number;
+  iconRequests: IconRequest[];
+}
+
+/**
  * A chart whose anchor shape XML is deferred until the relationship ID is known.
  */
 export interface PendingChart {
@@ -120,7 +129,6 @@ export function buildSlideShapes(
   const iconRequests: IconRequest[] = [];
   const pendingCharts: PendingChart[] = [];
   const accentColors = templateInfo.theme.accentColors.map(c => c.replace('#', ''));
-  let quoteRendered = false;
 
   switch (layout) {
     case 'title':
@@ -158,7 +166,6 @@ export function buildSlideShapes(
         const quoteEl = findElement(slide.elements, 'quote');
         const textEl = findElement(slide.elements, 'text');
         if (quoteEl) {
-          quoteRendered = true;
           const quoteText = quoteEl.author
             ? `\u201C${quoteEl.text}\u201D \u2014 ${quoteEl.author}`
             : `\u201C${quoteEl.text}\u201D`;
@@ -255,7 +262,6 @@ export function buildSlideShapes(
 
       const quoteEl = findElement(slide.elements, 'quote');
       if (quoteEl) {
-        quoteRendered = true;
         const accentColor = accentColors[0] ?? DEFAULT_ACCENT_COLOR;
 
         const quoteText = `\u201C${quoteEl.text}\u201D`;
@@ -331,8 +337,8 @@ export function buildSlideShapes(
     }
   }
 
-  // Check for quote element with decorative icon (only when quote text was rendered)
-  if (quoteRendered) {
+  // Check for quote element with decorative icon (only on layouts that render quote text)
+  if (layout === 'quote' || layout === 'bullets' || layout === 'generic') {
     const quoteEl = findElement(slide.elements, 'quote');
     if (quoteEl?.icon) {
       const accentColor = accentColors[0] ?? DEFAULT_ACCENT_COLOR;

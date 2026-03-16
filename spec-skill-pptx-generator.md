@@ -91,14 +91,21 @@ Responsable de la validation et de l'adaptation de l'AST aux capacités du gabar
 
 3. **Résolution des layouts** — pour chaque slide, vérifier si le layout demandé existe dans `supported_layouts`. Si absent, appliquer la cascade de dégradation depuis `fallback_map`. Émettre un warning par dégradation.
 
-4. **Application des règles de contenu** :
+4. **Dégradation des éléments** (`elementDegrader`) — quand un layout est dégradé, les éléments complexes sont convertis en éléments plus simples (ex : chart → table → bullets, kpi → bullets). Cela garantit que le contenu reste exploitable même sans le layout natif.
+
+5. **Application des règles de contenu** :
    - Bullets > 5 par slide → auto-split en slides consécutives titrées « (1/N) », « (2/N) ».
    - Bullet > 12 mots → troncature + warning.
    - Titre > 2 lignes estimées (> ~60 caractères à 36pt) → troncature avec ellipse + warning.
-   - Nœuds de diagramme > 8 → regroupement automatique des nœuds par layer.
-   - Événements timeline > 6 → split ou regroupement par période.
+   - Nœuds de diagramme > 8 → troncature aux 8 premiers nœuds, suppression des arêtes orphelines + warning.
+   - Événements timeline > 6 → troncature aux 6 premiers événements + warning.
+   - Indicateurs KPI > 6 → troncature aux 6 premiers + warning.
+   - Lignes de tableau > 8 → troncature + warning. Colonnes > 6 → troncature + warning.
+   - Catégories de chart > 8 → troncature + warning. Séries > 4 → troncature + warning.
+   - Pie/donut avec multiples séries → réduction à une seule série.
+   - Valeurs NaN/Infinity → remplacées par 0 + warning.
 
-5. **Sortie** — AST enrichi avec les champs ajoutés : `_resolvedLayout` (layout effectif), `_splitIndex`, `_warnings[]`.
+6. **Sortie** — AST enrichi avec les champs ajoutés : `_resolvedLayout` (layout effectif), `_splitIndex`, `_warnings[]`.
 
 ### 3.3 Renderer
 

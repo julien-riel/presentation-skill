@@ -1,5 +1,5 @@
 import type { Slide, Element } from '../schema/presentation.js';
-import type { IconRequest } from './placeholderFiller.js';
+import type { DrawerResult, IconRequest } from './placeholderFiller.js';
 import { emu, rectShape, textBoxShape, lineShape, emuFromPx } from './xmlHelpers.js';
 
 /**
@@ -9,7 +9,7 @@ export function buildProcessShapes(
   slide: Slide,
   startId: number,
   accentColors: string[],
-): { shapes: string; nextId: number; iconRequests: IconRequest[] } {
+): DrawerResult {
   const timelineEl = slide.elements.find(
     (el): el is Extract<Element, { type: 'timeline' }> => el.type === 'timeline',
   );

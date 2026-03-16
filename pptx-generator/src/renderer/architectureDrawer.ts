@@ -1,5 +1,5 @@
 import type { Slide, Element } from '../schema/presentation.js';
-import type { IconRequest } from './placeholderFiller.js';
+import type { DrawerResult, IconRequest } from './placeholderFiller.js';
 import { emu, rectShape, lineShape, textBoxShape, emuFromPx } from './xmlHelpers.js';
 
 const NODE_H = emu(0.55);
@@ -27,7 +27,7 @@ export function buildArchitectureShapes(
   slide: Slide,
   startId: number,
   accentColors: string[],
-): { shapes: string; nextId: number; iconRequests: IconRequest[] } {
+): DrawerResult {
   const diagramEl = slide.elements.find(
     (el): el is Extract<Element, { type: 'diagram' }> => el.type === 'diagram',
   );

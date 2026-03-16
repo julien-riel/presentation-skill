@@ -139,6 +139,7 @@ Liste a puces. Peut etre affectee a une colonne dans un layout `twoColumns`.
 | `items`  | `string[]`              | oui    | Liste des puces                                   |
 | `icons`  | `string[]`              | non    | Noms d'icones Lucide, un par puce                 |
 | `column` | `"left"` \| `"right"`   | non    | Colonne cible (pour layout `twoColumns`)          |
+| `label`  | `string`                | non    | Libelle d'en-tete (utilise par le layout `comparison`) |
 | `level`  | `number`                | non    | Niveau d'indentation (0 = racine)                 |
 
 ```json
@@ -237,11 +238,12 @@ Frise chronologique avec evenements dates.
 
 Graphique de donnees.
 
-| Champ       | Type                                           | Requis | Description              |
-|-------------|-------------------------------------------------|--------|--------------------------|
-| `type`      | `"chart"`                                       | oui    | Discriminant             |
-| `chartType` | `"bar"` \| `"line"` \| `"pie"` \| `"donut"`   | oui    | Type de graphique        |
-| `data`      | `ChartData`                                     | oui    | Donnees du graphique     |
+| Champ       | Type                                                          | Requis | Description              |
+|-------------|---------------------------------------------------------------|--------|--------------------------|
+| `type`      | `"chart"`                                                     | oui    | Discriminant             |
+| `chartType` | `"bar"` \| `"line"` \| `"pie"` \| `"donut"` \| `"stackedBar"` | oui    | Type de graphique        |
+| `data`      | `ChartData`                                                   | oui    | Donnees du graphique     |
+| `options`   | `ChartOptions`                                                | non    | Options de formatage     |
 
 **`ChartData`**
 
@@ -257,6 +259,23 @@ Graphique de donnees.
 | `name`   | `string`   | oui    | Nom de la serie          |
 | `values` | `number[]` | oui    | Valeurs numeriques       |
 
+**`ChartOptions`**
+
+| Champ            | Type                                             | Requis | Description                                           |
+|------------------|--------------------------------------------------|--------|-------------------------------------------------------|
+| `title`          | `string`                                         | non    | Titre affiche au-dessus du graphique                  |
+| `xAxisLabel`     | `string`                                         | non    | Libelle de l'axe X                                    |
+| `yAxisLabel`     | `string`                                         | non    | Libelle de l'axe Y                                    |
+| `yAxisMin`       | `number`                                         | non    | Valeur minimale de l'axe Y                            |
+| `yAxisMax`       | `number`                                         | non    | Valeur maximale de l'axe Y                            |
+| `valueFormat`    | `"number"` \| `"percent"` \| `"currency"`       | non    | Format des valeurs affichees                          |
+| `currencySymbol` | `string`                                         | non    | Symbole monetaire (max 5 caracteres, pas de `<>&"'`)  |
+| `showDataLabels` | `boolean`                                        | non    | Afficher les valeurs sur chaque point de donnees      |
+| `showLegend`     | `boolean`                                        | non    | Afficher la legende                                   |
+| `legendPosition` | `"top"` \| `"bottom"` \| `"right"` \| `"left"` | non    | Position de la legende                                |
+| `colors`         | `string[]`                                       | non    | Couleurs hex 6 caracteres sans `#` (ex: `"4A90D9"`)  |
+| `gridLines`      | `boolean`                                        | non    | Afficher les lignes de grille                         |
+
 ```json
 {
   "type": "chart",
@@ -267,6 +286,14 @@ Graphique de donnees.
       { "name": "2024", "values": [120, 150, 180, 200] },
       { "name": "2025", "values": [140, 170, 210, 240] }
     ]
+  },
+  "options": {
+    "valueFormat": "currency",
+    "currencySymbol": "€",
+    "showDataLabels": true,
+    "legendPosition": "bottom",
+    "colors": ["4A90D9", "E76F51"],
+    "gridLines": true
   }
 }
 ```
@@ -361,11 +388,21 @@ doivent **jamais** etre fournis dans l'AST d'entree.
 
 Le Transform applique les regles suivantes :
 
-| Regle                         | Seuil         | Action                                                        |
-|-------------------------------|---------------|---------------------------------------------------------------|
-| Puces par diapositive         | max 5         | Decoupage automatique en N diapositives avec suffixe `(n/N)`  |
-| Mots par puce                 | max 12        | Troncature avec ellipse `...` et ajout d'un warning           |
-| Caracteres par titre          | max ~60       | Troncature avec ellipse et ajout d'un warning                 |
+| Regle                          | Seuil          | Action                                                        |
+|--------------------------------|----------------|---------------------------------------------------------------|
+| Puces par diapositive          | max 5          | Decoupage automatique en N diapositives avec suffixe `(n/N)`  |
+| Mots par puce                  | max 12         | Troncature avec ellipse `…` et ajout d'un warning             |
+| Caracteres par titre           | max ~60        | Troncature avec ellipse et ajout d'un warning                 |
+| Indicateurs KPI                | max 6          | Troncature aux 6 premiers + warning                           |
+| Lignes de tableau              | max 8          | Troncature aux 8 premieres lignes + warning                   |
+| Colonnes de tableau            | max 6          | Troncature aux 6 premieres colonnes + warning                 |
+| Categories de chart            | max 8          | Troncature aux 8 premieres + warning                          |
+| Series de chart                | max 4          | Troncature aux 4 premieres series + warning                   |
+| Noeuds de diagramme            | max 8          | Troncature aux 8 premiers, aretes orphelines supprimees       |
+| Evenements timeline            | max 6          | Troncature aux 6 premiers + warning                           |
+| Charts par diapositive         | max 1          | Seul le premier element chart est conserve                     |
+| Pie/donut multi-series         | max 1 serie    | Reduction a la premiere serie + warning                        |
+| Valeurs NaN/Infinity           | —              | Remplacees par 0 + warning                                    |
 
 Chaque diapositive devrait contenir au moins un element `title` pour un rendu
 coherent.

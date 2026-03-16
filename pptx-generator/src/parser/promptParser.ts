@@ -1,5 +1,5 @@
 import type { TemplateCapabilities } from '../schema/capabilities.js';
-import { MAX_BULLETS, MAX_WORDS_PER_BULLET, MAX_TITLE_CHARS } from '../transform/contentValidator.js';
+import { MAX_BULLETS, MAX_WORDS_PER_BULLET, MAX_TITLE_CHARS } from '../schema/constraints.js';
 
 /**
  * Builds a system prompt for Claude to generate a Presentation AST

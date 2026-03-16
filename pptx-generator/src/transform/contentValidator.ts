@@ -1,15 +1,29 @@
 import type { Slide, Element } from '../schema/presentation.js';
+import {
+  MAX_BULLETS,
+  MAX_WORDS_PER_BULLET,
+  MAX_TITLE_CHARS,
+  MAX_KPI_INDICATORS,
+  MAX_TABLE_ROWS,
+  MAX_TABLE_COLS,
+  MAX_CHART_CATEGORIES,
+  MAX_CHART_SERIES,
+  MAX_DIAGRAM_NODES,
+  MAX_TIMELINE_EVENTS,
+} from '../schema/constraints.js';
 
-export const MAX_BULLETS = 5;
-export const MAX_WORDS_PER_BULLET = 12;
-export const MAX_TITLE_CHARS = 60;
-export const MAX_KPI_INDICATORS = 6;
-export const MAX_TABLE_ROWS = 8;
-export const MAX_TABLE_COLS = 6;
-export const MAX_CHART_CATEGORIES = 8;
-export const MAX_CHART_SERIES = 4;
-export const MAX_DIAGRAM_NODES = 8;
-export const MAX_TIMELINE_EVENTS = 6;
+export {
+  MAX_BULLETS,
+  MAX_WORDS_PER_BULLET,
+  MAX_TITLE_CHARS,
+  MAX_KPI_INDICATORS,
+  MAX_TABLE_ROWS,
+  MAX_TABLE_COLS,
+  MAX_CHART_CATEGORIES,
+  MAX_CHART_SERIES,
+  MAX_DIAGRAM_NODES,
+  MAX_TIMELINE_EVENTS,
+};
 
 /**
  * Counts words in a string (split by whitespace).

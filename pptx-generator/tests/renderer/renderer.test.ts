@@ -352,6 +352,53 @@ describe('renderToBuffer', () => {
     // Should reference a slideLayout
     expect(rels).toContain('slideLayout');
   });
+
+  it('handles imageText layout with text element', async () => {
+    const presentation: Presentation = {
+      title: 'ImageText Test',
+      slides: [
+        {
+          layout: 'imageText',
+          _resolvedLayout: 'imageText',
+          elements: [
+            { type: 'title', text: 'Image + Text' },
+            { type: 'text', text: 'Description alongside the image' },
+          ],
+        },
+      ],
+    };
+
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH, templateInfo);
+    const zip = await JSZip.loadAsync(buffer);
+    const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
+    expect(slideXml).toBeDefined();
+    expect(slideXml).toContain('Image + Text');
+    expect(slideXml).toContain('Description alongside the image');
+  });
+
+  it('handles imageText layout with bullets element', async () => {
+    const presentation: Presentation = {
+      title: 'ImageText Bullets Test',
+      slides: [
+        {
+          layout: 'imageText',
+          _resolvedLayout: 'imageText',
+          elements: [
+            { type: 'title', text: 'Features' },
+            { type: 'bullets', items: ['Fast', 'Simple'] },
+          ],
+        },
+      ],
+    };
+
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH, templateInfo);
+    const zip = await JSZip.loadAsync(buffer);
+    const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
+    expect(slideXml).toBeDefined();
+    expect(slideXml).toContain('Features');
+    expect(slideXml).toContain('Fast');
+    expect(slideXml).toContain('Simple');
+  });
 });
 
 // ─── E2E: AST → Transform → Render ──────────────────────────────────────────

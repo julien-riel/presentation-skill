@@ -104,15 +104,14 @@ L'option `--strict` traite les avertissements comme des erreurs (exit code 1).
 
 **Par programmation** :
 ```typescript
-import { readTemplate } from './src/validator/templateReader.js';
-import { runValidation } from './src/validator/engine.js';
-import { generateManifest } from './src/validator/manifestGenerator.js';
-import { generateDemo } from './src/validator/demoGenerator.js';
+import { validateTemplate } from './src/index.js';
 
-const template = await readTemplate(cheminGabarit);
-const results = runValidation(template);
-const manifest = generateManifest(template, nomGabarit);
-const demoBuffer = await generateDemo(manifest, cheminGabarit); // optionnel
+const report = await validateTemplate(cheminGabarit, { demo: true });
+// report.results    — liste des résultats de validation
+// report.manifest   — manifeste des capacités (avec cache sidecar)
+// report.hasErrors  — true si au moins une erreur
+// report.hasWarnings — true si au moins un avertissement
+// report.demoBuffer — Buffer du PPTX démo (si option demo: true)
 ```
 
 **Sortie** :

@@ -1,5 +1,5 @@
 import type { Slide, Element } from '../schema/presentation.js';
-import type { IconRequest } from './placeholderFiller.js';
+import type { DrawerResult } from './placeholderFiller.js';
 import { emu, rectShape, textBoxShape } from './xmlHelpers.js';
 
 /**
@@ -9,7 +9,7 @@ export function buildComparisonShapes(
   slide: Slide,
   startId: number,
   accentColors: string[],
-): { shapes: string; nextId: number; iconRequests: IconRequest[] } {
+): DrawerResult {
   const bulletElements = slide.elements.filter(
     (el): el is Extract<Element, { type: 'bullets' }> => el.type === 'bullets',
   );

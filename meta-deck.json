@@ -1,0 +1,244 @@
+{
+  "title": "pptx-generator — Le deck qui se génère lui-même",
+  "metadata": {
+    "author": "pptx-generator",
+    "date": "2026-03-15",
+    "version": "1.0.0",
+    "audience": "Développeurs et utilisateurs de Claude Code"
+  },
+  "slides": [
+    {
+      "layout": "title",
+      "elements": [
+        { "type": "title", "text": "pptx-generator" },
+        { "type": "subtitle", "text": "Le plugin Claude Code qui génère des présentations — et cette slide le prouve." }
+      ],
+      "notes": "Cette présentation a été générée par le plugin qu'elle décrit. Chaque slide démontre une fonctionnalité."
+    },
+    {
+      "layout": "section",
+      "elements": [
+        { "type": "title", "text": "Le problème" },
+        { "type": "subtitle", "text": "Pourquoi créer des présentations est pénible" }
+      ]
+    },
+    {
+      "layout": "bullets",
+      "elements": [
+        { "type": "title", "text": "Créer un deck, c'est long" },
+        {
+          "type": "bullets",
+          "items": [
+            "Ouvrir PowerPoint, choisir un template",
+            "Formater chaque slide à la main",
+            "Copier-coller des données dans des graphiques",
+            "Ajuster les alignements pendant des heures",
+            "Recommencer quand le contenu change"
+          ],
+          "icons": ["monitor", "palette", "clipboard", "move", "refresh-cw"]
+        }
+      ],
+      "notes": "Cette slide utilise des icônes Lucide sur chaque puce — une fonctionnalité native du plugin."
+    },
+    {
+      "layout": "section",
+      "elements": [
+        { "type": "title", "text": "La solution" },
+        { "type": "subtitle", "text": "Un plugin Claude Code, une commande, un .pptx" }
+      ]
+    },
+    {
+      "layout": "bullets",
+      "elements": [
+        { "type": "title", "text": "pptx-generator en un coup d'œil" },
+        {
+          "type": "bullets",
+          "items": [
+            "Décris ta présentation en langage naturel",
+            "15 types de layouts professionnels",
+            "Charts OOXML natifs (bar, line, pie, donut)",
+            "Dégradation gracieuse — jamais de crash",
+            "Validation de templates avec manifeste"
+          ],
+          "icons": ["message-square", "layout", "bar-chart-2", "shield", "check-circle"]
+        }
+      ],
+      "notes": "Encore des icônes Lucide ! Le plugin les convertit de SVG en PNG via @resvg/resvg-js."
+    },
+    {
+      "layout": "section",
+      "elements": [
+        { "type": "title", "text": "Installation" },
+        { "type": "subtitle", "text": "Trois options, une minute" }
+      ]
+    },
+    {
+      "layout": "twoColumns",
+      "elements": [
+        { "type": "title", "text": "Choisissez votre méthode" },
+        {
+          "type": "bullets",
+          "items": [
+            "Développement local :",
+            "claude --plugin-dir ./pptx-generator",
+            "Depuis le marketplace :",
+            "claude plugin install pptx-generator"
+          ],
+          "column": "left"
+        },
+        {
+          "type": "bullets",
+          "items": [
+            "Chargement automatique du plugin",
+            "Détection des mots-clés : deck, slides...",
+            "Gabarit Tier 2 professionnel inclus"
+          ],
+          "column": "right"
+        }
+      ],
+      "notes": "Le layout twoColumns est un des 6 layouts natifs du gabarit Tier 2 par défaut."
+    },
+    {
+      "layout": "section",
+      "elements": [
+        { "type": "title", "text": "4 modes d'utilisation" },
+        { "type": "subtitle", "text": "Du plus simple au plus contrôlé" }
+      ]
+    },
+    {
+      "layout": "twoColumns",
+      "elements": [
+        { "type": "title", "text": "Modes de génération" },
+        {
+          "type": "bullets",
+          "items": [
+            "Mode 1 — Prompt libre",
+            "« Fais-moi un deck sur l'IA »",
+            "Claude génère l'AST JSON",
+            "Le plugin transforme et rend"
+          ],
+          "column": "left",
+          "icons": ["message-square", "quote", "cpu", "file-output"]
+        },
+        {
+          "type": "bullets",
+          "items": [
+            "Mode 2 — AST JSON direct",
+            "Tu fournis le JSON structuré",
+            "Validation Zod instantanée",
+            "Contrôle total du contenu"
+          ],
+          "column": "right",
+          "icons": ["code", "file-json", "check", "sliders"]
+        }
+      ],
+      "notes": "Les icônes fonctionnent aussi en twoColumns — chaque colonne peut avoir ses propres icônes."
+    },
+    {
+      "layout": "twoColumns",
+      "elements": [
+        { "type": "title", "text": "Modes données et validation" },
+        {
+          "type": "bullets",
+          "items": [
+            "Mode 3 — Données CSV/JSON",
+            "Détection auto du type de données",
+            "KPI, timeline, ou tableau",
+            "Narration LLM contextuelle"
+          ],
+          "column": "left",
+          "icons": ["database", "search", "trending-up", "book-open"]
+        },
+        {
+          "type": "bullets",
+          "items": [
+            "Mode 4 — Validation de gabarit",
+            "30+ règles (LAY, PH, DIM, THM)",
+            "Manifeste de capacités généré",
+            "PPTX démo en option"
+          ],
+          "column": "right",
+          "icons": ["shield-check", "list-checks", "file-text", "presentation"]
+        }
+      ]
+    },
+    {
+      "layout": "section",
+      "elements": [
+        { "type": "title", "text": "Le pipeline interne" },
+        { "type": "subtitle", "text": "Parser → Transform → Renderer" }
+      ]
+    },
+    {
+      "layout": "timeline",
+      "elements": [
+        { "type": "title", "text": "De l'entrée au .pptx en 4 étapes" },
+        {
+          "type": "timeline",
+          "events": [
+            { "date": "Étape 1", "label": "Parser : valide l'AST (Zod)", "status": "done", "icon": "check-circle" },
+            { "date": "Étape 2", "label": "Résolution des layouts", "status": "done", "icon": "git-branch" },
+            { "date": "Étape 3", "label": "Validation du contenu", "status": "in-progress", "icon": "scissors" },
+            { "date": "Étape 4", "label": "Renderer OOXML (JSZip)", "status": "planned", "icon": "package" }
+          ]
+        }
+      ],
+      "notes": "Le layout timeline dessine des formes OOXML avec couleurs par statut : vert (done), orange (in-progress), gris (planned)."
+    },
+    {
+      "layout": "section",
+      "elements": [
+        { "type": "title", "text": "Dégradation gracieuse" },
+        { "type": "subtitle", "text": "Le système s'adapte au gabarit — la slide suivante le prouve" }
+      ]
+    },
+    {
+      "layout": "kpi",
+      "elements": [
+        { "type": "title", "text": "Le plugin en chiffres (dégradé !)" },
+        {
+          "type": "kpi",
+          "indicators": [
+            { "label": "Lignes de TypeScript", "value": "3 400", "unit": "TS", "trend": "up" },
+            { "label": "Tests unitaires", "value": "298", "trend": "up" },
+            { "label": "Layouts supportés", "value": "15", "trend": "stable" },
+            { "label": "Taux de pass", "value": "100%", "trend": "stable" }
+          ]
+        }
+      ],
+      "notes": "MÉTA : cette slide demande un layout 'kpi' mais le gabarit Tier 2 ne le supporte pas. Le système la dégrade en 'bullets'. Vous voyez le résultat de la dégradation !"
+    },
+    {
+      "layout": "section",
+      "elements": [
+        { "type": "title", "text": "Cette présentation est méta" },
+        { "type": "subtitle", "text": "Elle a été générée par le plugin qu'elle décrit" }
+      ]
+    },
+    {
+      "layout": "bullets",
+      "elements": [
+        { "type": "title", "text": "Ce que vous venez de voir" },
+        {
+          "type": "bullets",
+          "items": [
+            "Un AST JSON de 17 slides, écrit par Claude",
+            "Passé dans generateFromAST() — le Mode 2",
+            "Layouts natifs : title, section, bullets, twoColumns, timeline",
+            "Icônes Lucide rendues en PNG à la volée",
+            "Un slide KPI dégradé automatiquement (slide 14)"
+          ],
+          "icons": ["file-json", "play", "layers", "image", "arrow-down"]
+        }
+      ],
+      "notes": "Le cercle est bouclé : le plugin se décrit et se démontre simultanément."
+    },
+    {
+      "layout": "title",
+      "elements": [
+        { "type": "title", "text": "Essayez-le" },
+        { "type": "subtitle", "text": "« Fais-moi une présentation sur... » — c'est tout ce qu'il faut." }
+      ]
+    }
+  ]
+}
