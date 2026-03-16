@@ -324,7 +324,7 @@ describe('chartDrawer', () => {
       type: 'chart', chartType: 'bar',
       data: { labels: ['A', 'B'], series: [{ name: 'S', values: [1, 2] }] },
     };
-    const result = buildChart(chart, 100, ['1E3A5F', '2C7DA0']);
+    const result = buildChart(chart, 100);
     expect(typeof result.buildAnchorShape).toBe('function');
     const anchorShape = result.buildAnchorShape('rIdChart1');
     expect(anchorShape).toContain('<p:graphicFrame>');
@@ -341,7 +341,7 @@ describe('chartDrawer', () => {
       type: 'chart', chartType: 'pie',
       data: { labels: ['A', 'B'], series: [{ name: 'S', values: [60, 40] }] },
     };
-    const result = buildChart(chart, 200, []);
+    const result = buildChart(chart, 200);
     expect(result.chartRequest.chartXml).toContain('<c:pieChart>');
   });
 
@@ -350,7 +350,7 @@ describe('chartDrawer', () => {
       type: 'chart', chartType: 'donut',
       data: { labels: ['A', 'B'], series: [{ name: 'S', values: [60, 40] }] },
     };
-    const result = buildChart(chart, 200, []);
+    const result = buildChart(chart, 200);
     expect(result.chartRequest.chartXml).toContain('<c:doughnutChart>');
   });
 
@@ -359,7 +359,7 @@ describe('chartDrawer', () => {
       type: 'chart', chartType: 'line',
       data: { labels: ['A', 'B'], series: [{ name: 'S', values: [1, 2] }] },
     };
-    const result = buildChart(chart, 200, []);
+    const result = buildChart(chart, 200);
     expect(result.chartRequest.chartXml).toContain('<c:lineChart>');
   });
 
@@ -368,7 +368,7 @@ describe('chartDrawer', () => {
       type: 'chart', chartType: 'stackedBar',
       data: { labels: ['A'], series: [{ name: 'S', values: [1] }] },
     };
-    const result = buildChart(chart, 200, []);
+    const result = buildChart(chart, 200);
     expect(result.chartRequest.chartXml).toContain('<c:grouping val="stacked"/>');
   });
 
@@ -377,7 +377,7 @@ describe('chartDrawer', () => {
       type: 'chart', chartType: 'bar',
       data: { labels: ['A'], series: [{ name: 'S', values: [1] }] },
     };
-    const result = buildChart(chart, 100, []);
+    const result = buildChart(chart, 100);
     const anchorShape = result.buildAnchorShape('rIdTest');
     expect(anchorShape).toContain(`x="${Math.round(0.8 * 914400)}"`);
     expect(anchorShape).toContain(`y="${Math.round(1.6 * 914400)}"`);

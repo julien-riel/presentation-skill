@@ -22,7 +22,6 @@ export interface ImageTextDrawerResult {
 export function buildImageTextShapes(
   slide: Slide,
   startId: number,
-  _accentColors: string[],
 ): ImageTextDrawerResult {
   let id = startId;
   let shapes = '';

@@ -278,9 +278,9 @@ describe('PresentationSchema', () => {
     const parsed = PresentationSchema.parse(pres);
     expect(parsed.title).toBe('Test');
     expect(parsed.slides).toHaveLength(1);
-    // Default values are applied by Zod
-    expect(parsed.showSlideNumbers).toBe(false);
-    expect(parsed.locale).toBe('en-US');
+    // Optional fields are undefined when not provided
+    expect(parsed.showSlideNumbers).toBeUndefined();
+    expect(parsed.locale).toBeUndefined();
   });
 
   it('accepts a full presentation with metadata and theme', () => {

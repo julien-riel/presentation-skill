@@ -20,6 +20,8 @@ describe('timelineDrawer', () => {
   it('draws timeline shapes (line + circles) in the PPTX XML', async () => {
     const presentation: Presentation = {
       title: 'Timeline Test',
+      locale: 'en-US',
+      showSlideNumbers: false,
       slides: [
         {
           layout: 'timeline',
@@ -67,6 +69,8 @@ describe('timelineDrawer', () => {
   it('emits icon requests for events with icon, replacing ellipse', async () => {
     const presentation: Presentation = {
       title: 'Icon Timeline Test',
+      locale: 'en-US',
+      showSlideNumbers: false,
       slides: [
         {
           layout: 'timeline',
@@ -104,6 +108,8 @@ describe('timelineDrawer', () => {
   it('handles a single event timeline', async () => {
     const presentation: Presentation = {
       title: 'Single Event',
+      locale: 'en-US',
+      showSlideNumbers: false,
       slides: [
         {
           layout: 'timeline',

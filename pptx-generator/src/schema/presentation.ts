@@ -184,8 +184,8 @@ export const PresentationSchema = z.object({
   title: z.string(),
   metadata: PresentationMetadataSchema.optional(),
   theme: z.string().optional(),
-  locale: z.string().default('en-US'),
-  showSlideNumbers: z.boolean().default(false),
+  locale: z.string().optional(),
+  showSlideNumbers: z.boolean().optional(),
   footer: z.string().optional(),
   slides: z.array(SlideSchema),
 });

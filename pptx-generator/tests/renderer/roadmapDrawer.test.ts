@@ -20,6 +20,8 @@ describe('roadmapDrawer', () => {
   it('renders roadmap phases as horizontal bar segments', async () => {
     const presentation: Presentation = {
       title: 'Roadmap Test',
+      locale: 'en-US',
+      showSlideNumbers: false,
       slides: [
         {
           layout: 'roadmap',
@@ -60,6 +62,8 @@ describe('roadmapDrawer', () => {
   it('handles empty events gracefully', async () => {
     const presentation: Presentation = {
       title: 'Empty Roadmap Test',
+      locale: 'en-US',
+      showSlideNumbers: false,
       slides: [
         {
           layout: 'roadmap',

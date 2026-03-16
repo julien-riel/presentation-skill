@@ -49,7 +49,7 @@ function graphicFrameShape(id: number, relId: string, altText?: string): string 
  * containing the chart, style, and colors XML.
  */
 export function buildChart(
-  chart: ChartElement, startId: number, _accentColors: string[],
+  chart: ChartElement, startId: number,
 ): BuildChartResult {
   let chartXml: string;
   switch (chart.chartType) {

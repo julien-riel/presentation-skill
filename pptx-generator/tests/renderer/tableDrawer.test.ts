@@ -20,6 +20,8 @@ describe('tableDrawer', () => {
   it('renders table headers and data rows', async () => {
     const presentation: Presentation = {
       title: 'Table Test',
+      locale: 'en-US',
+      showSlideNumbers: false,
       slides: [
         {
           layout: 'table',
@@ -64,6 +66,8 @@ describe('tableDrawer', () => {
   it('handles single-column table', async () => {
     const presentation: Presentation = {
       title: 'Single Col Test',
+      locale: 'en-US',
+      showSlideNumbers: false,
       slides: [
         {
           layout: 'table',
@@ -93,6 +97,8 @@ describe('tableDrawer', () => {
   it('handles empty table gracefully (headers still render)', async () => {
     const presentation: Presentation = {
       title: 'Empty Table Test',
+      locale: 'en-US',
+      showSlideNumbers: false,
       slides: [
         {
           layout: 'table',
@@ -122,6 +128,8 @@ describe('tableDrawer', () => {
   it('renders many columns correctly', async () => {
     const presentation: Presentation = {
       title: 'Wide Table Test',
+      locale: 'en-US',
+      showSlideNumbers: false,
       slides: [
         {
           layout: 'table',

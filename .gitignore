@@ -1,4 +1,5 @@
 node_modules/
 dist/
+coverage/
 *.capabilities.json
 !pptx-generator/assets/default-capabilities.json

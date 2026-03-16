@@ -382,6 +382,8 @@ describe('renderToBuffer', () => {
   it('handles imageText layout with bullets element', async () => {
     const presentation: Presentation = {
       title: 'ImageText Bullets Test',
+      locale: 'en-US',
+      showSlideNumbers: false,
       slides: [
         {
           layout: 'imageText',
@@ -411,6 +413,8 @@ describe('E2E: AST → Transform(Tier 1) → Render', () => {
     const caps = makeTier1Capabilities();
     const ast: Presentation = {
       title: 'E2E Test Presentation',
+      locale: 'en-US',
+      showSlideNumbers: false,
       metadata: { author: 'Test Bot', date: '2026-03-14' },
       slides: [
         {
@@ -484,6 +488,8 @@ describe('E2E: AST → Transform(Tier 1) → Render', () => {
     const caps = makeTier1Capabilities(['twoColumns', 'timeline', 'architecture']);
     const ast: Presentation = {
       title: 'Icon Integration Test',
+      locale: 'en-US',
+      showSlideNumbers: false,
       slides: [
         {
           layout: 'architecture',
@@ -552,6 +558,8 @@ describe('E2E: AST → Transform(Tier 1) → Render', () => {
     const caps = makeTier1Capabilities();
     const ast: Presentation = {
       title: 'Split Test',
+      locale: 'en-US',
+      showSlideNumbers: false,
       slides: [
         {
           layout: 'bullets',
@@ -586,6 +594,8 @@ describe('chart rendering', () => {
   it('produces chart files in the ZIP', async () => {
     const presentation: Presentation = {
       title: 'Chart Test',
+      locale: 'en-US',
+      showSlideNumbers: false,
       slides: [{
         layout: 'chart', _resolvedLayout: 'chart',
         elements: [
@@ -627,6 +637,8 @@ describe('chart rendering', () => {
   it('numbers charts globally across slides', async () => {
     const presentation: Presentation = {
       title: 'Multi Chart',
+      locale: 'en-US',
+      showSlideNumbers: false,
       slides: [
         {
           layout: 'chart', _resolvedLayout: 'chart',

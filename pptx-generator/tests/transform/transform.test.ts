@@ -148,6 +148,8 @@ describe('contentValidator', () => {
   it('degrades KPI to bullets on Tier 1 (8 indicators → split bullets)', () => {
     const presentation: Presentation = {
       title: 'KPI Limit',
+      locale: 'en-US',
+      showSlideNumbers: false,
       slides: [{
         layout: 'kpi',
         elements: [
@@ -176,6 +178,8 @@ describe('contentValidator', () => {
   it('truncates KPI indicators beyond 6 when kpi layout is supported', () => {
     const presentation: Presentation = {
       title: 'KPI Limit',
+      locale: 'en-US',
+      showSlideNumbers: false,
       slides: [{
         layout: 'kpi',
         elements: [
@@ -203,6 +207,8 @@ describe('contentValidator', () => {
   it('truncates table rows beyond 8', () => {
     const presentation: Presentation = {
       title: 'Table Limit',
+      locale: 'en-US',
+      showSlideNumbers: false,
       slides: [{
         layout: 'table',
         elements: [
@@ -510,6 +516,8 @@ describe('contentValidator', () => {
   it('truncates table columns beyond 6', () => {
     const presentation: Presentation = {
       title: 'Wide Table',
+      locale: 'en-US',
+      showSlideNumbers: false,
       slides: [{
         layout: 'table',
         elements: [
@@ -544,6 +552,8 @@ describe('transformPresentation (full pipeline)', () => {
 
     const presentation = {
       title: 'Integration Test',
+      locale: 'en-US' as const,
+      showSlideNumbers: false,
       slides: [
         {
           layout: 'title' as const,
@@ -589,6 +599,8 @@ describe('transformPresentation (full pipeline)', () => {
     const caps = makeTier1Capabilities(['table']);
     const presentation: Presentation = {
       title: 'Chart Degrade Test',
+      locale: 'en-US',
+      showSlideNumbers: false,
       slides: [{
         layout: 'chart',
         elements: [

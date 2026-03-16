@@ -1,6 +1,7 @@
 import type { Slide, Element } from '../schema/presentation.js';
 import type { TemplateInfo } from '../validator/types.js';
 import { placeholderShape, bulletPlaceholderShape, textBoxShape, hyperlinkTextBoxShape, emuFromPx, emu } from './xmlHelpers.js';
+import { findElement } from './drawerUtils.js';
 import { buildTimelineShapes } from './timelineDrawer.js';
 import { buildArchitectureShapes } from './architectureDrawer.js';
 import { buildKpiShapes } from './kpiDrawer.js';
@@ -76,15 +77,8 @@ export interface SlideShapeResult {
   hyperlinkRequests: HyperlinkRequest[];
 }
 
-/**
- * Extracts the first element of a given type from a slide's elements.
- */
-export function findElement<T extends Element['type']>(
-  elements: Element[],
-  type: T,
-): Extract<Element, { type: T }> | undefined {
-  return elements.find((el) => el.type === type) as Extract<Element, { type: T }> | undefined;
-}
+// Re-export findElement for external consumers
+export { findElement } from './drawerUtils.js';
 
 function getTitleText(slide: Slide): string {
   return findElement(slide.elements, 'title')?.text ?? '';
@@ -339,7 +333,7 @@ export function buildSlideShapes(
     case 'imageText': {
       const title = getTitleText(slide);
       shapes += placeholderShape(id++, 'title', 0, [title]);
-      const result = buildImageTextShapes(slide, id, accentColors);
+      const result = buildImageTextShapes(slide, id);
       shapes += result.shapes;
       id = result.nextId;
       iconRequests.push(...result.iconRequests);
@@ -353,7 +347,7 @@ export function buildSlideShapes(
       shapes += placeholderShape(id++, 'title', 0, [title]);
       const chartEl = findElement(slide.elements, 'chart');
       if (chartEl) {
-        const result = buildChart(chartEl, id, accentColors);
+        const result = buildChart(chartEl, id);
         id = result.nextId;
         pendingCharts.push({ buildAnchorShape: result.buildAnchorShape, chartRequest: result.chartRequest });
       }

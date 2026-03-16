@@ -22,6 +22,7 @@ describe('slide numbers', () => {
   it('adds slide number textbox when showSlideNumbers is true', async () => {
     const presentation: Presentation = {
       title: 'Numbered',
+      locale: 'en-US',
       showSlideNumbers: true,
       slides: [
         {
@@ -62,6 +63,7 @@ describe('slide numbers', () => {
   it('does not add slide numbers when showSlideNumbers is false', async () => {
     const presentation: Presentation = {
       title: 'No Numbers',
+      locale: 'en-US',
       showSlideNumbers: false,
       slides: [
         {
@@ -88,6 +90,8 @@ describe('footer', () => {
   it('adds footer textbox when footer is set', async () => {
     const presentation: Presentation = {
       title: 'With Footer',
+      locale: 'en-US',
+      showSlideNumbers: false,
       footer: 'Confidential - Internal Use Only',
       slides: [
         {
@@ -113,6 +117,8 @@ describe('footer', () => {
   it('does not add footer when footer is not set', async () => {
     const presentation: Presentation = {
       title: 'No Footer',
+      locale: 'en-US',
+      showSlideNumbers: false,
       slides: [
         {
           layout: 'title',
@@ -136,6 +142,8 @@ describe('hyperlinks in text elements', () => {
   it('renders a text element with URL as a hyperlink shape', async () => {
     const presentation: Presentation = {
       title: 'Link Test',
+      locale: 'en-US',
+      showSlideNumbers: false,
       slides: [
         {
           layout: 'generic',
@@ -168,6 +176,8 @@ describe('hyperlinks in text elements', () => {
   it('renders text element without URL normally (no hyperlink)', async () => {
     const presentation: Presentation = {
       title: 'No Link',
+      locale: 'en-US',
+      showSlideNumbers: false,
       slides: [
         {
           layout: 'generic',
@@ -191,6 +201,8 @@ describe('hyperlinks in text elements', () => {
   it('renders hyperlink on title/section layout text element', async () => {
     const presentation: Presentation = {
       title: 'Title Link',
+      locale: 'en-US',
+      showSlideNumbers: false,
       slides: [
         {
           layout: 'title',
@@ -218,6 +230,7 @@ describe('hyperlinks in text elements', () => {
   it('combines slide numbers, footer, and hyperlinks on the same slide', async () => {
     const presentation: Presentation = {
       title: 'Full Featured',
+      locale: 'en-US',
       showSlideNumbers: true,
       footer: 'ACME Corp',
       slides: [

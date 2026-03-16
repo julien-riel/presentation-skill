@@ -1,3 +1,3 @@
 export { validateAST } from './astValidator.js';
-export { buildASTPrompt } from './promptParser.js';
-export { parseCSV, parseJSONData, detectDataType } from './dataParser.js';
+export { buildASTPrompt, buildDataPrompt } from './promptParser.js';
+export { parseCSV, parseJSONData } from './dataParser.js';
