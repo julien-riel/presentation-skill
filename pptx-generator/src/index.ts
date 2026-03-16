@@ -1,6 +1,5 @@
 import * as path from 'path';
 import { readFileSync, writeFileSync, statSync, existsSync } from 'fs';
-import { fileURLToPath } from 'url';
 import { readTemplate } from './validator/templateReader.js';
 import { runValidation } from './validator/engine.js';
 import { generateManifest } from './validator/manifestGenerator.js';
@@ -14,10 +13,10 @@ import { TemplateCapabilitiesSchema } from './schema/capabilities.js';
 import type { TemplateCapabilities } from './schema/capabilities.js';
 import type { Presentation } from './schema/presentation.js';
 import type { TemplateInfo, ValidationResult } from './validator/types.js';
+import { PACKAGE_ROOT } from './version.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DEFAULT_TEMPLATE = path.resolve(__dirname, '../assets/default-template.pptx');
-const DEFAULT_MANIFEST_PATH = path.resolve(__dirname, '../assets/default-capabilities.json');
+const DEFAULT_TEMPLATE = path.resolve(PACKAGE_ROOT, 'assets/default-template.pptx');
+const DEFAULT_MANIFEST_PATH = path.resolve(PACKAGE_ROOT, 'assets/default-capabilities.json');
 
 let cachedDefaultManifest: TemplateCapabilities | null = null;
 

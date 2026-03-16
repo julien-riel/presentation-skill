@@ -14,7 +14,7 @@ export interface ChartRequest {
 }
 
 export interface BuildChartResult {
-  anchorShape: string;
+  buildAnchorShape: (relId: string) => string;
   nextId: number;
   chartRequest: ChartRequest;
 }
@@ -24,7 +24,7 @@ const CHART_Y = emu(1.6);
 const CHART_CX = emu(10.6);
 const CHART_CY = emu(4.8);
 
-function graphicFrameShape(id: number): string {
+function graphicFrameShape(id: number, relId: string): string {
   return `<p:graphicFrame>
   <p:nvGraphicFramePr>
     <p:cNvPr id="${id}" name="Chart ${id}"/>
@@ -37,7 +37,7 @@ function graphicFrameShape(id: number): string {
   </p:xfrm>
   <a:graphic>
     <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart">
-      <c:chart r:id="__CHART_RELID__"/>
+      <c:chart r:id="${relId}"/>
     </a:graphicData>
   </a:graphic>
 </p:graphicFrame>`;
@@ -70,7 +70,7 @@ export function buildChart(
     }
   }
   return {
-    anchorShape: graphicFrameShape(startId),
+    buildAnchorShape: (relId: string) => graphicFrameShape(startId, relId),
     nextId: startId + 1,
     chartRequest: {
       chartXml,

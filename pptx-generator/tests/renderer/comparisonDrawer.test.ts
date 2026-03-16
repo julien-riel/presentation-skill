@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import JSZip from 'jszip';
 import * as path from 'path';
-import type { Presentation } from '../../src/schema/presentation.js';
+import type { Presentation, Slide } from '../../src/schema/presentation.js';
 import type { TemplateInfo } from '../../src/validator/types.js';
 import { renderToBuffer } from '../../src/renderer/pptxRenderer.js';
 import { readTemplate } from '../../src/validator/templateReader.js';
+import { buildComparisonShapes } from '../../src/renderer/comparisonDrawer.js';
 
 const TEMPLATE_PATH = path.resolve(__dirname, '../../assets/default-template.pptx');
 
@@ -92,5 +93,39 @@ describe('comparisonDrawer', () => {
     expect(slideXml).toContain('Cheap');
     // No Option B header for single column
     expect(slideXml).not.toContain('Option B');
+  });
+});
+
+describe('buildComparisonShapes – dynamic labels', () => {
+  const accentColors = ['2D7DD2', '27AE60', '999999'];
+
+  it('uses custom labels when provided', () => {
+    const slide: Slide = {
+      layout: 'comparison',
+      elements: [
+        { type: 'title', text: 'Compare' },
+        { type: 'bullets', items: ['Fast'], column: 'left', label: 'AWS' },
+        { type: 'bullets', items: ['Cheap'], column: 'right', label: 'GCP' },
+      ],
+    };
+    const result = buildComparisonShapes(slide, 100, accentColors);
+    expect(result.shapes).toContain('AWS');
+    expect(result.shapes).toContain('GCP');
+    expect(result.shapes).not.toContain('Option A');
+    expect(result.shapes).not.toContain('Option B');
+  });
+
+  it('falls back to Option A/B when no labels provided', () => {
+    const slide: Slide = {
+      layout: 'comparison',
+      elements: [
+        { type: 'title', text: 'Compare' },
+        { type: 'bullets', items: ['Fast'], column: 'left' },
+        { type: 'bullets', items: ['Cheap'], column: 'right' },
+      ],
+    };
+    const result = buildComparisonShapes(slide, 100, accentColors);
+    expect(result.shapes).toContain('Option A');
+    expect(result.shapes).toContain('Option B');
   });
 });

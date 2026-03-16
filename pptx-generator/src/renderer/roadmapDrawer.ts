@@ -1,14 +1,7 @@
 import type { Slide, Element } from '../schema/presentation.js';
 import type { IconRequest } from './placeholderFiller.js';
 import { emu, rectShape, textBoxShape, emuFromPx } from './xmlHelpers.js';
-
-function statusColor(status: string, accents: string[]): string {
-  switch (status) {
-    case 'done': return accents[3] ?? '27AE60';
-    case 'in-progress': return accents[4] ?? 'F39C12';
-    default: return accents.length > 2 ? accents[2] : '999999';
-  }
-}
+import { statusColor } from './drawerHelpers.js';
 
 /**
  * Builds roadmap shapes: horizontal phase blocks with labels and dates.

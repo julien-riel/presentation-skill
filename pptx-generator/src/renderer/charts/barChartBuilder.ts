@@ -7,12 +7,11 @@ import {
   buildLegendXml,
   buildDataLabelsXml,
   wrapChartXml,
+  CAT_AX_ID,
+  VAL_AX_ID,
 } from './chartXmlHelpers.js';
 
 type ChartElement = z.infer<typeof ChartElementSchema>;
-
-const CAT_AX_ID = 111111111;
-const VAL_AX_ID = 222222222;
 
 /**
  * Builds a complete bar/stackedBar chart XML document.

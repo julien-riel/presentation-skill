@@ -71,10 +71,10 @@ The plugin also provides a CLI for direct use:
 npx tsx src/cli.ts validate <template.pptx> [--json] [--demo] [--strict] [-o manifest.json]
 
 # Generate from AST
-npx tsx src/cli.ts generate --ast <ast.json> [-o output.pptx]
+npx tsx src/cli.ts generate --ast <ast.json> [--template template.pptx] [-o output.pptx]
 
 # Generate from data
-npx tsx src/cli.ts generate --data <data.csv> --title "Title" [-o output.pptx]
+npx tsx src/cli.ts generate --data <data.csv> --title "Title" [--template template.pptx] [-o output.pptx]
 ```
 
 ## Development

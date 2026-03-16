@@ -8,7 +8,8 @@ import { buildTableShapes } from './tableDrawer.js';
 import { buildRoadmapShapes } from './roadmapDrawer.js';
 import { buildProcessShapes } from './processDrawer.js';
 import { buildComparisonShapes } from './comparisonDrawer.js';
-import { buildChart, type ChartRequest } from './chartDrawer.js';
+import { buildChart } from './chartDrawer.js';
+import type { ChartRequest } from './chartDrawer.js';
 
 /** Default accent color when template has no accent colors defined. */
 const DEFAULT_ACCENT_COLOR = '2D7DD2';
@@ -27,17 +28,25 @@ export interface IconRequest {
   cy: number;
 }
 
+/**
+ * A chart whose anchor shape XML is deferred until the relationship ID is known.
+ */
+export interface PendingChart {
+  buildAnchorShape: (relId: string) => string;
+  chartRequest: ChartRequest;
+}
+
 export interface SlideShapeResult {
   shapes: string;
   nextId: number;
   iconRequests: IconRequest[];
-  chartRequests: ChartRequest[];
+  pendingCharts: PendingChart[];
 }
 
 /**
  * Extracts the first element of a given type from a slide's elements.
  */
-function findElement<T extends Element['type']>(
+export function findElement<T extends Element['type']>(
   elements: Element[],
   type: T,
 ): Extract<Element, { type: T }> | undefined {
@@ -109,7 +118,8 @@ export function buildSlideShapes(
   let id = startId;
   let shapes = '';
   const iconRequests: IconRequest[] = [];
-  const chartRequests: ChartRequest[] = [];
+  const pendingCharts: PendingChart[] = [];
+  const accentColors = templateInfo.theme.accentColors.map(c => c.replace('#', ''));
   let quoteRendered = false;
 
   switch (layout) {
@@ -138,7 +148,7 @@ export function buildSlideShapes(
 
       const bulletsEl = findElement(slide.elements, 'bullets');
       if (bulletsEl && bulletsEl.icons && bulletsEl.icons.length > 0) {
-        const accentColor = templateInfo.theme.accentColors[0]?.replace('#', '') ?? DEFAULT_ACCENT_COLOR;
+        const accentColor = accentColors[0] ?? DEFAULT_ACCENT_COLOR;
         const result = buildIconBulletShapes(bulletsEl, id, iconRequests, accentColor, emu(0.8), emu(1.8), emu(8.4));
         shapes += result.shapes;
         id = result.nextId;
@@ -173,7 +183,7 @@ export function buildSlideShapes(
       const hasAnyIcons = (leftBullets?.icons?.length ?? 0) > 0 || (rightBullets?.icons?.length ?? 0) > 0;
 
       if (hasAnyIcons) {
-        const accentColor = templateInfo.theme.accentColors[0]?.replace('#', '') ?? DEFAULT_ACCENT_COLOR;
+        const accentColor = accentColors[0] ?? DEFAULT_ACCENT_COLOR;
         const bodyTop = emu(1.8);
         const leftStart = emu(0.8);
         const colWidth = emu(4.0);
@@ -206,7 +216,6 @@ export function buildSlideShapes(
       shapes += placeholderShape(id++, 'title', 0, [title]);
 
       // Canvas shapes drawn with explicit position using theme colors
-      const accentColors = templateInfo.theme.accentColors.map(c => c.replace('#', ''));
       if (layout === 'timeline') {
         const result = buildTimelineShapes(slide, id, accentColors);
         shapes += result.shapes;
@@ -224,7 +233,6 @@ export function buildSlideShapes(
     case 'kpi': {
       const title = getTitleText(slide);
       shapes += placeholderShape(id++, 'title', 0, [title]);
-      const accentColors = templateInfo.theme.accentColors.map(c => c.replace('#', ''));
       const result = buildKpiShapes(slide, id, accentColors);
       shapes += result.shapes;
       id = result.nextId;
@@ -235,7 +243,6 @@ export function buildSlideShapes(
     case 'table': {
       const title = getTitleText(slide);
       shapes += placeholderShape(id++, 'title', 0, [title]);
-      const accentColors = templateInfo.theme.accentColors.map(c => c.replace('#', ''));
       const result = buildTableShapes(slide, id, accentColors);
       shapes += result.shapes;
       id = result.nextId;
@@ -249,7 +256,7 @@ export function buildSlideShapes(
       const quoteEl = findElement(slide.elements, 'quote');
       if (quoteEl) {
         quoteRendered = true;
-        const accentColor = templateInfo.theme.accentColors[0]?.replace('#', '') ?? DEFAULT_ACCENT_COLOR;
+        const accentColor = accentColors[0] ?? DEFAULT_ACCENT_COLOR;
 
         const quoteText = `\u201C${quoteEl.text}\u201D`;
         shapes += textBoxShape(id++, emu(1.5), emu(2.0), emu(9.2), emu(2.5),
@@ -267,7 +274,6 @@ export function buildSlideShapes(
     case 'process': {
       const title = getTitleText(slide);
       shapes += placeholderShape(id++, 'title', 0, [title]);
-      const accentColors = templateInfo.theme.accentColors.map(c => c.replace('#', ''));
       const result = layout === 'roadmap'
         ? buildRoadmapShapes(slide, id, accentColors)
         : buildProcessShapes(slide, id, accentColors);
@@ -280,7 +286,6 @@ export function buildSlideShapes(
     case 'comparison': {
       const title = getTitleText(slide);
       shapes += placeholderShape(id++, 'title', 0, [title]);
-      const accentColors = templateInfo.theme.accentColors.map(c => c.replace('#', ''));
       const result = buildComparisonShapes(slide, id, accentColors);
       shapes += result.shapes;
       id = result.nextId;
@@ -307,11 +312,9 @@ export function buildSlideShapes(
       shapes += placeholderShape(id++, 'title', 0, [title]);
       const chartEl = findElement(slide.elements, 'chart');
       if (chartEl) {
-        const accentColors = templateInfo.theme.accentColors.map(c => c.replace('#', ''));
         const result = buildChart(chartEl, id, accentColors);
-        shapes += result.anchorShape;
         id = result.nextId;
-        chartRequests.push(result.chartRequest);
+        pendingCharts.push({ buildAnchorShape: result.buildAnchorShape, chartRequest: result.chartRequest });
       }
       break;
     }
@@ -332,7 +335,7 @@ export function buildSlideShapes(
   if (quoteRendered) {
     const quoteEl = findElement(slide.elements, 'quote');
     if (quoteEl?.icon) {
-      const accentColor = templateInfo.theme.accentColors[0]?.replace('#', '') ?? DEFAULT_ACCENT_COLOR;
+      const accentColor = accentColors[0] ?? DEFAULT_ACCENT_COLOR;
       const iconSizePx = 48;
       const iconEmu = emuFromPx(iconSizePx);
       iconRequests.push({
@@ -347,5 +350,5 @@ export function buildSlideShapes(
     }
   }
 
-  return { shapes, nextId: id, iconRequests, chartRequests };
+  return { shapes, nextId: id, iconRequests, pendingCharts };
 }

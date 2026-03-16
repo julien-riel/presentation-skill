@@ -1,6 +1,3 @@
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import * as path from 'path';
 import type { TemplateInfo } from './types.js';
 import type { TemplateCapabilities } from '../schema/capabilities.js';
 import type { LayoutType } from '../schema/presentation.js';
@@ -11,17 +8,7 @@ import {
   TIER2_LAYOUTS,
   FALLBACK_CASCADES,
 } from './constants.js';
-
-let _version: string | undefined;
-function getVersion(): string {
-  if (!_version) {
-    const dir = path.dirname(fileURLToPath(import.meta.url));
-    const ver: string = JSON.parse(readFileSync(path.resolve(dir, '../../package.json'), 'utf-8')).version ?? '0.0.0';
-    _version = ver;
-    return ver;
-  }
-  return _version;
-}
+import { getVersion } from '../version.js';
 
 /**
  * Returns layout type names supported by the template.

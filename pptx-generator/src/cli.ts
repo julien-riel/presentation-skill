@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import { readFileSync } from 'fs';
 import { Command } from 'commander';
 import { formatText, formatJson } from './validator/formatter.js';
 import {
@@ -10,19 +9,14 @@ import {
 } from './index.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const { version } = JSON.parse(
-  readFileSync(path.resolve(__dirname, '../package.json'), 'utf-8')
-);
+import { getVersion } from './version.js';
 
 const program = new Command();
 
 program
   .name('pptx-generator')
   .description('PPTX template validator and presentation generator')
-  .version(version);
+  .version(getVersion());
 
 program
   .command('validate')
@@ -93,7 +87,17 @@ program
         const raw = await fs.readFile(options.data!, 'utf-8');
         const ext = path.extname(options.data!).toLowerCase();
         const format = ext === '.csv' ? 'csv' : 'json';
-        const data = format === 'json' ? JSON.parse(raw) : raw;
+        let data: unknown;
+        if (format === 'json') {
+          try {
+            data = JSON.parse(raw);
+          } catch {
+            console.error(`Invalid JSON in ${options.data}: file is not valid JSON`);
+            process.exit(1);
+          }
+        } else {
+          data = raw;
+        }
         buffer = await generateFromData(data, format, options.title, templatePath);
       }
 

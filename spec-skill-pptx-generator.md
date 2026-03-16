@@ -649,7 +649,7 @@ pptx-generator/
 │   │   ├── roadmapDrawer.ts          # Barres de phases horizontales
 │   │   ├── processDrawer.ts          # Boîtes numérotées + flèches
 │   │   ├── comparisonDrawer.ts       # Colonnes avec headers colorés
-│   │   ├── quoteLayout.ts            # Citation centrée + attribution
+│   │   ├── placeholderFiller.ts       # Remplissage placeholders, citation, icônes bullets
 │   │   ├── chartDrawer.ts            # Orchestrateur charts OOXML
 │   │   ├── charts/                   # Builders OOXML par type de chart
 │   │   │   ├── barChartBuilder.ts    # Bar/stackedBar charts

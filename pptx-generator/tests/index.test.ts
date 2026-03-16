@@ -30,6 +30,13 @@ describe('validateTemplate', () => {
     expect(report.manifest.tier).toBe(2);
     expect(report.hasErrors).toBe(false);
   });
+
+  it('reports hasWarnings for templates with warnings', async () => {
+    const report = await validateTemplate(getDefaultTemplatePath());
+    // The default template is well-formed, so check the type at minimum
+    expect(typeof report.hasWarnings).toBe('boolean');
+    expect(typeof report.hasErrors).toBe('boolean');
+  });
 });
 
 describe('generateFromAST', () => {

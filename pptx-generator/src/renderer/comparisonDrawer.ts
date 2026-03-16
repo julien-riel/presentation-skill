@@ -40,7 +40,7 @@ export function buildComparisonShapes(
       fill: leftColor, rectRadius: 0.04,
     });
     shapes += textBoxShape(id++, colLeft, headerY, colW, headerH,
-      'Option A', { size: 13, bold: true, color: 'FFFFFF', align: 'ctr', valign: 'ctr' });
+      leftBullets.label ?? 'Option A', { size: 13, bold: true, color: 'FFFFFF', align: 'ctr', valign: 'ctr' });
 
     for (let i = 0; i < leftBullets.items.length; i++) {
       const y = bodyY + i * lineH;
@@ -55,7 +55,7 @@ export function buildComparisonShapes(
       fill: rightColor, rectRadius: 0.04,
     });
     shapes += textBoxShape(id++, colRight, headerY, colW, headerH,
-      'Option B', { size: 13, bold: true, color: 'FFFFFF', align: 'ctr', valign: 'ctr' });
+      rightBullets.label ?? 'Option B', { size: 13, bold: true, color: 'FFFFFF', align: 'ctr', valign: 'ctr' });
 
     for (let i = 0; i < rightBullets.items.length; i++) {
       const y = bodyY + i * lineH;

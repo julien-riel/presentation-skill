@@ -12,6 +12,127 @@ import { resolveIcon, createIconCache } from './iconResolver.js';
 import { wrapSlideXml, notesSlideXml, pictureShape } from './xmlHelpers.js';
 
 /**
+ * Adds a relationship entry to a slide's .rels file.
+ */
+async function addSlideRelationship(
+  zip: JSZip,
+  slideNum: number,
+  relId: string,
+  type: string,
+  target: string,
+): Promise<void> {
+  const relsPath = `ppt/slides/_rels/slide${slideNum}.xml.rels`;
+  const relsEntry = zip.file(relsPath);
+  if (!relsEntry) throw new Error(`Missing slide rels: ${relsPath}`);
+  const currentRels = await relsEntry.async('text');
+  const updated = currentRels.replace(
+    '</Relationships>',
+    `  <Relationship Id="${relId}" Type="${type}" Target="${target}"/>\n</Relationships>`,
+  );
+  zip.file(relsPath, updated);
+}
+
+/**
+ * Embeds speaker notes for a slide: writes the notesSlide XML, its rels,
+ * adds the content-type override, and links the notes into the slide rels.
+ * Returns the content-type override string to append.
+ */
+async function embedSlideNotes(
+  zip: JSZip,
+  slideNum: number,
+  notes: string,
+): Promise<string> {
+  const notesPath = `ppt/notesSlides/notesSlide${slideNum}.xml`;
+  const notesXml = notesSlideXml(notes);
+  zip.file(notesPath, notesXml);
+
+  // Notes relationships
+  const notesRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="../slides/slide${slideNum}.xml"/>
+</Relationships>`;
+  zip.file(`ppt/notesSlides/_rels/notesSlide${slideNum}.xml.rels`, notesRels);
+
+  // Add notes reference to slide rels
+  await addSlideRelationship(
+    zip,
+    slideNum,
+    'rId2',
+    'http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide',
+    `../notesSlides/notesSlide${slideNum}.xml`,
+  );
+
+  return `\n  <Override PartName="/${notesPath}" ContentType="application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml"/>`;
+}
+
+/**
+ * Embeds image files into the ZIP and adds their relationships to the slide.
+ */
+async function embedSlideImages(
+  zip: JSZip,
+  slideNum: number,
+  images: Array<{ relId: string; mediaPath: string; pngBuffer: Buffer }>,
+): Promise<void> {
+  for (const img of images) {
+    zip.file(img.mediaPath, img.pngBuffer);
+  }
+  if (images.length > 0) {
+    for (const img of images) {
+      await addSlideRelationship(
+        zip,
+        slideNum,
+        img.relId,
+        'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image',
+        `../media/${img.mediaPath.split('/').pop()}`,
+      );
+    }
+  }
+}
+
+/**
+ * Embeds chart files into the ZIP, adds their relationships to the slide,
+ * and collects content-type override strings.
+ */
+async function embedSlideCharts(
+  zip: JSZip,
+  slideNum: number,
+  charts: Array<{ chartNum: number; chartRelId: string; chartRequest: ChartRequest }>,
+  newContentTypes: string[],
+): Promise<void> {
+  for (const chart of charts) {
+    const { chartNum, chartRelId, chartRequest } = chart;
+
+    // Write chart XML files
+    zip.file(`ppt/charts/chart${chartNum}.xml`, chartRequest.chartXml);
+    zip.file(`ppt/charts/style${chartNum}.xml`, chartRequest.styleXml);
+    zip.file(`ppt/charts/colors${chartNum}.xml`, chartRequest.colorsXml);
+
+    // Write chart rels
+    zip.file(`ppt/charts/_rels/chart${chartNum}.xml.rels`, buildChartRelsXml(chartNum));
+
+    // Add chart relationship to slide rels
+    await addSlideRelationship(
+      zip,
+      slideNum,
+      chartRelId,
+      'http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart',
+      `../charts/chart${chartNum}.xml`,
+    );
+
+    // Collect content type overrides for chart files
+    newContentTypes.push(
+      `\n  <Override PartName="/ppt/charts/chart${chartNum}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>`,
+    );
+    newContentTypes.push(
+      `\n  <Override PartName="/ppt/charts/style${chartNum}.xml" ContentType="application/vnd.ms-office.chartstyle+xml"/>`,
+    );
+    newContentTypes.push(
+      `\n  <Override PartName="/ppt/charts/colors${chartNum}.xml" ContentType="application/vnd.ms-office.chartcolorstyle+xml"/>`,
+    );
+  }
+}
+
+/**
  * Maps layout type names (e.g. "bullets") to their slideLayout file index
  * inside the template ZIP.
  */
@@ -75,7 +196,7 @@ export async function renderToBuffer(
     const layoutIndex = layoutEntry?.index ?? 1;
 
     // Build the shapes XML for this slide
-    const { shapes, nextId, iconRequests, chartRequests } = buildSlideShapes(slide, nextShapeId, templateInfo);
+    const { shapes, nextId, iconRequests, pendingCharts } = buildSlideShapes(slide, nextShapeId, templateInfo);
     nextShapeId = nextId;
 
     let allShapes = shapes;
@@ -97,17 +218,13 @@ export async function renderToBuffer(
       hasImages = true;
     }
 
-    // Process chart requests: replace __CHART_RELID__ tokens BEFORE wrapping
+    // Process pending charts: resolve relIds and build anchor shapes
     const slideCharts: Array<{ chartNum: number; chartRelId: string; chartRequest: ChartRequest }> = [];
-    for (const chartReq of chartRequests) {
+    for (const pending of pendingCharts) {
       const chartNum = nextChartNum++;
       const chartRelId = `rIdChart${chartNum}`;
-      allShapes = allShapes.replace('__CHART_RELID__', chartRelId);
-      slideCharts.push({ chartNum, chartRelId, chartRequest: chartReq });
-    }
-
-    if (allShapes.includes('__CHART_RELID__')) {
-      throw new Error(`Unreplaced __CHART_RELID__ token in slide ${i + 1}`);
+      allShapes += pending.buildAnchorShape(chartRelId);
+      slideCharts.push({ chartNum, chartRelId, chartRequest: pending.chartRequest });
     }
 
     const slideXml = wrapSlideXml(allShapes);
@@ -165,81 +282,18 @@ export async function renderToBuffer(
     // Build sldIdLst entry
     sldIdLst += `\n    <p:sldId id="${baseSlideId + entry.slideNum}" r:id="${slideRId}"/>`;
 
-    // Handle speaker notes
+    // Embed speaker notes
     if (entry.notes) {
-      const notesPath = `ppt/notesSlides/notesSlide${entry.slideNum}.xml`;
-      const notesXml = notesSlideXml(entry.notes);
-      zip.file(notesPath, notesXml);
-
-      // Notes relationships
-      const notesRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="../slides/slide${entry.slideNum}.xml"/>
-</Relationships>`;
-      zip.file(`ppt/notesSlides/_rels/notesSlide${entry.slideNum}.xml.rels`, notesRels);
-
-      newContentTypes += `\n  <Override PartName="/${notesPath}" ContentType="application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml"/>`;
-
-      // Add notes reference to slide rels
-      const slideRelsPath = `ppt/slides/_rels/slide${entry.slideNum}.xml.rels`;
-      const slideRelsEntry = zip.file(slideRelsPath);
-      if (!slideRelsEntry) throw new Error(`Template is missing required file: ${slideRelsPath}`);
-      const slideRelsContent = await slideRelsEntry.async('text');
-      const updatedSlideRels = slideRelsContent.replace(
-        '</Relationships>',
-        `  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide" Target="../notesSlides/notesSlide${entry.slideNum}.xml"/>\n</Relationships>`
-      );
-      zip.file(`ppt/slides/_rels/slide${entry.slideNum}.xml.rels`, updatedSlideRels);
+      newContentTypes += await embedSlideNotes(zip, entry.slideNum, entry.notes);
     }
 
-    // Write image files to ZIP and update slide rels
-    for (const img of entry.images) {
-      zip.file(img.mediaPath, img.pngBuffer);
-    }
+    // Embed images into ZIP and update slide rels
+    await embedSlideImages(zip, entry.slideNum, entry.images);
 
-    if (entry.images.length > 0) {
-      const imgRelsPath = `ppt/slides/_rels/slide${entry.slideNum}.xml.rels`;
-      const imgRelsEntry = zip.file(imgRelsPath);
-      if (!imgRelsEntry) throw new Error(`Template is missing required file: ${imgRelsPath}`);
-      const currentRels = await imgRelsEntry.async('text');
-      const imageRels = entry.images.map(img =>
-        `  <Relationship Id="${img.relId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/${img.mediaPath.split('/').pop()}"/>`
-      ).join('\n');
-      const updatedRels = currentRels.replace(
-        '</Relationships>',
-        `${imageRels}\n</Relationships>`
-      );
-      zip.file(`ppt/slides/_rels/slide${entry.slideNum}.xml.rels`, updatedRels);
-    }
-
-    // Write chart files to ZIP and update slide rels
-    for (const chart of entry.charts) {
-      const { chartNum, chartRelId, chartRequest } = chart;
-
-      // Write chart XML files
-      zip.file(`ppt/charts/chart${chartNum}.xml`, chartRequest.chartXml);
-      zip.file(`ppt/charts/style${chartNum}.xml`, chartRequest.styleXml);
-      zip.file(`ppt/charts/colors${chartNum}.xml`, chartRequest.colorsXml);
-
-      // Write chart rels
-      zip.file(`ppt/charts/_rels/chart${chartNum}.xml.rels`, buildChartRelsXml(chartNum));
-
-      // Add chart relationship to slide rels
-      const chartRelsPath = `ppt/slides/_rels/slide${entry.slideNum}.xml.rels`;
-      const chartRelsEntry = zip.file(chartRelsPath);
-      if (!chartRelsEntry) throw new Error(`Missing slide rels: ${chartRelsPath}`);
-      const chartCurrentRels = await chartRelsEntry.async('text');
-      const updatedChartRels = chartCurrentRels.replace(
-        '</Relationships>',
-        `  <Relationship Id="${chartRelId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart" Target="../charts/chart${chartNum}.xml"/>\n</Relationships>`
-      );
-      zip.file(chartRelsPath, updatedChartRels);
-
-      // Add content type overrides for chart files
-      newContentTypes += `\n  <Override PartName="/ppt/charts/chart${chartNum}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>`;
-      newContentTypes += `\n  <Override PartName="/ppt/charts/style${chartNum}.xml" ContentType="application/vnd.ms-office.chartstyle+xml"/>`;
-      newContentTypes += `\n  <Override PartName="/ppt/charts/colors${chartNum}.xml" ContentType="application/vnd.ms-office.chartcolorstyle+xml"/>`;
-    }
+    // Embed charts into ZIP and update slide rels
+    const chartContentTypes: string[] = [];
+    await embedSlideCharts(zip, entry.slideNum, entry.charts, chartContentTypes);
+    newContentTypes += chartContentTypes.join('');
   }
 
   if (hasImages && !newContentTypes.includes('Extension="png"')) {

@@ -8,6 +8,8 @@ export const MAX_TABLE_ROWS = 8;
 export const MAX_TABLE_COLS = 6;
 export const MAX_CHART_CATEGORIES = 8;
 export const MAX_CHART_SERIES = 4;
+export const MAX_DIAGRAM_NODES = 8;
+export const MAX_TIMELINE_EVENTS = 6;
 
 /**
  * Counts words in a string (split by whitespace).
@@ -155,6 +157,29 @@ export function validateSlideContent(slide: Slide): Slide[] {
     }));
 
     return { ...el, data: { labels, series } };
+  });
+
+  // --- Diagram node limit ---
+  elements = elements.map((el) => {
+    if (el.type !== 'diagram') return el;
+    if (el.nodes.length > MAX_DIAGRAM_NODES) {
+      warnings.push(`Diagram nodes truncated from ${el.nodes.length} to ${MAX_DIAGRAM_NODES}`);
+      const kept = el.nodes.slice(0, MAX_DIAGRAM_NODES);
+      const keptIds = new Set(kept.map(n => n.id));
+      const edges = el.edges.filter(e => keptIds.has(e.from) && keptIds.has(e.to));
+      return { ...el, nodes: kept, edges };
+    }
+    return el;
+  });
+
+  // --- Timeline event limit ---
+  elements = elements.map((el) => {
+    if (el.type !== 'timeline') return el;
+    if (el.events.length > MAX_TIMELINE_EVENTS) {
+      warnings.push(`Timeline events truncated from ${el.events.length} to ${MAX_TIMELINE_EVENTS}`);
+      return { ...el, events: el.events.slice(0, MAX_TIMELINE_EVENTS) };
+    }
+    return el;
   });
 
   // --- Bullet count split ---

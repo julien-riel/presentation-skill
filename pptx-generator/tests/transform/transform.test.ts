@@ -397,6 +397,88 @@ describe('contentValidator', () => {
     expect(result[0]._warnings?.some(w => w.includes('Non-finite'))).toBe(true);
   });
 
+  it('truncates diagram with 10 nodes to 8 and drops orphaned edges', () => {
+    const nodes = Array.from({ length: 10 }, (_, i) => ({ id: `n${i}`, label: `Node ${i}` }));
+    const edges = [
+      { from: 'n0', to: 'n1' },
+      { from: 'n1', to: 'n5' },
+      { from: 'n7', to: 'n9' },   // n9 will be removed
+      { from: 'n8', to: 'n3' },   // n8 will be removed
+      { from: 'n2', to: 'n4' },
+    ];
+    const slides: Slide[] = [{
+      layout: 'architecture',
+      elements: [
+        { type: 'title', text: 'Diagram' },
+        { type: 'diagram', nodes, edges },
+      ],
+    }];
+    const result = validateContent(slides);
+    const diagramEl = result[0].elements.find(el => el.type === 'diagram');
+    expect(diagramEl).toBeDefined();
+    if (diagramEl?.type === 'diagram') {
+      expect(diagramEl.nodes).toHaveLength(8);
+      // edges referencing n8 or n9 should be removed
+      expect(diagramEl.edges).toHaveLength(3);
+      expect(diagramEl.edges.every(e => !['n8', 'n9'].includes(e.from) && !['n8', 'n9'].includes(e.to))).toBe(true);
+    }
+    expect(result[0]._warnings?.some(w => w.includes('Diagram nodes truncated'))).toBe(true);
+  });
+
+  it('does not truncate diagram with exactly 8 nodes', () => {
+    const nodes = Array.from({ length: 8 }, (_, i) => ({ id: `n${i}`, label: `Node ${i}` }));
+    const edges = [{ from: 'n0', to: 'n7' }];
+    const slides: Slide[] = [{
+      layout: 'architecture',
+      elements: [
+        { type: 'title', text: 'Diagram' },
+        { type: 'diagram', nodes, edges },
+      ],
+    }];
+    const result = validateContent(slides);
+    const diagramEl = result[0].elements.find(el => el.type === 'diagram');
+    if (diagramEl?.type === 'diagram') {
+      expect(diagramEl.nodes).toHaveLength(8);
+      expect(diagramEl.edges).toHaveLength(1);
+    }
+    expect(result[0]._warnings?.some(w => w.includes('Diagram'))).toBeFalsy();
+  });
+
+  it('truncates timeline with 8 events to 6', () => {
+    const events = Array.from({ length: 8 }, (_, i) => ({ date: `2024-0${i + 1}`, label: `Event ${i}` }));
+    const slides: Slide[] = [{
+      layout: 'timeline',
+      elements: [
+        { type: 'title', text: 'Timeline' },
+        { type: 'timeline', events },
+      ],
+    }];
+    const result = validateContent(slides);
+    const timelineEl = result[0].elements.find(el => el.type === 'timeline');
+    expect(timelineEl).toBeDefined();
+    if (timelineEl?.type === 'timeline') {
+      expect(timelineEl.events).toHaveLength(6);
+    }
+    expect(result[0]._warnings?.some(w => w.includes('Timeline events truncated'))).toBe(true);
+  });
+
+  it('does not truncate timeline with exactly 6 events', () => {
+    const events = Array.from({ length: 6 }, (_, i) => ({ date: `2024-0${i + 1}`, label: `Event ${i}` }));
+    const slides: Slide[] = [{
+      layout: 'timeline',
+      elements: [
+        { type: 'title', text: 'Timeline' },
+        { type: 'timeline', events },
+      ],
+    }];
+    const result = validateContent(slides);
+    const timelineEl = result[0].elements.find(el => el.type === 'timeline');
+    if (timelineEl?.type === 'timeline') {
+      expect(timelineEl.events).toHaveLength(6);
+    }
+    expect(result[0]._warnings?.some(w => w.includes('Timeline'))).toBeFalsy();
+  });
+
   it('truncates table columns beyond 6', () => {
     const presentation: Presentation = {
       title: 'Wide Table',

@@ -75,7 +75,7 @@ Ces éléments ne sont pas bloquants pour une v1 mais sont dans la spec :
 | ~~Support Tier 3 layouts (roadmap, process, comparison)~~ | ~~Basse~~ | ~~FAIT — roadmap (barres de phase), process (boîtes numérotées + flèches), comparison (colonnes avec headers)~~ |
 | ~~Validation contenu KPI/Table~~ | ~~Moyenne~~ | ~~FAIT — max 6 indicateurs KPI, max 8 lignes / 6 colonnes table~~ |
 | ~~Renderer Chart natif~~ | ~~Basse~~ | ~~FAIT — charts OOXML natifs (bar, line, pie, donut, stackedBar) avec options de formatage~~ |
-| Mode génération depuis données avec LLM | Moyenne | `dataParser.ts` fait l'analyse, mais la narration LLM manque |
+| ~~Mode génération depuis données avec LLM~~ | ~~Moyenne~~ | ~~FAIT — `buildDataPrompt` génère le prompt LLM, `dataParser.ts` analyse CSV/JSON~~ |
 
 ---
 

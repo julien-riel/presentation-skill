@@ -124,4 +124,35 @@ describe('parseJSONData', () => {
     const timelineSlide = result.slides.find(s => s.layout === 'timeline');
     expect(timelineSlide).toBeDefined();
   });
+
+  it('filters out invalid trend values in KPI JSON data', () => {
+    const data = [
+      { label: 'Revenue', value: '1M', trend: 'up' },
+      { label: 'Cost', value: '500K', trend: 'invalid' },
+      { label: 'Profit', value: '500K', trend: 'down' },
+    ];
+    const result = parseJSONData(data, 'Test');
+    const kpiSlide = result.slides.find(s => s.layout === 'kpi');
+    expect(kpiSlide).toBeDefined();
+    const kpiEl = kpiSlide!.elements.find(el => el.type === 'kpi');
+    expect(kpiEl).toBeDefined();
+    if (kpiEl?.type === 'kpi') {
+      expect(kpiEl.indicators[0].trend).toBe('up');
+      expect(kpiEl.indicators[1].trend).toBeUndefined();
+      expect(kpiEl.indicators[2].trend).toBe('down');
+    }
+  });
+
+  it('falls back to bullets for unrecognized array data', () => {
+    const data = ['apple', 'banana', 'cherry'];
+    const result = parseJSONData(data, 'Fruits');
+    const bulletsSlide = result.slides.find(s => s.layout === 'bullets');
+    expect(bulletsSlide).toBeDefined();
+    const bulletsEl = bulletsSlide!.elements.find(el => el.type === 'bullets');
+    expect(bulletsEl).toBeDefined();
+    if (bulletsEl?.type === 'bullets') {
+      expect(bulletsEl.items).toHaveLength(3);
+      expect(bulletsEl.items[0]).toContain('apple');
+    }
+  });
 });

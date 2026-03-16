@@ -36,6 +36,7 @@ export const BulletsElementSchema = z.object({
   items: z.array(z.string()),
   icons: z.array(z.string()).optional(),
   column: z.enum(['left', 'right']).optional(),
+  label: z.string().optional(),
   level: z.number().optional(),
 });
 

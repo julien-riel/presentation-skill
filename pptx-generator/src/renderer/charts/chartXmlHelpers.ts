@@ -1,5 +1,9 @@
 import { escapeXml } from '../xmlHelpers.js';
 
+/** Shared axis IDs for chart builders. */
+export const CAT_AX_ID = 111111111;
+export const VAL_AX_ID = 222222222;
+
 /** Generates <c:cat> XML with a string cache for category labels. */
 export function buildCategoryXml(labels: string[]): string {
   const pts = labels.map((label, i) =>

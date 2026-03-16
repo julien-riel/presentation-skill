@@ -9,6 +9,13 @@ function isValidStatus(value: string): value is TimelineStatus {
   return VALID_STATUSES.includes(value as TimelineStatus);
 }
 
+const VALID_TRENDS = ['up', 'down', 'stable'] as const;
+type Trend = typeof VALID_TRENDS[number];
+
+function isValidTrend(value: string): value is Trend {
+  return VALID_TRENDS.includes(value as Trend);
+}
+
 /**
  * Detects the dominant data type from CSV headers and rows.
  */
@@ -217,7 +224,7 @@ export function parseJSONData(data: unknown, title: string): Presentation {
             indicators: data.map((item: Record<string, unknown>) => ({
               label: String(item.label ?? ''), value: String(item.value ?? ''),
               ...(item.unit ? { unit: String(item.unit) } : {}),
-              ...(typeof item.trend === 'string' ? { trend: item.trend as 'up' | 'down' | 'stable' } : {}),
+              ...(typeof item.trend === 'string' && isValidTrend(item.trend) ? { trend: item.trend } : {}),
             })),
           },
         ],

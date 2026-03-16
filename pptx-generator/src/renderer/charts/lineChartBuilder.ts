@@ -9,12 +9,11 @@ import {
   buildDataLabelsXml,
   wrapChartXml,
   escapeXml,
+  CAT_AX_ID,
+  VAL_AX_ID,
 } from './chartXmlHelpers.js';
 
 type ChartElement = z.infer<typeof ChartElementSchema>;
-
-const CAT_AX_ID = 111111111;
-const VAL_AX_ID = 222222222;
 
 /**
  * Builds a single <c:ser> element for a line chart series.

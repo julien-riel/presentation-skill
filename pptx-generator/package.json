@@ -2,9 +2,11 @@
   "name": "pptx-generator",
   "version": "1.0.0",
   "description": "Generate professional PowerPoint presentations from AST, data, or prompts",
-  "main": "src/index.ts",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "type": "module",
   "scripts": {
+    "build": "tsc",
     "test": "vitest run",
     "build:template": "tsx scripts/buildDefaultTemplate.ts",
     "validate": "tsx src/cli.ts validate",

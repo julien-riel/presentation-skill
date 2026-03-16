@@ -78,12 +78,13 @@ Quand l'utilisateur fournit un fichier CSV ou JSON de donnees :
 
 **Option B — Generation directe (sans narration)** :
 1. Lire le fichier de donnees.
-2. Parser avec le bon format :
+2. Utiliser l'API publique :
    ```typescript
-   import { parseCSV, parseJSONData } from './src/parser/dataParser.js';
-   const presentation = ext === '.csv' ? parseCSV(raw, titre) : parseJSONData(data, titre);
+   import { generateFromData } from './src/index.js';
+
+   const buffer = await generateFromData(data, format, titre, templatePath);
    ```
-3. Valider, transformer et generer comme en Mode 2.
+   `generateFromData` detecte automatiquement le type de donnees (KPI, timeline, table) et genere le .pptx.
 
 **Via CLI** :
 ```bash

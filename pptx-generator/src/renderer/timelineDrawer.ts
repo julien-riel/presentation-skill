@@ -1,18 +1,7 @@
 import type { Slide, Element } from '../schema/presentation.js';
 import type { IconRequest } from './placeholderFiller.js';
 import { emu, ellipseShape, lineShape, textBoxShape, emuFromPx } from './xmlHelpers.js';
-
-/**
- * Status colors: uses template accent colors when available,
- * falls back to sensible defaults.
- */
-function statusColor(status: string, accents: string[]): string {
-  switch (status) {
-    case 'done': return accents[3] ?? '27AE60';         // accent4 or green
-    case 'in-progress': return accents[4] ?? 'F39C12';  // accent5 or amber
-    default: return accents.length > 2 ? accents[2] : '999999'; // accent3 or gray
-  }
-}
+import { statusColor } from './drawerHelpers.js';
 
 /**
  * Builds timeline shape XML fragments.

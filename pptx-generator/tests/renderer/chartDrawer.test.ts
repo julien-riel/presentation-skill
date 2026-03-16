@@ -325,8 +325,11 @@ describe('chartDrawer', () => {
       data: { labels: ['A', 'B'], series: [{ name: 'S', values: [1, 2] }] },
     };
     const result = buildChart(chart, 100, ['1E3A5F', '2C7DA0']);
-    expect(result.anchorShape).toContain('<p:graphicFrame>');
-    expect(result.anchorShape).toContain('__CHART_RELID__');
+    expect(typeof result.buildAnchorShape).toBe('function');
+    const anchorShape = result.buildAnchorShape('rIdChart1');
+    expect(anchorShape).toContain('<p:graphicFrame>');
+    expect(anchorShape).toContain('r:id="rIdChart1"');
+    expect(anchorShape).not.toContain('__CHART_RELID__');
     expect(result.nextId).toBe(101);
     expect(result.chartRequest.chartXml).toContain('<c:barChart>');
     expect(result.chartRequest.styleXml).toContain('cs:chartStyle');
@@ -375,7 +378,8 @@ describe('chartDrawer', () => {
       data: { labels: ['A'], series: [{ name: 'S', values: [1] }] },
     };
     const result = buildChart(chart, 100, []);
-    expect(result.anchorShape).toContain(`x="${Math.round(0.8 * 914400)}"`);
-    expect(result.anchorShape).toContain(`y="${Math.round(1.6 * 914400)}"`);
+    const anchorShape = result.buildAnchorShape('rIdTest');
+    expect(anchorShape).toContain(`x="${Math.round(0.8 * 914400)}"`);
+    expect(anchorShape).toContain(`y="${Math.round(1.6 * 914400)}"`);
   });
 });
