@@ -529,3 +529,78 @@ describe('E2E: AST → Transform(Tier 1) → Render', () => {
     expect(slideFiles).toHaveLength(3);
   });
 });
+
+// ─── Chart Rendering ─────────────────────────────────────────────────────────
+
+describe('chart rendering', () => {
+  it('produces chart files in the ZIP', async () => {
+    const presentation: Presentation = {
+      title: 'Chart Test',
+      slides: [{
+        layout: 'chart', _resolvedLayout: 'chart',
+        elements: [
+          { type: 'title', text: 'Revenue Chart' },
+          {
+            type: 'chart', chartType: 'bar',
+            data: { labels: ['Q1', 'Q2', 'Q3'], series: [{ name: 'Revenue', values: [100, 200, 150] }] },
+          },
+        ],
+      }],
+    };
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH, templateInfo);
+    const zip = await JSZip.loadAsync(buffer);
+
+    expect(zip.file('ppt/charts/chart1.xml')).not.toBeNull();
+    expect(zip.file('ppt/charts/style1.xml')).not.toBeNull();
+    expect(zip.file('ppt/charts/colors1.xml')).not.toBeNull();
+    expect(zip.file('ppt/charts/_rels/chart1.xml.rels')).not.toBeNull();
+
+    const chartXml = await zip.file('ppt/charts/chart1.xml')?.async('text');
+    expect(chartXml).toContain('<c:barChart>');
+    expect(chartXml).toContain('Revenue');
+
+    const slideXml = await zip.file('ppt/slides/slide1.xml')?.async('text');
+    expect(slideXml).toContain('<p:graphicFrame>');
+    expect(slideXml).toContain('Revenue Chart');
+    expect(slideXml).not.toContain('__CHART_RELID__');
+    expect(slideXml).toContain('rIdChart1');
+
+    const slideRels = await zip.file('ppt/slides/_rels/slide1.xml.rels')?.async('text');
+    expect(slideRels).toContain('rIdChart1');
+    expect(slideRels).toContain('relationships/chart');
+
+    const contentTypes = await zip.file('[Content_Types].xml')?.async('text');
+    expect(contentTypes).toContain('chart1.xml');
+    expect(contentTypes).toContain('drawingml.chart+xml');
+  });
+
+  it('numbers charts globally across slides', async () => {
+    const presentation: Presentation = {
+      title: 'Multi Chart',
+      slides: [
+        {
+          layout: 'chart', _resolvedLayout: 'chart',
+          elements: [
+            { type: 'title', text: 'Chart 1' },
+            { type: 'chart', chartType: 'bar', data: { labels: ['A'], series: [{ name: 'S', values: [1] }] } },
+          ],
+        },
+        {
+          layout: 'chart', _resolvedLayout: 'chart',
+          elements: [
+            { type: 'title', text: 'Chart 2' },
+            { type: 'chart', chartType: 'pie', data: { labels: ['A', 'B'], series: [{ name: 'S', values: [60, 40] }] } },
+          ],
+        },
+      ],
+    };
+    const buffer = await renderToBuffer(presentation, TEMPLATE_PATH, templateInfo);
+    const zip = await JSZip.loadAsync(buffer);
+    expect(zip.file('ppt/charts/chart1.xml')).not.toBeNull();
+    expect(zip.file('ppt/charts/chart2.xml')).not.toBeNull();
+    const chart1 = await zip.file('ppt/charts/chart1.xml')?.async('text');
+    const chart2 = await zip.file('ppt/charts/chart2.xml')?.async('text');
+    expect(chart1).toContain('<c:barChart>');
+    expect(chart2).toContain('<c:pieChart>');
+  });
+});

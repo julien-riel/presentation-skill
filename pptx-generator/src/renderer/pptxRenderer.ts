@@ -6,6 +6,8 @@ import type { LayoutInfo, TemplateInfo } from '../validator/types.js';
 import { LAYOUT_TYPE_TO_PPT_NAME } from '../validator/constants.js';
 import { buildSlideShapes } from './placeholderFiller.js';
 import type { IconRequest } from './placeholderFiller.js';
+import type { ChartRequest } from './chartDrawer.js';
+import { buildChartRelsXml } from './charts/chartStyleBuilder.js';
 import { resolveIcon, createIconCache } from './iconResolver.js';
 import { wrapSlideXml, notesSlideXml, pictureShape } from './xmlHelpers.js';
 
@@ -55,10 +57,12 @@ export async function renderToBuffer(
     layoutIndex: number;
     notes?: string;
     images: Array<{ relId: string; mediaPath: string; pngBuffer: Buffer }>;
+    charts: Array<{ chartNum: number; chartRelId: string; chartRequest: ChartRequest }>;
   }> = [];
 
   const iconCache = createIconCache();
   let nextImageNum = 1;
+  let nextChartNum = 1;
   let hasImages = false;
   let nextShapeId = 100; // Start high to avoid conflicts with layout shapes
 
@@ -89,6 +93,15 @@ export async function renderToBuffer(
       hasImages = true;
     }
 
+    // Process chart requests: replace __CHART_RELID__ tokens BEFORE wrapping
+    const slideCharts: Array<{ chartNum: number; chartRelId: string; chartRequest: ChartRequest }> = [];
+    for (const chartReq of chartRequests) {
+      const chartNum = nextChartNum++;
+      const chartRelId = `rIdChart${chartNum}`;
+      allShapes = allShapes.replace('__CHART_RELID__', chartRelId);
+      slideCharts.push({ chartNum, chartRelId, chartRequest: chartReq });
+    }
+
     const slideXml = wrapSlideXml(allShapes);
 
     slideEntries.push({
@@ -97,6 +110,7 @@ export async function renderToBuffer(
       layoutIndex,
       notes: slide.notes,
       images: slideImages,
+      charts: slideCharts,
     });
   }
 
@@ -188,6 +202,35 @@ export async function renderToBuffer(
         `${imageRels}\n</Relationships>`
       );
       zip.file(`ppt/slides/_rels/slide${entry.slideNum}.xml.rels`, updatedRels);
+    }
+
+    // Write chart files to ZIP and update slide rels
+    for (const chart of entry.charts) {
+      const { chartNum, chartRelId, chartRequest } = chart;
+
+      // Write chart XML files
+      zip.file(`ppt/charts/chart${chartNum}.xml`, chartRequest.chartXml);
+      zip.file(`ppt/charts/style${chartNum}.xml`, chartRequest.styleXml);
+      zip.file(`ppt/charts/colors${chartNum}.xml`, chartRequest.colorsXml);
+
+      // Write chart rels
+      zip.file(`ppt/charts/_rels/chart${chartNum}.xml.rels`, buildChartRelsXml(chartNum));
+
+      // Add chart relationship to slide rels
+      const chartRelsPath = `ppt/slides/_rels/slide${entry.slideNum}.xml.rels`;
+      const chartRelsEntry = zip.file(chartRelsPath);
+      if (!chartRelsEntry) throw new Error(`Missing slide rels: ${chartRelsPath}`);
+      const chartCurrentRels = await chartRelsEntry.async('text');
+      const updatedChartRels = chartCurrentRels.replace(
+        '</Relationships>',
+        `  <Relationship Id="${chartRelId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart" Target="../charts/chart${chartNum}.xml"/>\n</Relationships>`
+      );
+      zip.file(chartRelsPath, updatedChartRels);
+
+      // Add content type overrides for chart files
+      newContentTypes += `\n  <Override PartName="/ppt/charts/chart${chartNum}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>`;
+      newContentTypes += `\n  <Override PartName="/ppt/charts/style${chartNum}.xml" ContentType="application/vnd.ms-office.chartstyle+xml"/>`;
+      newContentTypes += `\n  <Override PartName="/ppt/charts/colors${chartNum}.xml" ContentType="application/vnd.ms-office.chartcolorstyle+xml"/>`;
     }
   }
 
