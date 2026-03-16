@@ -45,7 +45,7 @@ export function buildASTPrompt(
     layouts.includes('architecture') ? '- "architecture": Architecture diagram. Use diagram element with nodes (id, label, layer, icon?) and edges (from, to).' : '',
     layouts.includes('kpi') ? '- "kpi": Key performance indicators. Use kpi element with indicators (label, value, unit?, trend?, icon?).' : '',
     layouts.includes('quote') ? '- "quote": Citation slide. Use quote element with text, author?, icon?.' : '',
-    layouts.includes('chart') ? '- "chart": Chart slide. Use chart element with chartType (bar/line/pie/donut) and data series.' : '',
+    layouts.includes('chart') ? '- "chart": Chart slide. Use chart element with chartType (bar/line/pie/donut/stackedBar) and data series. Options: valueFormat, showDataLabels, legendPosition, colors, gridLines, axis labels/limits.' : '',
     layouts.includes('table') ? '- "table": Table slide. Use table element with headers and rows arrays.' : '',
     layouts.includes('imageText') ? '- "imageText": Image + text layout. Use with text and image elements side by side.' : '',
     layouts.includes('roadmap') ? '- "roadmap": Roadmap/milestones layout. Use timeline element with date, label, status.' : '',
@@ -62,7 +62,7 @@ export function buildASTPrompt(
     '- { type: "diagram", nodes: [{ id, label, layer?, icon? }], edges: [{ from, to }] } — Architecture diagram',
     layouts.includes('kpi') ? '- { type: "kpi", indicators: [{ label, value, unit?, trend?, icon? }] } — Key metrics' : '',
     layouts.includes('quote') ? '- { type: "quote", text: "...", author?: "...", icon?: "..." } — Citation with optional decorative icon' : '',
-    layouts.includes('chart') ? '- { type: "chart", chartType: "bar"|"line"|"pie"|"donut", data: [...] } — Chart' : '',
+    layouts.includes('chart') ? '- { type: "chart", chartType: "bar"|"line"|"pie"|"donut"|"stackedBar", data: { labels: [...], series: [{ name, values }] }, options?: { valueFormat?, showDataLabels?, legendPosition?, colors?, ... } } — Chart' : '',
     layouts.includes('table') ? '- { type: "table", headers: [...], rows: [[...], ...] } — Data table' : '',
   ].filter(Boolean).join('\n');
 

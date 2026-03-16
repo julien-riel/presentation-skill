@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildASTPrompt } from '../../src/parser/promptParser.js';
 import type { TemplateCapabilities } from '../../src/schema/capabilities.js';
+import { makeTier1Capabilities } from '../helpers/capabilitiesHelpers.js';
 
 const MOCK_CAPABILITIES: TemplateCapabilities = {
   template: 'test.pptx',
@@ -55,5 +56,13 @@ describe('buildASTPrompt', () => {
     if (jsonMatch) {
       expect(() => JSON.parse(jsonMatch[1])).not.toThrow();
     }
+  });
+
+  it('includes stackedBar in chart description when chart is supported', () => {
+    const caps = { ...makeTier1Capabilities(['chart']), supported_layouts: ['title', 'section', 'bullets', 'generic', 'chart'] as any };
+    const prompt = buildASTPrompt(caps, 'Test brief');
+    expect(prompt).toContain('stackedBar');
+    expect(prompt).toContain('valueFormat');
+    expect(prompt).toContain('showDataLabels');
   });
 });
