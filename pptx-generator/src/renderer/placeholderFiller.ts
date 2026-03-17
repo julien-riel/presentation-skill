@@ -1,6 +1,6 @@
 import type { Slide, Element } from '../schema/presentation.js';
 import type { TemplateInfo } from '../validator/types.js';
-import type { IconRequest, SlideShapeResult } from './types.js';
+import type { HyperlinkRequest, IconRequest, ImageRequest, PendingChart, SlideShapeResult } from './types.js';
 import { placeholderShape, bulletPlaceholderShape, textBoxShape, hyperlinkTextBoxShape, emuFromPx, emu } from './xmlHelpers.js';
 import { DEFAULT_ACCENT_COLOR, makeIconRequest } from './layoutConstants.js';
 import { findElement } from './drawerUtils.js';

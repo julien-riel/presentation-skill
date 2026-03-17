@@ -3,6 +3,7 @@ export default defineConfig({
   test: {
     globals: true,
     testTimeout: 30000,
+    exclude: ['dist/**', 'node_modules/**'],
     coverage: {
       reporter: ['text', 'lcov'],
       include: ['src/**/*.ts'],
