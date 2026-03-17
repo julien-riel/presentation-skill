@@ -1,19 +1,7 @@
 import type { Slide } from '../schema/presentation.js';
-import type { IconRequest, ImageRequest, HyperlinkRequest } from './placeholderFiller.js';
+import type { IconRequest, ImageRequest, HyperlinkRequest, SlideShapeResult } from './types.js';
 import { emu, placeholderShape, bulletPlaceholderShape, hyperlinkTextBoxShape } from './xmlHelpers.js';
 import { findElement } from './drawerUtils.js';
-
-/**
- * Extended result for the imageText drawer, which also produces
- * image requests and hyperlink requests in addition to shapes.
- */
-export interface ImageTextDrawerResult {
-  shapes: string;
-  nextId: number;
-  iconRequests: IconRequest[];
-  imageRequests: ImageRequest[];
-  hyperlinkRequests: HyperlinkRequest[];
-}
 
 /**
  * Builds imageText body shapes for a slide (excluding the title placeholder).
@@ -22,7 +10,7 @@ export interface ImageTextDrawerResult {
 export function buildImageTextShapes(
   slide: Slide,
   startId: number,
-): ImageTextDrawerResult {
+): Pick<SlideShapeResult, 'shapes' | 'nextId' | 'iconRequests' | 'imageRequests' | 'hyperlinkRequests'> {
   let id = startId;
   let shapes = '';
   const iconRequests: IconRequest[] = [];

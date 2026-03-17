@@ -6,7 +6,8 @@
   "types": "dist/src/index.d.ts",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && echo 'Build complete: dist/ ready for npm publish'",
+    "prebuild:check": "tsc --noEmit",
     "test": "vitest run",
     "build:template": "tsx scripts/buildDefaultTemplate.ts",
     "validate": "tsx src/cli.ts validate",

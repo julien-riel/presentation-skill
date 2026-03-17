@@ -183,7 +183,9 @@ export const PresentationMetadataSchema = z.object({
 export const PresentationSchema = z.object({
   title: z.string(),
   metadata: PresentationMetadataSchema.optional(),
+  /** Reserved for future use. Currently ignored by the renderer (theme comes from the template). */
   theme: z.string().optional(),
+  /** BCP 47 locale tag (e.g. "fr-FR", "en-US"). Affects default currency symbol in charts and OOXML lang attributes. Defaults to "en-US". */
   locale: z.string().optional(),
   showSlideNumbers: z.boolean().optional(),
   footer: z.string().optional(),

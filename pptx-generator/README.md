@@ -85,7 +85,12 @@ npx vitest run
 
 # Rebuild the default template
 npx tsx scripts/buildDefaultTemplate.ts
+
+# Compile TypeScript to dist/ (for npm consumers)
+npm run build
 ```
+
+> **Note:** `npm run build` compiles TypeScript to `dist/` for npm consumers, but development and testing uses `tsx` directly (no build step required).
 
 ## License
 

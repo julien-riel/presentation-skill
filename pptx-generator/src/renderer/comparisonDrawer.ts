@@ -1,5 +1,5 @@
 import type { Slide, Element } from '../schema/presentation.js';
-import type { DrawerResult } from './placeholderFiller.js';
+import type { DrawerResult } from './types.js';
 import { emu, rectShape, textBoxShape } from './xmlHelpers.js';
 import { CANVAS, GAP, HEIGHT } from './layoutConstants.js';
 

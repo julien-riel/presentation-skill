@@ -4,6 +4,7 @@ import { buildBarChartXml } from './charts/barChartBuilder.js';
 import { buildLineChartXml } from './charts/lineChartBuilder.js';
 import { buildPieChartXml } from './charts/pieChartBuilder.js';
 import { buildChartStyleXml, buildChartColorsXml } from './charts/chartStyleBuilder.js';
+import { getDefaultCurrencySymbol } from './locale.js';
 
 type ChartElement = Extract<Element, { type: 'chart' }>;
 
@@ -49,8 +50,16 @@ function graphicFrameShape(id: number, relId: string, altText?: string): string 
  * containing the chart, style, and colors XML.
  */
 export function buildChart(
-  chart: ChartElement, startId: number,
+  chart: ChartElement, startId: number, locale?: string,
 ): BuildChartResult {
+  // Resolve default currency symbol from locale if not explicitly specified
+  if (chart.options?.valueFormat === 'currency' && !chart.options.currencySymbol) {
+    chart = {
+      ...chart,
+      options: { ...chart.options, currencySymbol: getDefaultCurrencySymbol(locale) },
+    };
+  }
+
   let chartXml: string;
   switch (chart.chartType) {
     case 'bar':

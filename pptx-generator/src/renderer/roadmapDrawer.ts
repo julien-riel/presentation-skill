@@ -1,7 +1,7 @@
 import type { Slide } from '../schema/presentation.js';
-import type { DrawerResult, IconRequest } from './placeholderFiller.js';
+import type { DrawerResult, IconRequest } from './types.js';
 import { emu, rectShape, textBoxShape, emuFromPx } from './xmlHelpers.js';
-import { CANVAS, GAP, HEIGHT } from './layoutConstants.js';
+import { CANVAS, GAP, HEIGHT, makeIconRequest } from './layoutConstants.js';
 import { statusColor } from './drawerHelpers.js';
 import { findElement } from './drawerUtils.js';
 
@@ -50,17 +50,12 @@ export function buildRoadmapShapes(
       event.date, { size: 9, color: '888888', align: 'ctr', valign: 't' });
 
     if (event.icon) {
-      const iconSizePx = 20;
-      const iconEmu = emuFromPx(iconSizePx);
-      iconRequests.push({
-        name: event.icon,
-        color: 'FFFFFF',
-        sizePx: iconSizePx,
-        x: x + blockW - iconEmu - GAP.SMALL,
-        y: barY + GAP.SMALL,
-        cx: iconEmu,
-        cy: iconEmu,
-      });
+      const iconEmu = emuFromPx(20);
+      iconRequests.push(makeIconRequest(
+        event.icon, 'FFFFFF', 20,
+        x + blockW - iconEmu - GAP.SMALL,
+        barY + GAP.SMALL,
+      ));
     }
   }
 

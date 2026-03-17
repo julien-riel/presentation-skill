@@ -1,6 +1,8 @@
 import type { Slide, Element } from '../schema/presentation.js';
 import type { TemplateInfo } from '../validator/types.js';
+import type { IconRequest, SlideShapeResult } from './types.js';
 import { placeholderShape, bulletPlaceholderShape, textBoxShape, hyperlinkTextBoxShape, emuFromPx, emu } from './xmlHelpers.js';
+import { DEFAULT_ACCENT_COLOR, makeIconRequest } from './layoutConstants.js';
 import { findElement } from './drawerUtils.js';
 import { buildTimelineShapes } from './timelineDrawer.js';
 import { buildArchitectureShapes } from './architectureDrawer.js';
@@ -12,72 +14,9 @@ import { buildComparisonShapes } from './comparisonDrawer.js';
 import { buildQuoteShapes } from './quoteDrawer.js';
 import { buildImageTextShapes } from './imageTextDrawer.js';
 import { buildChart } from './chartDrawer.js';
-import type { ChartRequest } from './chartDrawer.js';
 
-/** Default accent color when template has no accent colors defined. */
-const DEFAULT_ACCENT_COLOR = '2D7DD2';
-
-/**
- * Describes an icon to be resolved and embedded by the renderer.
- * Drawers emit these synchronously; renderToBuffer resolves them in batch.
- */
-export interface IconRequest {
-  name: string;
-  color: string;
-  sizePx: number;
-  x: number;
-  y: number;
-  cx: number;
-  cy: number;
-}
-
-/**
- * Standard return type for all canvas drawers (timeline, architecture, kpi, etc.).
- */
-export interface DrawerResult {
-  shapes: string;
-  nextId: number;
-  iconRequests: IconRequest[];
-}
-
-/**
- * A chart whose anchor shape XML is deferred until the relationship ID is known.
- */
-export interface PendingChart {
-  buildAnchorShape: (relId: string) => string;
-  chartRequest: ChartRequest;
-}
-
-/**
- * Describes a user-provided image to be read from disk and embedded.
- */
-export interface ImageRequest {
-  filePath: string;
-  altText?: string;
-  x: number;
-  y: number;
-  cx: number;
-  cy: number;
-}
-
-/**
- * Describes a hyperlink whose shape XML is deferred until the relationship ID is known.
- */
-export interface HyperlinkRequest {
-  url: string;
-  shapeXmlBuilder: (relId: string) => string;
-}
-
-export interface SlideShapeResult {
-  shapes: string;
-  nextId: number;
-  iconRequests: IconRequest[];
-  pendingCharts: PendingChart[];
-  imageRequests: ImageRequest[];
-  hyperlinkRequests: HyperlinkRequest[];
-}
-
-// Re-export findElement for external consumers
+// Re-export types and findElement for external consumers
+export type { IconRequest, DrawerResult, PendingChart, ImageRequest, HyperlinkRequest, SlideShapeResult } from './types.js';
 export { findElement } from './drawerUtils.js';
 
 function getTitleText(slide: Slide): string {
@@ -140,6 +79,7 @@ export function buildSlideShapes(
   slide: Slide,
   startId: number,
   templateInfo: TemplateInfo,
+  locale?: string,
 ): SlideShapeResult {
   const layout = slide._resolvedLayout ?? slide.layout;
   let id = startId;
@@ -347,7 +287,7 @@ export function buildSlideShapes(
       shapes += placeholderShape(id++, 'title', 0, [title]);
       const chartEl = findElement(slide.elements, 'chart');
       if (chartEl) {
-        const result = buildChart(chartEl, id);
+        const result = buildChart(chartEl, id, locale);
         id = result.nextId;
         pendingCharts.push({ buildAnchorShape: result.buildAnchorShape, chartRequest: result.chartRequest });
       }
@@ -371,17 +311,7 @@ export function buildSlideShapes(
     const quoteEl = findElement(slide.elements, 'quote');
     if (quoteEl?.icon) {
       const accentColor = accentColors[0] ?? DEFAULT_ACCENT_COLOR;
-      const iconSizePx = 48;
-      const iconEmu = emuFromPx(iconSizePx);
-      iconRequests.push({
-        name: quoteEl.icon,
-        color: accentColor,
-        sizePx: iconSizePx,
-        x: emu(0.5),
-        y: emu(1.5),
-        cx: iconEmu,
-        cy: iconEmu,
-      });
+      iconRequests.push(makeIconRequest(quoteEl.icon, accentColor, 48, emu(0.5), emu(1.5)));
     }
   }
 

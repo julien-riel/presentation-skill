@@ -6,8 +6,9 @@ import type { TemplateCapabilities } from '../schema/capabilities.js';
 import type { LayoutInfo, TemplateInfo } from '../validator/types.js';
 import { LAYOUT_TYPE_TO_PPT_NAME } from '../validator/constants.js';
 import { buildSlideShapes } from './placeholderFiller.js';
-import type { IconRequest, ImageRequest, HyperlinkRequest } from './placeholderFiller.js';
+import type { IconRequest, ImageRequest, HyperlinkRequest } from './types.js';
 import type { ChartRequest } from './chartDrawer.js';
+import { getOoxmlLang } from './locale.js';
 import { buildChartRelsXml } from './charts/chartStyleBuilder.js';
 import { resolveIcon, createIconCache } from './iconResolver.js';
 import { wrapSlideXml, notesSlideXml, pictureShape, textBoxShape, emu } from './xmlHelpers.js';
@@ -303,6 +304,7 @@ export async function renderToBuffer(
   let hasImages = false;
   const imageExtensionsUsed = new Set<string>();
   let nextShapeId = 100; // Start high to avoid conflicts with layout shapes
+  const lang = getOoxmlLang(presentation.locale);
 
   for (let i = 0; i < presentation.slides.length; i++) {
     const slide = presentation.slides[i];
@@ -312,7 +314,7 @@ export async function renderToBuffer(
     const layoutIndex = layoutEntry?.index ?? 1;
 
     // Build the shapes XML for this slide
-    const { shapes, nextId, iconRequests, pendingCharts, imageRequests, hyperlinkRequests } = buildSlideShapes(slide, nextShapeId, templateInfo);
+    const { shapes, nextId, iconRequests, pendingCharts, imageRequests, hyperlinkRequests } = buildSlideShapes(slide, nextShapeId, templateInfo, presentation.locale);
     nextShapeId = nextId;
 
     let allShapes = shapes;

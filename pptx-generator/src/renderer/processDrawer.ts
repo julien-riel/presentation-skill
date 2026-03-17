@@ -1,7 +1,7 @@
 import type { Slide } from '../schema/presentation.js';
-import type { DrawerResult, IconRequest } from './placeholderFiller.js';
+import type { DrawerResult, IconRequest } from './types.js';
 import { emu, rectShape, textBoxShape, lineShape, emuFromPx } from './xmlHelpers.js';
-import { CANVAS, GAP, HEIGHT } from './layoutConstants.js';
+import { CANVAS, GAP, HEIGHT, makeIconRequest } from './layoutConstants.js';
 import { findElement } from './drawerUtils.js';
 
 /**
@@ -62,17 +62,12 @@ export function buildProcessShapes(
     }
 
     if (event.icon) {
-      const iconSizePx = 20;
-      const iconEmu = emuFromPx(iconSizePx);
-      iconRequests.push({
-        name: event.icon,
-        color: 'FFFFFF',
-        sizePx: iconSizePx,
-        x: x + boxW - iconEmu - GAP.SMALL,
-        y: boxY + GAP.SMALL,
-        cx: iconEmu,
-        cy: iconEmu,
-      });
+      const iconEmu = emuFromPx(20);
+      iconRequests.push(makeIconRequest(
+        event.icon, 'FFFFFF', 20,
+        x + boxW - iconEmu - GAP.SMALL,
+        boxY + GAP.SMALL,
+      ));
     }
   }
 

@@ -129,7 +129,7 @@ Responsable de transformer l'AST enrichi en fichier `.pptx` physique.
 | roadmap             | Remplir TITLE (idx 0), dessiner barres de phases horizontales   |
 | process             | Remplir TITLE (idx 0), dessiner boîtes numérotées + flèches    |
 | comparison          | Remplir TITLE (idx 0), dessiner colonnes avec headers colorés   |
-| imageText           | Remplir TITLE (idx 0), TEXT_BODY (idx 2). IMAGE (idx 1) réservé |
+| imageText           | Remplir TITLE (idx 0), TEXT_BODY (idx 2). L'image est embarquée comme picture shape via ImageRequest (pas de placeholder template pour l'image) |
 
 **Dessin de shapes (layouts canvas)** :
 

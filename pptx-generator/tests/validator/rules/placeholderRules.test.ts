@@ -76,4 +76,76 @@ describe('placeholderRules', () => {
     const result = rule.validate(template);
     expect(result.status).toBe('fail');
   });
+
+  it('PH-003 passes when LAYOUT_SECTION has Title at index 0', () => {
+    const rule = placeholderRules.find(r => r.id === 'PH-003')!;
+    const result = rule.validate(makeTier1Template());
+    expect(result.status).toBe('pass');
+  });
+
+  it('PH-004 passes when LAYOUT_SECTION has Subtitle/Text at index 1', () => {
+    const rule = placeholderRules.find(r => r.id === 'PH-004')!;
+    const result = rule.validate(makeTier1Template());
+    expect(result.status).toBe('pass');
+  });
+
+  it('PH-005 passes when LAYOUT_BULLETS has Title at index 0', () => {
+    const rule = placeholderRules.find(r => r.id === 'PH-005')!;
+    const result = rule.validate(makeTier1Template());
+    expect(result.status).toBe('pass');
+  });
+
+  it('PH-011 passes when LAYOUT_TIMELINE has Content (canvas) at index 1', () => {
+    const rule = placeholderRules.find(r => r.id === 'PH-011')!;
+    const result = rule.validate(makeTier2Template());
+    expect(result.status).toBe('pass');
+  });
+
+  it('PH-011 fails when LAYOUT_TIMELINE has no Content at index 1', () => {
+    const rule = placeholderRules.find(r => r.id === 'PH-011')!;
+    const template = makeTier2Template();
+    const timeline = template.layouts.find(l => l.name === 'LAYOUT_TIMELINE')!;
+    timeline.placeholders = [{ index: 0, type: 'title', position: { x: 0, y: 0, cx: 0, cy: 0 } }];
+    const result = rule.validate(template);
+    expect(result.status).toBe('fail');
+  });
+
+  it('PH-012 passes when LAYOUT_ARCHITECTURE has Title at index 0', () => {
+    const rule = placeholderRules.find(r => r.id === 'PH-012')!;
+    const template = makeTier2Template();
+    template.layouts.push(makeLayout('LAYOUT_ARCHITECTURE', [
+      { index: 0, type: 'title' },
+      { index: 1, type: 'body', cy: 4500000 },
+    ], 7));
+    const result = rule.validate(template);
+    expect(result.status).toBe('pass');
+  });
+
+  it('PH-012 skips when LAYOUT_ARCHITECTURE is absent', () => {
+    const rule = placeholderRules.find(r => r.id === 'PH-012')!;
+    const result = rule.validate(makeTier1Template());
+    expect(result.status).toBe('pass');
+    expect(result.message).toContain('not present');
+  });
+
+  it('PH-013 passes when LAYOUT_ARCHITECTURE has Content (canvas) at index 1', () => {
+    const rule = placeholderRules.find(r => r.id === 'PH-013')!;
+    const template = makeTier2Template();
+    template.layouts.push(makeLayout('LAYOUT_ARCHITECTURE', [
+      { index: 0, type: 'title' },
+      { index: 1, type: 'body', cy: 4500000 },
+    ], 7));
+    const result = rule.validate(template);
+    expect(result.status).toBe('pass');
+  });
+
+  it('PH-013 fails when LAYOUT_ARCHITECTURE has no Content at index 1', () => {
+    const rule = placeholderRules.find(r => r.id === 'PH-013')!;
+    const template = makeTier2Template();
+    template.layouts.push(makeLayout('LAYOUT_ARCHITECTURE', [
+      { index: 0, type: 'title' },
+    ], 7));
+    const result = rule.validate(template);
+    expect(result.status).toBe('fail');
+  });
 });

@@ -1,7 +1,7 @@
 import type { Slide } from '../schema/presentation.js';
-import type { DrawerResult, IconRequest } from './placeholderFiller.js';
+import type { DrawerResult, IconRequest } from './types.js';
 import { emu, rectShape, textBoxShape, emuFromPx } from './xmlHelpers.js';
-import { CANVAS, GAP, HEIGHT } from './layoutConstants.js';
+import { CANVAS, GAP, HEIGHT, makeIconRequest } from './layoutConstants.js';
 import { findElement } from './drawerUtils.js';
 
 const TREND_ICONS: Record<string, string> = {
@@ -78,32 +78,21 @@ export function buildKpiShapes(
     if (indicator.trend) {
       const trendIconName = TREND_ICONS[indicator.trend];
       if (trendIconName) {
-        const iconSizePx = 20;
-        const iconEmu = emuFromPx(iconSizePx);
-        iconRequests.push({
-          name: trendIconName,
-          color: 'FFFFFF',
-          sizePx: iconSizePx,
-          x: x + cardW - iconEmu - GAP.MEDIUM,
-          y: y + GAP.MEDIUM,
-          cx: iconEmu,
-          cy: iconEmu,
-        });
+        const trendEmu = emuFromPx(20);
+        iconRequests.push(makeIconRequest(
+          trendIconName, 'FFFFFF', 20,
+          x + cardW - trendEmu - GAP.MEDIUM,
+          y + GAP.MEDIUM,
+        ));
       }
     }
 
     if (indicator.icon) {
-      const iconSizePx = 24;
-      const iconEmu = emuFromPx(iconSizePx);
-      iconRequests.push({
-        name: indicator.icon,
-        color: 'FFFFFF',
-        sizePx: iconSizePx,
-        x: x + GAP.MEDIUM,
-        y: y + GAP.MEDIUM,
-        cx: iconEmu,
-        cy: iconEmu,
-      });
+      iconRequests.push(makeIconRequest(
+        indicator.icon, 'FFFFFF', 24,
+        x + GAP.MEDIUM,
+        y + GAP.MEDIUM,
+      ));
     }
   }
 

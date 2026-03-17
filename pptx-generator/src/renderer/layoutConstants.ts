@@ -1,4 +1,8 @@
-import { emu } from './xmlHelpers.js';
+import { emu, emuFromPx } from './xmlHelpers.js';
+import type { IconRequest } from './types.js';
+
+/** Default accent color when template has no accent colors defined. */
+export const DEFAULT_ACCENT_COLOR = '2D7DD2';
 
 /** Standard slide canvas boundaries (16:9 slide, 12.192" x 6.858"). */
 export const CANVAS = {
@@ -28,3 +32,18 @@ export const HEIGHT = {
   BAR: emu(1.4),
   BOX: emu(1.6),
 } as const;
+
+/**
+ * Creates an IconRequest for a given icon name, centered at the given position.
+ * Shared helper for all drawers that render icons.
+ */
+export function makeIconRequest(
+  name: string,
+  color: string,
+  sizePx: number,
+  x: number,
+  y: number,
+): IconRequest {
+  const iconEmu = emuFromPx(sizePx);
+  return { name, color, sizePx, x, y, cx: iconEmu, cy: iconEmu };
+}

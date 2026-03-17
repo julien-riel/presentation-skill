@@ -23,8 +23,8 @@ L'AST est un objet JSON conforme au schema Zod defini dans
 |------------|-------------------------------|--------|--------------------------------------------------|
 | `title`            | `string`                      | oui    | Titre de la presentation                         |
 | `metadata`         | `PresentationMetadata`        | non    | Metadonnees (auteur, date, version, audience)    |
-| `theme`            | `string`                      | non    | Nom du theme a appliquer                         |
-| `locale`           | `string`                      | non    | Locale de la presentation (defaut : `en-US`)     |
+| `theme`            | `string`                      | non    | Reserve pour usage futur. Ignore par le renderer (le theme provient du gabarit) |
+| `locale`           | `string`                      | non    | Locale BCP 47 (ex: `fr-FR`). Affecte le symbole monetaire par defaut dans les charts et les attributs lang OOXML. Defaut : `en-US` |
 | `showSlideNumbers` | `boolean`                     | non    | Afficher les numeros de diapositive (defaut : `false`) |
 | `footer`           | `string`                      | non    | Texte de pied de page affiche sur chaque diapositive |
 | `slides`           | `Slide[]`                     | oui    | Liste ordonnee des diapositives                  |
@@ -443,6 +443,8 @@ Le Transform applique les regles suivantes :
 | Charts par diapositive         | max 1          | Seul le premier element chart est conserve                     |
 | Pie/donut multi-series         | max 1 serie    | Reduction a la premiere serie + warning                        |
 | Valeurs NaN/Infinity           | —              | Remplacees par 0 + warning                                    |
+| Valeurs negatives pie/donut      | —              | Remplacees par 0 + warning (bar/line conservent les negatifs)  |
+| Aretes auto-referentes (diagram) | —              | Supprimees automatiquement (from === to)                       |
 
 Chaque diapositive devrait contenir au moins un element `title` pour un rendu
 coherent.

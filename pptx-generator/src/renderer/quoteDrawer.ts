@@ -1,10 +1,8 @@
 import type { Slide } from '../schema/presentation.js';
-import type { DrawerResult } from './placeholderFiller.js';
+import type { DrawerResult } from './types.js';
 import { emu, textBoxShape } from './xmlHelpers.js';
+import { DEFAULT_ACCENT_COLOR } from './layoutConstants.js';
 import { findElement } from './drawerUtils.js';
-
-/** Default accent color when template has no accent colors defined. */
-const DEFAULT_ACCENT_COLOR = '2D7DD2';
 
 /**
  * Builds quote body shapes for a slide (excluding the title placeholder).

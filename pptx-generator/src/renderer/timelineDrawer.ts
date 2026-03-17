@@ -1,6 +1,7 @@
 import type { Slide } from '../schema/presentation.js';
-import type { DrawerResult, IconRequest } from './placeholderFiller.js';
+import type { DrawerResult, IconRequest } from './types.js';
 import { emu, ellipseShape, lineShape, textBoxShape, emuFromPx } from './xmlHelpers.js';
+import { makeIconRequest } from './layoutConstants.js';
 import { statusColor } from './drawerHelpers.js';
 import { findElement } from './drawerUtils.js';
 
@@ -50,17 +51,12 @@ export function buildTimelineShapes(
 
     // Colored circle or icon
     if (event.icon) {
-      const iconSizePx = 24;
-      const iconEmu = emuFromPx(iconSizePx);
-      iconRequests.push({
-        name: event.icon,
-        color: color,
-        sizePx: iconSizePx,
-        x: cx - Math.round(iconEmu / 2),
-        y: lineY - Math.round(iconEmu / 2),
-        cx: iconEmu,
-        cy: iconEmu,
-      });
+      const iconEmu = emuFromPx(24);
+      iconRequests.push(makeIconRequest(
+        event.icon, color, 24,
+        cx - Math.round(iconEmu / 2),
+        lineY - Math.round(iconEmu / 2),
+      ));
     } else {
       shapes += ellipseShape(id++, {
         x: cx - circleR, y: lineY - circleR,

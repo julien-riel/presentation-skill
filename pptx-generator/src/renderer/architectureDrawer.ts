@@ -1,7 +1,7 @@
 import type { Slide } from '../schema/presentation.js';
-import type { DrawerResult, IconRequest } from './placeholderFiller.js';
+import type { DrawerResult, IconRequest } from './types.js';
 import { emu, rectShape, lineShape, textBoxShape, emuFromPx } from './xmlHelpers.js';
-import { CANVAS, GAP, HEIGHT } from './layoutConstants.js';
+import { CANVAS, GAP, HEIGHT, makeIconRequest } from './layoutConstants.js';
 import { findElement } from './drawerUtils.js';
 
 const NODE_H = HEIGHT.HEADER;
@@ -90,17 +90,12 @@ export function buildArchitectureShapes(
 
       // Node label (white text on colored background)
       if (node.style?.icon) {
-        const iconSizePx = 32;
-        const iconEmu = emuFromPx(iconSizePx);
-        iconRequests.push({
-          name: node.style.icon,
-          color: 'FFFFFF',
-          sizePx: iconSizePx,
-          x: x + Math.round((nodeW - iconEmu) / 2),
-          y: y + Math.round((NODE_H - iconEmu) / 4),
-          cx: iconEmu,
-          cy: iconEmu,
-        });
+        const iconEmu = emuFromPx(32);
+        iconRequests.push(makeIconRequest(
+          node.style.icon, 'FFFFFF', 32,
+          x + Math.round((nodeW - iconEmu) / 2),
+          y + Math.round((NODE_H - iconEmu) / 4),
+        ));
 
         // Label shifted down to make room for icon
         shapes += textBoxShape(id++, x, y + Math.round(NODE_H * 0.55), nodeW, Math.round(NODE_H * 0.45),
